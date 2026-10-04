@@ -39,8 +39,7 @@ export function TrendChart({ days }: { days: Report["by_day"] }) {
       <div className={s.scrollx}>
         <svg
           viewBox={`0 0 ${width} ${H}`}
-          width={width}
-          height={H}
+          style={{ minWidth: width }}
           role="img"
           aria-labelledby="trend-title trend-desc"
           className={s.trend}
