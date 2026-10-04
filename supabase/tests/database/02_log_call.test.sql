@@ -51,7 +51,11 @@ select is((select next_call_at from public.customers where id = '40000000-0000-4
 select is((select last_note from public.customers where id = '40000000-0000-4000-8000-000000000001'),
           'üçüncü', 'last_note güncellendi');
 
--- ikinci tur
+-- ikinci tur (0700 sonrası log_call havuzdaki müşteriye kapalı: dağıtımın yaptığı
+-- havuz dönüşü burada postgres olarak taklit edilir)
+reset role;
+update public.customers set call_status = 'retry' where id = '40000000-0000-4000-8000-000000000001';
+set local role authenticated;
 do $$
 begin
   perform public.log_call('40000000-0000-4000-8000-000000000001', 'no_answer');
@@ -64,6 +68,9 @@ select is((select call_status from public.customers where id = '40000000-0000-40
           'pool', 'ikinci turdan sonra yine havuz');
 
 -- üçüncü tur: max_rounds (2) aşıldı -> unreachable
+reset role;
+update public.customers set call_status = 'retry' where id = '40000000-0000-4000-8000-000000000001';
+set local role authenticated;
 do $$
 begin
   perform public.log_call('40000000-0000-4000-8000-000000000001', 'no_answer');

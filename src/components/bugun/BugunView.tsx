@@ -11,6 +11,7 @@ import { FocusCard } from "./FocusCard";
 import {
   OPERATORS,
   firstName,
+  isCallOpen,
   logText,
   toneOf,
   type BirthdayInfo,
@@ -77,6 +78,7 @@ export function BugunView(props: Props) {
   const [curId, setCurId] = useState<string | null>(() => defaultCursor(props.items));
   const [nonce, setNonce] = useState(0);
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const [distributing, setDistributing] = useState(false);
   const [dialog, setDialog] = useState<{ kind: "callback" | "reason"; note: string } | null>(null);
 
@@ -100,6 +102,9 @@ export function BugunView(props: Props) {
   const finished = count("done") + count("bad") + count("pool");
 
   async function submit(item: Item, outcome: Outcome, note: string, callbackAt?: Date) {
+    // Aynı render içindeki çift dokunuşu engelle (state kapanışı henüz güncellenmemiş olabilir)
+    if (busyRef.current || !isCallOpen(item.status)) return;
+    busyRef.current = true;
     const snapshot = items;
     const trimmed = note.trim();
     const after = items.map((x) =>
@@ -118,6 +123,7 @@ export function BugunView(props: Props) {
     }
 
     const res = await logCallAction(item.id, outcome, trimmed || null, callbackAt ? callbackAt.toISOString() : null);
+    busyRef.current = false;
     setBusy(false);
     if (!res.ok) {
       setItems(snapshot);
@@ -144,7 +150,7 @@ export function BugunView(props: Props) {
   }
 
   function pick(outcome: Outcome, note: string) {
-    if (!cur || busy) return;
+    if (!cur || busy || busyRef.current || !isCallOpen(cur.status)) return;
     if (outcome === "callback") return setDialog({ kind: "callback", note });
     if (outcome === "disqualified" && !note.trim()) return setDialog({ kind: "reason", note });
     void submit(cur, outcome, note);

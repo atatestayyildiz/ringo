@@ -13,7 +13,7 @@ import {
 } from "@/components/icons";
 import { Avatar, Chip } from "@/components/ui";
 import { formatPhone, relativeTime, telLink, waLink } from "@/lib/format";
-import { OPERATORS, logText, type Item, type Outcome } from "./model";
+import { OPERATORS, isCallOpen, logText, type Item, type Outcome } from "./model";
 import styles from "./bugun.module.css";
 
 const OUTCOME_BUTTONS: { outcome: Outcome; Icon: (p: IconProps) => React.ReactElement; title: string; sub: string; color: string }[] = [
@@ -25,6 +25,13 @@ const OUTCOME_BUTTONS: { outcome: Outcome; Icon: (p: IconProps) => React.ReactEl
   { outcome: "not_interested", Icon: IconCheck, title: "İlgilenmiyor", sub: "Kapat", color: "var(--c-pool)" },
 ];
 
+const CLOSED_TEXT: Partial<Record<Item["status"], string>> = {
+  done: "Bu müşteri tamamlandı.",
+  pool: "Bu müşteri havuzda, süresi dolunca listeye döner.",
+  unreachable: "Bu müşteri ulaşılamadı olarak kapandı.",
+  disqualified: "Bu müşteri uygun değil olarak kapandı.",
+};
+
 export function FocusCard({
   item,
   busy,
@@ -35,6 +42,7 @@ export function FocusCard({
   onPick: (outcome: Outcome, note: string) => void;
 }) {
   const [note, setNote] = useState("");
+  const open = isCallOpen(item.status);
   const tel = telLink(item.phone);
   const wa = waLink(item.phone);
   const callbackLabel =
@@ -104,15 +112,21 @@ export function FocusCard({
           </a>
         </div>
       </div>
-      <div className={styles.outcomes}>
+      <div className={`${styles.outcomes}${open ? "" : ` ${styles.outcomesClosed}`}`}>
         <p>Görüşme nasıl bitti?</p>
+        {open ? null : (
+          <div className={styles.closedNote} role="status">
+            {CLOSED_TEXT[item.status] ?? "Bu müşteri için arama kaydı kapalı."} Aşama değişikliği için Müşteriler
+            ekranını kullanın.
+          </div>
+        )}
         <div className={styles.ogrid}>
           {OUTCOME_BUTTONS.map(({ outcome, Icon, title, sub, color }) => (
             <button
               key={outcome}
               type="button"
               className={styles.o}
-              disabled={busy}
+              disabled={busy || !open}
               onClick={() => onPick(outcome, note)}
             >
               <span className={styles.tag} style={{ background: color }}>
@@ -129,6 +143,7 @@ export function FocusCard({
           maxLength={1000}
           placeholder="Not ekle (isteğe bağlı)"
           aria-label="Görüşme notu"
+          disabled={!open}
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />

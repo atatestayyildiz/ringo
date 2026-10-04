@@ -238,6 +238,9 @@ isOneToOne: true
 "_has_perm":
 { Args: { "m": Database["public"]['Tables']["members"]['Row'],"p_perm": string }; Returns: boolean
                            },
+"_name_initials":
+{ Args: { "p": string }; Returns: string
+                           },
 "_normalize_operator":
 { Args: { "p": string }; Returns: string
                            },

@@ -18,10 +18,16 @@ insert into public.members (id, tenant_id, user_id, full_name, role, permissions
   ('30000000-0000-4000-8000-0000000000a3', '10000000-0000-4000-8000-0000000000a1', '20000000-0000-4000-8000-0000000000a3', 'Yetkili Ajan', 'agent', '{"delete_customers": true}'),
   ('30000000-0000-4000-8000-0000000000a4', '10000000-0000-4000-8000-0000000000a2', '20000000-0000-4000-8000-0000000000a4', 'Diğer Yönetici', 'manager', '{}');
 
-insert into public.customers (id, tenant_id, full_name, phone) values
-  ('40000000-0000-4000-8000-0000000000a1', '10000000-0000-4000-8000-0000000000a1', 'Silinecek Bir', '05327774567'),
-  ('40000000-0000-4000-8000-0000000000a2', '10000000-0000-4000-8000-0000000000a1', 'Silinecek Iki', '05327771234'),
-  ('40000000-0000-4000-8000-0000000000a3', '10000000-0000-4000-8000-0000000000a1', 'Doğrudan Silinmez', '05327770000');
+insert into public.customers (id, tenant_id, full_name, phone, assigned_to) values
+  ('40000000-0000-4000-8000-0000000000a1', '10000000-0000-4000-8000-0000000000a1', 'Silinecek Bir', '05327774567', null),
+  ('40000000-0000-4000-8000-0000000000a2', '10000000-0000-4000-8000-0000000000a1', 'Silinecek Iki', '05327771234',
+   '30000000-0000-4000-8000-0000000000a3'),
+  ('40000000-0000-4000-8000-0000000000a3', '10000000-0000-4000-8000-0000000000a1', 'Doğrudan Silinmez', '05327770000', null);
+
+-- 0700 sonrası: yetkili ajan yalnız görebildiği müşteriyi siler; a2 bugün ona atanmış
+insert into public.daily_assignments (tenant_id, day, customer_id, member_id, position) values
+  ('10000000-0000-4000-8000-0000000000a1', public.tr_today(), '40000000-0000-4000-8000-0000000000a2',
+   '30000000-0000-4000-8000-0000000000a3', 1);
 
 -- Yetkisiz ajan
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000a2","role":"authenticated"}', true);
@@ -55,7 +61,7 @@ select throws_ok($$select public.delete_customer('40000000-0000-4000-8000-000000
 -- delete_customers yetkili ajan siler
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000a3","role":"authenticated"}', true);
 select lives_ok($$select public.delete_customer('40000000-0000-4000-8000-0000000000a2')$$,
-                'delete_customers yetkili ajan siler');
+                'delete_customers yetkili ajan görebildiği müşteriyi siler');
 
 -- anon çağıramaz
 reset role;

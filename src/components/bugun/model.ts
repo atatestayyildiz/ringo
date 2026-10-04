@@ -48,7 +48,12 @@ export function toneOf(status: CallStatus): Tone {
   }
 }
 
-export type LogEntry = { outcome: string; note: string | null };
+/** Arama kaydı yalnız bekleyen/tekrar müşteride açıktır (log_call ile aynı kural, DB zorlar). */
+export function isCallOpen(status: CallStatus): boolean {
+  return status === "pending" || status === "retry";
+}
+
+export type LogEntry ={ outcome: string; note: string | null };
 
 export type Item = {
   id: string;

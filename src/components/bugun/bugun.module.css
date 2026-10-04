@@ -345,6 +345,21 @@
   width: 15px;
   height: 15px;
 }
+.closedNote {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.outcomesClosed .o,
+.outcomesClosed .noteInput {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .noteInput {
   margin-top: 12px;
   width: 100%;
