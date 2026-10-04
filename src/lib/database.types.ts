@@ -156,13 +156,13 @@ isOneToOne: false
                   ]
                 },"notification_log": {
                   Row: {
-                    "created_at": string | null,"day": string,"error": string | null,"id": number,"kind": string,"member_id": string,"status": string,"tenant_id": string
+                    "attempts": number,"claimed_at": string,"created_at": string | null,"day": string,"error": string | null,"id": number,"kind": string,"member_id": string,"status": string,"tenant_id": string
                   }
                   Insert: {
-                    "created_at"?: string | null,"day": string,"error"?: string | null,"id"?: number,"kind": string,"member_id": string,"status": string,"tenant_id": string
+                    "attempts"?: number,"claimed_at"?: string,"created_at"?: string | null,"day": string,"error"?: string | null,"id"?: number,"kind": string,"member_id": string,"status": string,"tenant_id": string
                   }
                   Update: {
-                    "created_at"?: string | null,"day"?: string,"error"?: string | null,"id"?: number,"kind"?: string,"member_id"?: string,"status"?: string,"tenant_id"?: string
+                    "attempts"?: number,"claimed_at"?: string,"created_at"?: string | null,"day"?: string,"error"?: string | null,"id"?: number,"kind"?: string,"member_id"?: string,"status"?: string,"tenant_id"?: string
                   }
                   Relationships: [
                     {
@@ -209,6 +209,19 @@ isOneToOne: false
       referencedRelation: "members"
       referencedColumns: ["tenant_id","id"]
     }
+                  ]
+                },"telegram_link_attempts": {
+                  Row: {
+                    "at": string,"chat_id": number
+                  }
+                  Insert: {
+                    "at"?: string,"chat_id": number
+                  }
+                  Update: {
+                    "at"?: string,"chat_id"?: number
+                  }
+                  Relationships: [
+                    
                   ]
                 },"telegram_link_codes": {
                   Row: {
@@ -294,6 +307,15 @@ isOneToOne: true
 "_normalize_operator":
 { Args: { "p": string }; Returns: string
                            },
+"_notification_claim":
+{ Args: { "p_day": string,"p_kind": string,"p_member": string,"p_tenant": string }; Returns: number
+                           },
+"_notification_done":
+{ Args: { "p_day": string,"p_kind": string,"p_member": string }; Returns: boolean
+                           },
+"_notification_finish":
+{ Args: { "p_error": string,"p_id": number,"p_status": string }; Returns: undefined
+                           },
 "_notification_record":
 { Args: { "p_day": string,"p_error": string,"p_kind": string,"p_member": string,"p_status": string,"p_tenant": string }; Returns: undefined
                            },
@@ -309,6 +331,9 @@ isOneToOne: true
                            },
 "_telegram_consume_link_code":
 { Args: { "p_chat_id": number,"p_code": string }; Returns: Json
+                           },
+"_telegram_link_limited":
+{ Args: { "p_chat_id": number }; Returns: boolean
                            },
 "auth_assigned_today":
 { Args: { "p_customer": string }; Returns: boolean

@@ -68,7 +68,6 @@ async function check(group, name, fn) {
     record(group, name, false, `istisna: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
-const errInfo = (error) => (error ? `${error.code ?? "?"}` : "hata yok");
 /** PostgREST çağrısı hata ile bitmeli; codes verilirse kod da eşleşmeli. */
 function expectError(res, codes) {
   if (!res.error) return `hata bekleniyordu, ${Array.isArray(res.data) ? res.data.length + " satır" : "başarılı"} döndü`;
@@ -255,6 +254,10 @@ async function main() {
     ["_telegram_consume_link_code", { p_code: "AAAAAAAA", p_chat_id: 1 }],
     ["_notification_targets", { p_now: new Date().toISOString() }],
     ["_notification_record", { p_tenant: fakeTenant, p_member: randomUUID(), p_kind: "test", p_day: "2000-01-01", p_status: "sent", p_error: null }],
+    ["_notification_claim", { p_tenant: fakeTenant, p_member: randomUUID(), p_kind: "test", p_day: "2000-01-01" }],
+    ["_notification_finish", { p_id: 0, p_status: "sent", p_error: null }],
+    ["_notification_done", { p_member: randomUUID(), p_kind: "morning", p_day: "2000-01-01" }],
+    ["_telegram_link_limited", { p_chat_id: 1 }],
   ];
   for (const [fn, args] of internalCalls) {
     await check(GI, `${fn}: authenticated reddedilir`, async () => expectError(await elif.rpc(fn, args), DENIED));
@@ -349,6 +352,29 @@ async function main() {
   );
   await check(G2, "members.notify_*: doğrudan update kapalı", async () =>
     expectError(await ayse.from("members").update({ notify_summary: true }).eq("id", M.ayse.id).select("id"), DENIED),
+  );
+  await check(G2, "members insert: yönetici telegram_chat_id yazamaz (D2)", async () =>
+    expectError(
+      await manager.from("members").insert({ tenant_id: tenant, user_id: randomUUID(), full_name: "Probe Kişi", role: "agent", telegram_chat_id: 4242 }),
+      DENIED,
+    ),
+  );
+  await check(G2, "members insert: yönetici telegram_linked_at / notify_* yazamaz (D2)", async () =>
+    expectError(
+      await manager.from("members").insert({ tenant_id: tenant, user_id: randomUUID(), full_name: "Probe Kişi", role: "agent", notify_morning: false }),
+      DENIED,
+    ),
+  );
+  await check(G2, "telegram_link_attempts: ajan okuyamaz", async () =>
+    expectError(await elif.from("telegram_link_attempts").select("chat_id").limit(1), DENIED),
+  );
+  await check(G2, "telegram_link_attempts: yönetici yazamaz/silemez", async () => {
+    const ins = expectError(await manager.from("telegram_link_attempts").insert({ chat_id: 1 }), DENIED);
+    if (ins !== true) return ins;
+    return expectError(await manager.from("telegram_link_attempts").delete().eq("chat_id", 1), DENIED);
+  });
+  await check(G2, "notification_log: yönetici sahiplenme kolonlarını güncelleyemez", async () =>
+    expectError(await manager.from("notification_log").update({ attempts: 1, status: "failed" }).eq("tenant_id", tenant).select("id"), DENIED),
   );
 
   // ===== HTTP =====

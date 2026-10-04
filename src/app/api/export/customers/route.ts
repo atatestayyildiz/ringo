@@ -31,8 +31,10 @@ export async function GET(req: NextRequest) {
   const operator = sp.get("operator") ?? "";
   const atanan = sp.get("atanan") ?? "";
 
-  const build = () => {
-    let query = supabase.from("customers").select(COLUMNS);
+  // Filtreler hem veri hem sayım sorgusunda aynı
+  const applyFilters = <T extends { or: (f: string) => T; eq: (c: string, v: string) => T; is: (c: string, v: null) => T }>(
+    query: T,
+  ): T => {
     if (q) {
       let digits = q.replace(/\D/g, "");
       if (digits.startsWith("90") && digits.length >= 6) digits = digits.slice(2);
@@ -53,8 +55,10 @@ export async function GET(req: NextRequest) {
     else if (operator) query = query.eq("operator", operator);
     if (atanan === "yok") query = query.is("assigned_to", null);
     else if (atanan) query = query.eq("assigned_to", atanan);
-    return query.order("created_at", { ascending: false }).order("id");
+    return query;
   };
+  const build = () =>
+    applyFilters(supabase.from("customers").select(COLUMNS)).order("created_at", { ascending: false }).order("id");
 
   type Row = {
     id: string;
@@ -74,12 +78,23 @@ export async function GET(req: NextRequest) {
   };
 
   const rows: Row[] = [];
-  for (let from = 0; from < MAX_ROWS; from += CHUNK) {
+  // Sunucunun sayfa sınırı CHUNK'tan küçük olsa da eksik satır kalmasın: dönen sayı kadar ilerle, boş gelince dur.
+  while (rows.length < MAX_ROWS) {
+    const from = rows.length;
     const { data, error } = await build().range(from, Math.min(from + CHUNK, MAX_ROWS) - 1);
     if (error) return NextResponse.json({ error: toUserMessage(error) }, { status: 500 });
-    rows.push(...((data ?? []) as Row[]));
-    if ((data?.length ?? 0) < CHUNK) break;
+    if (!data?.length) break;
+    rows.push(...(data as Row[]));
   }
+
+  // Sınıra ulaşıldıysa toplamı al: kesildiyse başlıkla bildir
+  let total = rows.length;
+  if (rows.length >= MAX_ROWS) {
+    const { count, error } = await applyFilters(supabase.from("customers").select("id", { count: "exact", head: true }));
+    if (error) return NextResponse.json({ error: toUserMessage(error) }, { status: 500 });
+    total = Math.max(count ?? rows.length, rows.length);
+  }
+  const truncated = total > rows.length;
 
   const { data: memberRows } = await supabase.from("members").select("id, full_name");
   const names = new Map((memberRows ?? []).map((m) => [m.id, m.full_name]));
@@ -116,5 +131,9 @@ export async function GET(req: NextRequest) {
   const { error: logError } = await supabase.rpc("log_export", { p_kind: "customers", p_rows: rows.length, p_filters: filters });
   if (logError) return NextResponse.json({ error: toUserMessage(logError) }, { status: 500 });
 
-  return csvResponse(toCsv([header, ...body]), `musteriler-${fileDay()}.csv`);
+  return csvResponse(
+    toCsv([header, ...body]),
+    `musteriler-${fileDay()}.csv`,
+    truncated ? { "X-Export-Truncated": "1", "X-Export-Total": String(total) } : undefined,
+  );
 }

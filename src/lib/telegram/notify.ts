@@ -55,10 +55,27 @@ export async function processNotifyRequest(req: Request, deps: NotifyDeps): Prom
   let sent = 0;
   let failed = 0;
   let skipped = 0;
+  let claimedElsewhere = 0;
   for (const t of targets) {
-    // Bot anahtarı yoksa kayıt yazma: anahtar gün içinde eklenirse o günün bildirimi kaybolmasın.
+    // Bot anahtarı yoksa sahiplenme/kayıt yok: anahtar gün içinde eklenirse o günün bildirimi kaybolmasın.
     if (!deps.send) {
       skipped++;
+      continue;
+    }
+    // Önce sahiplen: eşzamanlı çağrıda yalnız biri gönderir; başarısızlar sonraki çalışmada yeniden denenir.
+    const claim = await admin.rpc("_notification_claim", {
+      p_tenant: t.tenant_id,
+      p_member: t.member_id,
+      p_kind: t.kind,
+      p_day: day,
+    });
+    if (claim.error) {
+      console.error("[cron] sahiplenilemedi:", claim.error.message);
+      failed++;
+      continue;
+    }
+    if (claim.data === null || claim.data === undefined) {
+      claimedElsewhere++;
       continue;
     }
     let status: "sent" | "failed";
@@ -72,15 +89,8 @@ export async function processNotifyRequest(req: Request, deps: NotifyDeps): Prom
     }
     if (status === "sent") sent++;
     else failed++;
-    const rec = await admin.rpc("_notification_record", {
-      p_tenant: t.tenant_id,
-      p_member: t.member_id,
-      p_kind: t.kind,
-      p_day: day,
-      p_status: status,
-      p_error: err as string,
-    });
-    if (rec.error) console.error("[cron] kayıt yazılamadı:", rec.error.message);
+    const fin = await admin.rpc("_notification_finish", { p_id: claim.data, p_status: status, p_error: err as string });
+    if (fin.error) console.error("[cron] sonuç yazılamadı:", fin.error.message);
   }
 
   return Response.json({
@@ -88,6 +98,7 @@ export async function processNotifyRequest(req: Request, deps: NotifyDeps): Prom
     sent,
     failed,
     skipped,
+    claimedElsewhere,
     ...(deps.send ? {} : { botConfigured: false, note: "Bot anahtarı tanımlı değil, gönderim yapılmadı ve kayıt tutulmadı." }),
   });
 }

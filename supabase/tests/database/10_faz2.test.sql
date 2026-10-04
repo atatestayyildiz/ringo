@@ -239,9 +239,10 @@ select is((select chat_id from public._notification_targets((public.tr_today()::
 select is((select payload -> 'birthdays' from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
            where member_id = '30000000-0000-4000-8000-0000000000d3' and kind = 'morning'),
           '[]'::jsonb, 'morning: doğum günü yoksa boş liste');
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '9 hours') at time zone 'Europe/Istanbul')
+-- 0900 (O1) sonrası: saat koşulu ">= ayar saati"; ayar saatlerinden önce hedef yok
+select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '7 hours') at time zone 'Europe/Istanbul')
            where tenant_id = '10000000-0000-4000-8000-0000000000d1'),
-          0, 'saat: hiçbir ayar saatiyle eşleşmeyen saatte hedef yok');
+          0, 'saat: tüm ayar saatlerinden önce hedef yok');
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours 59 minutes') at time zone 'Europe/Istanbul')
            where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'morning'),
           2, 'saat: 08:59 hâlâ 08 saati sayılır (Europe/Istanbul)');
@@ -308,11 +309,11 @@ select is((select payload::text from public._notification_targets((public.tr_tod
            where member_id = '30000000-0000-4000-8000-0000000000d2' and kind = 'reminder'),
           jsonb_build_object('first_name', 'Zeynep', 'retry_count', 1)::text, 'reminder: payload');
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
-           where kind = 'morning' or kind = 'summary'),
-          0, 'reminder saatinde başka tür hedef yok');
+           where kind = 'summary' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
+          0, 'reminder saatinde summary hedefi yok (summary saati gelmedi)');
 update public.customers set call_status = 'done' where id = '40000000-0000-4000-8000-0000000000d5';
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d3'),
+           where member_id = '30000000-0000-4000-8000-0000000000d3' and kind = 'reminder'),
           0, 'reminder: retry sayısı 0 ise hedef yok');
 update public.customers set call_status = 'retry' where id = '40000000-0000-4000-8000-0000000000d5';
 update public.tenant_settings set reminder_hour = 16 where tenant_id = '10000000-0000-4000-8000-0000000000d1';
@@ -375,7 +376,7 @@ select is((select member_id from public._notification_targets((public.tr_today()
 select public._notification_record('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d3', 'morning', public.tr_today(), 'failed', 'ağ hatası');
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
            where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'morning'),
-          0, 'dedup: failed kaydı da yeniden denemeyi engeller');
+          1, 'dedup: failed kaydı (deneme < 3) yeniden denemeye izin verir (0900, D3)');
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
            where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'reminder'),
           2, 'dedup: morning kaydı reminder''ı etkilemez');
@@ -532,7 +533,8 @@ set local role authenticated;
 select throws_ok($$select public.log_export('customers', 10, '{}')$$,
                  '42501', 'Dışa aktarma yetkiniz yok.', 'export: yetkisiz ajan reddedilir');
 reset role;
-select is((select count(*)::int from public.audit_log where action = 'export'), 0, 'export: reddedilen çağrı audit yazmaz');
+select is((select count(*)::int from public.audit_log where action = 'export' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
+          0, 'export: reddedilen çağrı audit yazmaz');
 
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d4","role":"authenticated"}', true);
 set local role authenticated;

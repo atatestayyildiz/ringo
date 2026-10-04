@@ -11,7 +11,7 @@ export type WebhookDeps = {
   appUrl?: string;
 };
 
-export type UpdateResult = "linked" | "rejected" | "help" | "ignored";
+export type UpdateResult = "linked" | "rejected" | "help" | "ignored" | "limited";
 
 const START_RE = /^\/start(?:@\w+)?(?:\s+(\S+))?\s*$/i;
 
@@ -44,6 +44,8 @@ export async function handleTelegramUpdate(update: unknown, deps: WebhookDeps): 
     return "rejected";
   }
   const res = (data ?? {}) as { ok?: boolean; full_name?: string; tenant_name?: string; reason?: string };
+  // Sohbet başına deneme sınırı aşıldı: yanıt verme (botun gönderim kotası tüketilmesin)
+  if (res.reason === "rate_limited") return "limited";
   if (res.ok) {
     await reply(linkedText(res.full_name ?? "", res.tenant_name ?? ""));
     return "linked";

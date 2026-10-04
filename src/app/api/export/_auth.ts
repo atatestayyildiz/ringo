@@ -33,13 +33,14 @@ export async function authorizeExport(
   return { ok: true, supabase, member };
 }
 
-export function csvResponse(body: string, filename: string): NextResponse {
+export function csvResponse(body: string, filename: string, extraHeaders?: Record<string, string>): NextResponse {
   return new NextResponse(body, {
     status: 200,
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="${filename}"`,
       "Cache-Control": "no-store",
+      ...extraHeaders,
     },
   });
 }

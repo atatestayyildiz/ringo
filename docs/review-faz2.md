@@ -114,3 +114,27 @@ Webhook/cron kimlik doğrulama, proxy muafiyetleri, iç fonksiyon erişimi, rapo
 - Dışa aktarma: oturumsuz → 307 (veri yok), export yetkisiz ajan → 403, `view_reports` var `export` yok (Elif) → müşteri ve rapor 403 (probe). Müşteri listesi RLS'li istemciyle (yalnız görünen), `tenant_id` oturumdan; `log_export` veriden önce başarısız olursa dosya dönmüyor. Dosya adı doğrulanmış tarihlerden.
 - CSV (`csv.ts:7-19`): `= + - @ \t \r` ile başlayan metin `'` ile etkisiz; `;`, `"`, satır sonu tırnaklanıyor; sayılar ayrı yol; BOM + CRLF. Önce tırnak sonra önek değil, önek sonra tırnak: doğru sıra.
 - `/raporlar`: `requireAccess` ile sunucuda yetki; yetkisiz ajana içerik dönmüyor (probe). Bildirimler paneli ve ayar action'ları `requireManager`; sırlar istemciye yalnız boolean olarak gidiyor. `telegram_bot_username` hem DB check hem action regex'i; `t.me` linki bu değerle kuruluyor.
+
+---
+
+## Düzeltme durumu
+
+Tarih: 2026-10-04. Migration: `supabase/migrations/20261004000900_faz2_review_fixes.sql`. Testler: `supabase/tests/database/11_faz2_review_fixes.test.sql` (62), `src/lib/telegram/routes.test.ts`, `src/lib/telegram/link.integration.test.ts`, `src/app/(app)/profil/password.test.ts`, `scripts/security-probe.mjs` (99 kontrol).
+
+| Madde | Durum | Not |
+|---|---|---|
+| O1 | Düzeltildi | `_notification_targets` saat koşulu `>=` (morning/reminder/summary, o günün kalanında yakalanır). Telegram açık, `auto_even` kiracıda bugün hiç atama yoksa ve dağıtım saati geçtiyse önce `_distribute_day_for` (idempotent; fonksiyon artık `volatile`). `vercel.json` cron `5 * * * *`. |
+| O2 | Düzeltildi | Profil şifre değiştirme mevcut şifreyi ister; oturumdan bağımsız geçici istemcide `signInWithPassword` ile doğrulanır (yanlışsa "Mevcut şifre hatalı."), başarıda `signOut({ scope: 'others' })`. **Canlı için öneri:** Supabase Auth'ta `secure_password_change = true` ve `minimum_password_length = 8` (doğrudan supabase-js `updateUser` çağrısını da kapatır). `config.toml` değiştirilmedi. |
+| D2 | Düzeltildi | `members` INSERT kolon bazlı: `authenticated` yalnız `id, tenant_id, user_id, full_name, role, permissions, is_active, absent_on, created_at`. Telegram/notify kolonları insert ve update ile yazılamaz. |
+| D3 | Düzeltildi | Önce sahiplen (`_notification_claim`, `status='sending'`, `attempts`), gönder, sonra `_notification_finish`. Hedef dışı: `sent`/`skipped`, son 10 dk içindeki `sending`, `attempts >= 3`. `failed` ve yarım kalmış `sending` en fazla 3 denemeye kadar yeniden sahiplenilir. Bot anahtarı yoksa sahiplenme/kayıt yok. `_notification_record` uyumluluk için duruyor, uygulama kullanmıyor. |
+| D4 | Düzeltildi | `telegram_link_attempts` (RLS açık, istemci yetkisi yok). Sohbet başına saatte 5 başarısız kod denemesinden sonra kod kontrol edilmez, `rate_limited` döner, bot yanıt vermez. 24 saatten eski kayıtlar her denemede silinir. |
+| D5 | Düzeltildi | Test mesajı üye başına dakikada 1 (`_notification_claim` kind `test`, üye satırı kilitli); aşımda 429. |
+| D6 | Kısmen | 10.000 satır aşılırsa `X-Export-Truncated: 1` ve `X-Export-Total`; Müşteriler sayfasında "En fazla 10.000 satır" notu. Döngü dönen satır sayısı kadar ilerler, boş sayfada durur (`max_rows` < 1000 olsa da eksik kalmaz). Ertelendi: audit'te ham `q` (ürün kararı: maskeleme mi, uzunluk mu). Rapor CSV'si satır sınırlı değil (özet tablo), notu yok. |
+| D1 | Ertelendi | Kolon bazlı `select` profil, Bildirimler paneli, export ve diğer `members` okumalarını etkiler; ayrı tur ve RPC gerekir. |
+| D7 | Ertelendi | Tasarım gereği; spec notu ve `source_detail` temizliği ürün kararı. |
+| D8 | Ertelendi | KVKK/ürün kararı (ad maskeleme). |
+| D9 | Ertelendi | Bu turun kapsamı dışında bırakıldı; tek satırlık koşul (`absent_on is distinct from v_day`), sonraki turda. |
+| Ş1 | Açık | Vercel planı doğrulanmalı (Hobby'de saatlik cron yok). |
+| Ş2-Ş5 | Ertelendi | Ş2 unique indeks, Ş3 performans ölçümü, Ş4 tanım kararı, Ş5 pasifleştirmede bağlantı kaldırma: ayrı tur. |
+
+Uyarlanan eski testler (`10_faz2.test.sql`): "09:00'da hedef yok" → 07:00 (>= kuralı); "reminder saatinde başka tür yok" → yalnız summary; "retry 0 ise hedef yok" yalnız reminder türüne bakar; "failed yeniden denemeyi engeller" → 1 hedef (D3); "export audit yazmaz" kiracıya göre filtrelendi (yerel DB'deki e2e dışa aktarma kayıtları testi bozuyordu).

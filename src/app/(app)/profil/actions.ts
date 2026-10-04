@@ -1,9 +1,12 @@
 "use server";
 
+import { createClient as createBareClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { toUserMessage } from "@/lib/errors";
 import { getSessionContext } from "@/lib/session";
+import { supabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { changePassword } from "./password";
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -55,21 +58,26 @@ export async function saveNotifyPrefsAction(prefs: {
   return { ok: true };
 }
 
-const MIN_PASSWORD = 8;
-
-export async function changePasswordAction(password: string, repeat: string): Promise<Result> {
-  await getSessionContext();
-  if (typeof password !== "string" || password.length < MIN_PASSWORD) {
-    return { ok: false, error: `Şifre en az ${MIN_PASSWORD} karakter olmalı.` };
-  }
-  if (password !== repeat) return { ok: false, error: "Şifreler aynı değil." };
-
+export async function changePasswordAction(current: string, password: string, repeat: string): Promise<Result> {
+  const ctx = await getSessionContext();
   const supabase = await createClient();
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) {
-    if (error.code === "same_password") return { ok: false, error: "Yeni şifre eskisiyle aynı olamaz." };
-    if (error.code === "weak_password") return { ok: false, error: "Şifre çok zayıf. Daha uzun veya karmaşık bir şifre seçin." };
-    return { ok: false, error: toUserMessage({ code: error.code, message: error.message }) };
-  }
-  return { ok: true };
+  return changePassword(current, password, repeat, {
+    email: ctx.user.email,
+    verify: async (email, pw) => {
+      // Oturum çerezlerine dokunmayan geçici istemci; doğrulama oturumu hemen kapatılır.
+      const { url, anonKey } = supabaseEnv();
+      const tmp = createBareClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
+      const { error } = await tmp.auth.signInWithPassword({ email, password: pw });
+      if (!error) await tmp.auth.signOut({ scope: "local" }).catch(() => undefined);
+      return { error: error ? { code: error.code, message: error.message } : null };
+    },
+    update: async (pw) => {
+      const { error } = await supabase.auth.updateUser({ password: pw });
+      return { error: error ? { code: error.code, message: error.message } : null };
+    },
+    signOutOthers: async () => {
+      const { error } = await supabase.auth.signOut({ scope: "others" });
+      return { error: error ? { code: error.code, message: error.message } : null };
+    },
+  });
 }

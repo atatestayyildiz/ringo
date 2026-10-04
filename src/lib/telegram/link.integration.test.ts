@@ -11,6 +11,7 @@ const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ready = Boolean(url && anon && service);
 
 const CHAT_ID = 900000123;
+const CLAIM_DAY = "2000-01-01";
 
 describe.skipIf(!ready)("Telegram bağlama (yerel DB)", () => {
   const opts = { auth: { autoRefreshToken: false, persistSession: false } };
@@ -24,6 +25,9 @@ describe.skipIf(!ready)("Telegram bağlama (yerel DB)", () => {
 
   afterAll(async () => {
     await elif?.rpc("telegram_unlink", {});
+    // Deneme sınırı sayacı ve sahiplenme denemesinin izleri kalmasın
+    await admin?.from("telegram_link_attempts").delete().in("chat_id", [CHAT_ID, CHAT_ID + 1, CHAT_ID + 2]);
+    await admin?.from("notification_log").delete().eq("day", CLAIM_DAY);
   });
 
   it("elif kodu üretir, webhook işleyicisi chat'i bağlar", async () => {
@@ -66,5 +70,34 @@ describe.skipIf(!ready)("Telegram bağlama (yerel DB)", () => {
       { admin, send },
     );
     expect(r).toBe("rejected");
+  });
+
+  it("aynı sohbetten saatte 5 başarısız denemeden sonra yanıt verilmez", async () => {
+    const send = vi.fn().mockResolvedValue(undefined);
+    const chat = { id: CHAT_ID + 2, type: "private" };
+    const results: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      results.push(await handleTelegramUpdate({ message: { text: "/start ZZZZZZZZ", chat } }, { admin, send }));
+    }
+    expect(results).toEqual(["rejected", "rejected", "rejected", "rejected", "rejected", "limited"]);
+    expect(send).toHaveBeenCalledTimes(5);
+  });
+
+  it("bildirim sahiplenme: ikinci sahiplenme null, başarısızdan sonra yeniden, 3 denemede biter", async () => {
+    const { data: me } = await admin.from("members").select("id, tenant_id").limit(1).single();
+    const args = { p_tenant: me!.tenant_id, p_member: me!.id, p_kind: "morning", p_day: CLAIM_DAY };
+    const first = await admin.rpc("_notification_claim", args);
+    expect(first.error).toBeNull();
+    expect(typeof first.data).toBe("number");
+    expect((await admin.rpc("_notification_claim", args)).data).toBeNull();
+    for (let i = 0; i < 2; i++) {
+      const cur = await admin.from("notification_log").select("id").eq("day", CLAIM_DAY).single();
+      await admin.rpc("_notification_finish", { p_id: cur.data!.id, p_status: "failed", p_error: "ağ" });
+      expect((await admin.rpc("_notification_claim", args)).data).toBe(first.data);
+    }
+    await admin.rpc("_notification_finish", { p_id: first.data as number, p_status: "failed", p_error: "ağ" });
+    expect((await admin.rpc("_notification_claim", args)).data).toBeNull();
+    const row = await admin.from("notification_log").select("status, attempts").eq("day", CLAIM_DAY).single();
+    expect(row.data).toEqual({ status: "failed", attempts: 3 });
   });
 });

@@ -28,6 +28,22 @@ export async function POST() {
     return Response.json({ ok: false, error: "Önce Telegram hesabını bağla." }, { status: 400 });
   }
 
+  // Üye başına dakikada 1 test mesajı: önce sahiplen, sınırdaysa gönderme
+  const admin = createAdminClient();
+  const claim = await admin.rpc("_notification_claim", {
+    p_tenant: m.tenant_id,
+    p_member: m.id,
+    p_kind: "test",
+    p_day: istanbulDay(new Date()),
+  });
+  if (claim.error) {
+    console.error("[telegram] test kaydı açılamadı:", claim.error.message);
+    return Response.json({ ok: false, error: "Mesaj gönderilemedi. Biraz sonra tekrar dene." }, { status: 500 });
+  }
+  if (claim.data === null || claim.data === undefined) {
+    return Response.json({ ok: false, error: "Test mesajı dakikada bir gönderilebilir. Biraz bekleyip tekrar dene." }, { status: 429 });
+  }
+
   const first = m.full_name.trim().split(/\s+/)[0] ?? "";
   let status: "sent" | "failed" = "sent";
   let err: string | null = null;
@@ -39,18 +55,8 @@ export async function POST() {
     console.error("[telegram] test mesajı gönderilemedi:", err);
   }
 
-  try {
-    await createAdminClient().rpc("_notification_record", {
-      p_tenant: m.tenant_id,
-      p_member: m.id,
-      p_kind: "test",
-      p_day: istanbulDay(new Date()),
-      p_status: status,
-      p_error: err as string,
-    });
-  } catch (e) {
-    console.error("[telegram] test kaydı yazılamadı:", e instanceof Error ? e.message : "bilinmeyen hata");
-  }
+  const fin = await admin.rpc("_notification_finish", { p_id: claim.data, p_status: status, p_error: err as string });
+  if (fin.error) console.error("[telegram] test kaydı yazılamadı:", fin.error.message);
 
   if (status === "failed") {
     return Response.json({ ok: false, error: "Mesaj gönderilemedi. Botu Telegram'da başlattığından emin ol." }, { status: 502 });

@@ -110,9 +110,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
               </>
             ) : null}
             {canExport ? (
-              <a href={exportHref} className={buttonClass("soft")} download>
-                Dışa aktar
-              </a>
+              <>
+                <a href={exportHref} className={buttonClass("soft")} download>
+                  Dışa aktar
+                </a>
+                <span style={{ alignSelf: "center", fontSize: 12, color: "var(--ink-3)" }}>En fazla 10.000 satır</span>
+              </>
             ) : null}
           </div>
         ) : null}
