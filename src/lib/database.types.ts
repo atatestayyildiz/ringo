@@ -293,6 +293,9 @@ isOneToOne: true
               "appointments": number,"assigned": number,"done": number,"full_name": string,"member_id": string,"reached": number,"retries": number
             }[]
                            },
+"delete_customer":
+{ Args: { "p_customer": string,"p_reason"?: string }; Returns: undefined
+                           },
 "distribute_day":
 { Args: { "p_day"?: string }; Returns: number
                            },

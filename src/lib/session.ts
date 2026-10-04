@@ -31,7 +31,7 @@ export function can(member: Pick<Member, "role" | "permissions">, perm: Permissi
   return p?.[perm] === true;
 }
 
-/** Oturum, üyelik ve kiracı ayarı. Eksikse çıkış yaptırıp /giris'e yönlendirir. */
+/** Oturum, üyelik ve kiracı ayarı. Eksikse /giris?hata=uye'ye yönlendirir (çerezi proxy temizler). */
 export const getSessionContext = cache(async (): Promise<SessionContext> => {
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
@@ -45,7 +45,7 @@ export const getSessionContext = cache(async (): Promise<SessionContext> => {
     .maybeSingle();
 
   if (!member || !member.is_active) {
-    await supabase.auth.signOut();
+    // Çerez temizliği proxy'de (server component çerez yazamaz).
     redirect("/giris?hata=uye");
   }
 
@@ -56,7 +56,7 @@ export const getSessionContext = cache(async (): Promise<SessionContext> => {
     .maybeSingle();
 
   if (!settings) {
-    await supabase.auth.signOut();
+    // Çerez temizliği proxy'de (server component çerez yazamaz).
     redirect("/giris?hata=uye");
   }
 

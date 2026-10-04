@@ -86,10 +86,15 @@ select
   now() - make_interval(hours => 60 - i)
 from generate_series(1, 40) as i, names n;
 
--- Biri 3 gün sonra doğum günü
+-- Doğum günü kartı için: biri 3 gün, biri 1 gün sonra (dağıtımdan sonra Elif'e taşınır, aşağıda)
 update public.customers
-set birth_date = ((now() at time zone 'Europe/Istanbul')::date + 3) - interval '30 years'
-where tenant_id = '11111111-1111-1111-1111-111111111111' and phone = '05320000005';
+set birth_date = case phone
+  when '05320000005' then make_date(1992, extract(month from (now() at time zone 'Europe/Istanbul')::date + 3)::int,
+                                    extract(day from (now() at time zone 'Europe/Istanbul')::date + 3)::int)
+  when '05320000012' then make_date(1985, extract(month from (now() at time zone 'Europe/Istanbul')::date + 1)::int,
+                                    extract(day from (now() at time zone 'Europe/Istanbul')::date + 1)::int)
+end
+where tenant_id = '11111111-1111-1111-1111-111111111111' and phone in ('05320000005', '05320000012');
 
 -- ---------------------------------------------------------------------------
 -- Geçmiş denemeler: tekrar aranacaklar ve havuz örnekleri
@@ -168,3 +173,15 @@ where c.tenant_id = '11111111-1111-1111-1111-111111111111'
 -- ---------------------------------------------------------------------------
 select public._distribute_day_for('11111111-1111-1111-1111-111111111111',
                                   (now() at time zone 'Europe/Istanbul')::date);
+
+-- Doğum günü müşterileri bugün Elif'in listesinde olsun (kart demoda görünsün)
+update public.customers
+set assigned_to = 'bbbbbbbb-0000-4000-8000-000000000002'
+where tenant_id = '11111111-1111-1111-1111-111111111111' and phone in ('05320000005', '05320000012');
+
+insert into public.daily_assignments (tenant_id, day, customer_id, member_id, position)
+select c.tenant_id, (now() at time zone 'Europe/Istanbul')::date, c.id, 'bbbbbbbb-0000-4000-8000-000000000002',
+       100 + row_number() over (order by c.phone)
+from public.customers c
+where c.tenant_id = '11111111-1111-1111-1111-111111111111' and c.phone in ('05320000005', '05320000012')
+on conflict (day, customer_id) do update set member_id = excluded.member_id;

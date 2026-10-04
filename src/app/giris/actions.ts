@@ -11,8 +11,19 @@ export async function signInAction(_prev: LoginState, formData: FormData): Promi
   if (!email || !password) return { error: "E-posta ve şifreyi gir." };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: "E-posta veya şifre hatalı." };
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error || !data.user) return { error: "E-posta veya şifre hatalı." };
+
+  const { data: member } = await supabase
+    .from("members")
+    .select("id")
+    .eq("user_id", data.user.id)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!member) {
+    await supabase.auth.signOut();
+    return { error: "Hesabınız etkin değil. Yöneticinize başvurun." };
+  }
 
   redirect("/bugun");
 }

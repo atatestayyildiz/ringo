@@ -33,7 +33,22 @@ export async function updateSession(request: NextRequest) {
   };
 
   if (!signedIn && !onLogin) return redirectTo("/giris");
-  // ?hata=uye: üyeliği olmayan oturum kapatılıyor, döngüye girme.
+
+  if (signedIn) {
+    // Oturum var ama aktif üyelik yoksa çerezleri burada temizle (server component çerez yazamaz).
+    const { data: member } = await supabase
+      .from("members")
+      .select("id")
+      .eq("user_id", String(data?.claims?.sub))
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!member) {
+      await supabase.auth.signOut();
+      return onLogin ? response : redirectTo("/giris?hata=uye");
+    }
+  }
+
+  // ?hata: giriş ekranı notu gösteriliyor, yönlendirme yapma.
   if (signedIn && ((onLogin && !request.nextUrl.searchParams.has("hata")) || path === "/")) return redirectTo("/bugun");
   return response;
 }

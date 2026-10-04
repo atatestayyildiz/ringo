@@ -1,5 +1,6 @@
+import "server-only";
 // YALNIZ SUNUCU: Service role istemcisi. Bu dosya istemci bileşenlerinden asla import edilmez.
-// (`server-only` paketi projede yok; yalnız ayarlar/actions.ts ve ayarlar/page.tsx import eder.)
+// (`server-only` ile korunur; yalnız ayarlar/actions.ts ve ayarlar/page.tsx import eder.)
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 

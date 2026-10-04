@@ -649,6 +649,10 @@ select.input {
 
 /* ---------- mobil ---------- */
 @media (max-width: 1180px) {
+  html {
+    /* kaydırma/odak hedefleri yüzen menünün altında kalmasın */
+    scroll-padding-bottom: calc(100px + env(safe-area-inset-bottom));
+  }
   .nav {
     position: fixed;
     bottom: calc(14px + env(safe-area-inset-bottom));
@@ -658,6 +662,10 @@ select.input {
     box-shadow: var(--shadow-lift);
     padding: 6px;
     max-width: calc(100vw - 24px);
+  }
+  .app {
+    /* yüzen menü (~72px) + alt boşluk + safe-area kadar yer bırak */
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
   }
   .nav a {
     padding: 12px 14px;
@@ -683,7 +691,7 @@ select.input {
 }
 @media (max-width: 560px) {
   .app {
-    padding: 14px 16px 110px;
+    padding: 14px 16px calc(112px + env(safe-area-inset-bottom));
   }
   .card {
     padding: 20px;

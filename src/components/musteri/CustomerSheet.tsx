@@ -495,17 +495,17 @@ function DeleteModal({
 }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const [reason, setReason] = useState("");
 
   const go = async () => {
     setBusy(true);
-    const { data, error } = await createClient().from("customers").delete().eq("id", c.id).select("id");
+    const { error } = await createClient().rpc("delete_customer", {
+      p_customer: c.id,
+      p_reason: reason.trim() || undefined,
+    });
     setBusy(false);
     if (error) {
       toast("Silinemedi. " + error.message, "error");
-      return;
-    }
-    if (!data || data.length === 0) {
-      toast("Silinemedi. Bu müşteriyi silme yetkiniz yok.", "error");
       return;
     }
     onDeleted();
@@ -517,6 +517,13 @@ function DeleteModal({
         <b>{c.full_name}</b> ve bu müşteriye ait tüm arama ve aşama geçmişi kalıcı olarak silinir. Bu işlem geri alınamaz.
         Yalnız müşterinin KVKK kapsamındaki silme talebi için kullanın ve talebi kayıt altına alın.
       </p>
+      <Input
+        label="Silme nedeni (isteğe bağlı)"
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        maxLength={200}
+        placeholder="Örn. KVKK silme talebi"
+      />
       <div className="modal-foot">
         <Button variant="soft" onClick={onClose} disabled={busy}>
           Vazgeç
