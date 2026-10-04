@@ -1,18 +1,69 @@
+import { SettingsTabs } from "@/components/ayarlar/SettingsTabs";
+import type { MemberRow, PermKey } from "@/components/ayarlar/shared";
 import { Card, EmptyState } from "@/components/ui";
 import { requireAccess } from "@/lib/session";
+import { createClient } from "@/lib/supabase/server";
+import { listAuthEmails } from "./_server/admin";
+
 export const metadata = { title: "Ayarlar" };
 
 export default async function Page() {
-  await requireAccess(({ member }) => member.role === "manager");
+  const ctx = await requireAccess(({ member }) => member.role === "manager");
+  const supabase = await createClient();
+
+  const [membersRes, summaryRes] = await Promise.all([
+    supabase
+      .from("members")
+      .select("id, user_id, full_name, role, is_active, permissions")
+      .order("is_active", { ascending: false })
+      .order("full_name"),
+    supabase.rpc("rules_summary_text"),
+  ]);
+
+  let emails = new Map<string, string>();
+  let emailWarning: string | null = null;
+  try {
+    emails = await listAuthEmails();
+  } catch {
+    emailWarning = "E-postalar okunamadı. Sunucu yapılandırmasını (service role anahtarı) kontrol edin.";
+  }
+
+  if (membersRes.error) {
+    return (
+      <>
+        <div className="page-head">
+          <h1>Ayarlar</h1>
+        </div>
+        <Card>
+          <EmptyState title="Ayarlar yüklenemedi">{membersRes.error.message} Sayfayı yenileyin.</EmptyState>
+        </Card>
+      </>
+    );
+  }
+
+  const members: MemberRow[] = (membersRes.data ?? []).map((m) => ({
+    id: m.id,
+    user_id: m.user_id,
+    full_name: m.full_name,
+    email: emails.get(m.user_id) ?? "",
+    role: m.role === "manager" ? "manager" : "agent",
+    is_active: m.is_active,
+    permissions: (m.permissions ?? {}) as Partial<Record<PermKey, boolean>>,
+    isSelf: m.id === ctx.member.id,
+  }));
+
   return (
     <>
       <div className="page-head">
         <h1>Ayarlar</h1>
-        <p>Kurallar, ekip ve marka.</p>
+        <p>Arama kuralları, ekip ve marka.</p>
       </div>
-      <Card>
-        <EmptyState title="Bu ekran hazırlanıyor">Bu bölüm sonraki adımda eklenecek.</EmptyState>
-      </Card>
+      <SettingsTabs
+        settings={ctx.settings}
+        summary={summaryRes.data ?? ""}
+        members={members}
+        emailWarning={emailWarning}
+      />
     </>
   );
 }
