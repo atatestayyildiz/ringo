@@ -1,0 +1,107 @@
+import type { CallStatus } from "@/components/ui";
+
+export type Outcome =
+  | "appointment"
+  | "callback"
+  | "no_answer"
+  | "busy"
+  | "disqualified"
+  | "not_interested"
+  | "wrong_number";
+
+export const OUTCOME_VALUES: Outcome[] = [
+  "appointment",
+  "callback",
+  "no_answer",
+  "busy",
+  "disqualified",
+  "not_interested",
+  "wrong_number",
+];
+
+export const OUTCOME_LABEL: Record<Outcome, string> = {
+  appointment: "Dükkana gelecek",
+  callback: "Sonra ara",
+  no_answer: "Açmadı",
+  busy: "Meşgul",
+  disqualified: "Uygun değil",
+  not_interested: "İlgilenmiyor",
+  wrong_number: "Yanlış numara",
+};
+
+export const OPERATORS: Record<string, string> = { VF: "Vodafone", TC: "Turkcell", TT: "Türk Telekom" };
+
+export type Tone = "wait" | "retry" | "done" | "bad" | "pool";
+
+export function toneOf(status: CallStatus): Tone {
+  switch (status) {
+    case "pending":
+      return "wait";
+    case "retry":
+      return "retry";
+    case "done":
+      return "done";
+    case "pool":
+      return "pool";
+    default:
+      return "bad";
+  }
+}
+
+export type LogEntry = { outcome: string; note: string | null };
+
+export type Item = {
+  id: string;
+  name: string;
+  phone: string;
+  operator: string | null;
+  sourceLabel: string;
+  appliedLabel: string | null;
+  status: CallStatus;
+  tries: number;
+  nextCallAt: string;
+  position: number;
+  owner: string | null;
+  /** Eskiden yeniye */
+  log: LogEntry[];
+};
+
+export type TeamRow = {
+  memberId: string;
+  name: string;
+  assigned: number;
+  done: number;
+  appointments: number;
+};
+
+export type BirthdayInfo = {
+  name: string;
+  daysLeft: number;
+  dateLabel: string;
+  waHref: string | null;
+  more: number;
+};
+
+export type PoolInfo = { count: number; nearestDays: number | null; thisWeek: number };
+
+export type RuleNumbers = { maxAttempts: number; poolWaitDays: number; maxRounds: number };
+
+export type LogCallResult =
+  | { ok: true; status: CallStatus; attempts: number; poolCount: number; nextCallAt: string }
+  | { ok: false; error: string };
+
+export type DistributeResult = { ok: true; count: number } | { ok: false; error: string };
+
+export function logText(e: LogEntry): string {
+  const label = OUTCOME_LABEL[e.outcome as Outcome] ?? e.outcome;
+  return e.note ? `${label}: ${e.note}` : label;
+}
+
+export function sourceLabel(source: string, detail: string | null): string {
+  const base = source === "meta_api" ? "Meta" : source === "import" ? "İçe aktarım" : "Elle eklendi";
+  return detail ? `${base} · ${detail}` : base;
+}
+
+export function firstName(full: string): string {
+  return full.trim().split(/\s+/)[0] ?? full;
+}
