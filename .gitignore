@@ -12,3 +12,6 @@ supabase/.branches/
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+
+e2e/.output/
+e2e/.report/

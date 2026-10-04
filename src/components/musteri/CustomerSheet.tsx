@@ -30,6 +30,7 @@ import {
   type Viewer,
 } from "./shared";
 import "./musteri.css";
+import { toUserMessage } from "@/lib/errors";
 
 type Props = {
   customer: Customer | null;
@@ -262,7 +263,7 @@ function EditForm({ customer: c, onCancel, onSaved }: { customer: Customer; onCa
     setBusy(false);
     if (error) {
       if (error.code === "23505") setErrs({ phone: "Bu numara başka bir müşteride kayıtlı." });
-      else toast("Kaydedilemedi. " + error.message, "error");
+      else toast("Kaydedilemedi. " + toUserMessage(error), "error");
       return;
     }
     if (!data || data.length === 0) {
@@ -328,7 +329,7 @@ function StageForm({ customer: c, onDone }: { customer: Customer; onDone: () => 
     });
     setBusy(false);
     if (error) {
-      toast(error.message, "error");
+      toast(toUserMessage(error), "error");
       return;
     }
     setNote("");
@@ -370,7 +371,7 @@ function ReassignForm({ customer: c, members, onDone }: { customer: Customer; me
     const { error } = await createClient().rpc("reassign_customer", { p_customer: c.id, p_member: to });
     setBusy(false);
     if (error) {
-      toast(error.message, "error");
+      toast(toUserMessage(error), "error");
       return;
     }
     toast(`Devredildi: ${memberName(members, to)}`);
@@ -505,7 +506,7 @@ function DeleteModal({
     });
     setBusy(false);
     if (error) {
-      toast("Silinemedi. " + error.message, "error");
+      toast("Silinemedi. " + toUserMessage(error), "error");
       return;
     }
     onDeleted();

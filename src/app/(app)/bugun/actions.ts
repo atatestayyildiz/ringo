@@ -3,12 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { OUTCOME_VALUES, type DistributeResult, type LogCallResult, type Outcome } from "@/components/bugun/model";
 import type { CallStatus } from "@/components/ui";
+import { toUserMessage } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-/** Veritabanının Türkçe iş kuralı hataları bu kodlarla gelir; diğerleri genel mesaja döner. */
-const RULE_ERRORS = new Set(["22023", "42501", "P0002"]);
-const GENERIC = "Kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.";
 
 export async function logCallAction(
   customerId: string,
@@ -40,7 +38,7 @@ export async function logCallAction(
     p_callback_at: cb,
   });
   if (error || !data) {
-    return { ok: false, error: error && RULE_ERRORS.has(error.code) ? error.message : GENERIC };
+    return { ok: false, error: toUserMessage(error) };
   }
   revalidatePath("/bugun");
   return {
@@ -56,10 +54,7 @@ export async function distributeDayAction(): Promise<DistributeResult> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("distribute_day");
   if (error) {
-    return {
-      ok: false,
-      error: RULE_ERRORS.has(error.code) ? error.message : "Dağıtım yapılamadı. Biraz sonra tekrar deneyin.",
-    };
+    return { ok: false, error: toUserMessage(error) };
   }
   revalidatePath("/bugun");
   return { ok: true, count: data ?? 0 };

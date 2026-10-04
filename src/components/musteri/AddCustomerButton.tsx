@@ -8,6 +8,7 @@ import { normalizeTrPhone } from "@/lib/import/phone";
 import { createClient } from "@/lib/supabase/client";
 import { OPERATOR_LABEL } from "./shared";
 import "./musteri.css";
+import { toUserMessage } from "@/lib/errors";
 
 type Result = { inserted: number; duplicates: number; invalid: number; invalid_rows: { index: number; reason: string }[] };
 
@@ -55,7 +56,7 @@ function AddModal({ onClose }: { onClose: () => void }) {
     });
     setBusy(false);
     if (error) {
-      toast(error.message, "error");
+      toast(toUserMessage(error), "error");
       return;
     }
     const r = data as unknown as Result;

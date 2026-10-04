@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { toUserMessage } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/session";
 
@@ -16,7 +17,7 @@ export async function markAbsentAction(memberId: string, day: string): Promise<A
   }
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("mark_absent", { p_member: memberId, p_day: day });
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: toUserMessage(error) };
   revalidatePath("/yonetim");
   revalidatePath("/bugun");
   return { ok: true, moved: data ?? 0 };

@@ -18,6 +18,7 @@ import {
   type Viewer,
 } from "./shared";
 import "./musteri.css";
+import { toUserMessage } from "@/lib/errors";
 
 type V = Pick<Viewer, "id" | "isManager">;
 
@@ -129,7 +130,7 @@ function FunnelCard({ c, members, viewer }: { c: Customer; members: MemberLite[]
     const { error } = await createClient().rpc("set_pipeline_stage", { p_customer: c.id, p_stage: stage });
     setBusy(false);
     if (error) {
-      toast(error.message, "error");
+      toast(toUserMessage(error), "error");
       return;
     }
     toast(`${c.full_name}: ${STAGE_LABEL[stage]}`);

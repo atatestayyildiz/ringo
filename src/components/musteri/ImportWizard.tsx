@@ -9,6 +9,7 @@ import { chunk, cellToString, prepareRows, type PreparedRow } from "@/lib/import
 import { formatPhone } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
 import "./musteri.css";
+import { toUserMessage } from "@/lib/errors";
 
 const CHUNK = 500;
 const FIELD_ORDER: FieldKey[] = ["full_name", "first_name", "last_name", "phone", "phone_alt", "operator", "birth_date", "applied_at", "note"];
@@ -82,7 +83,7 @@ export function ImportWizard() {
         p_source_detail: label,
       });
       if (err) {
-        sum.stoppedAt = err.message;
+        sum.stoppedAt = toUserMessage(err);
         break;
       }
       const r = data as unknown as RpcResult;

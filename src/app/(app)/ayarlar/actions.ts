@@ -10,6 +10,7 @@ import {
   type PermKey,
   type RulesValues,
 } from "@/components/ayarlar/shared";
+import { toUserMessage } from "@/lib/errors";
 import { getSessionContext } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "./_server/admin";
@@ -51,7 +52,7 @@ export async function saveRulesAction(v: RulesValues): Promise<ActionResult<{ su
     })
     .eq("tenant_id", ctx.member.tenant_id)
     .select("tenant_id");
-  if (error) return { ok: false, error: `Kurallar kaydedilemedi: ${error.message}` };
+  if (error) return { ok: false, error: toUserMessage(error) };
   if (!data || data.length === 0) return { ok: false, error: "Kurallar kaydedilemedi. Yetkinizi kontrol edip tekrar deneyin." };
 
   const { data: summary } = await supabase.rpc("rules_summary_text");
@@ -78,11 +79,11 @@ export async function saveBrandAction(v: {
     let ok = false;
     try {
       const u = new URL(logo);
-      ok = u.protocol === "https:" || u.protocol === "http:";
+      ok = u.protocol === "https:";
     } catch {
       ok = false;
     }
-    if (!ok) return { ok: false, error: "Logo adresi http:// veya https:// ile başlayan geçerli bir bağlantı olmalı." };
+    if (!ok) return { ok: false, error: "Logo adresi https:// ile başlayan geçerli bir bağlantı olmalı." };
   }
 
   const supabase = await createClient();
@@ -91,7 +92,7 @@ export async function saveBrandAction(v: {
     .update({ brand_name: name, brand_color: v.brand_color.toUpperCase(), logo_url: logo || null })
     .eq("tenant_id", ctx.member.tenant_id)
     .select("tenant_id");
-  if (error) return { ok: false, error: `Marka kaydedilemedi: ${error.message}` };
+  if (error) return { ok: false, error: toUserMessage(error) };
   if (!data || data.length === 0) return { ok: false, error: "Marka kaydedilemedi. Yetkinizi kontrol edip tekrar deneyin." };
 
   revalidatePath("/", "layout");
@@ -119,11 +120,8 @@ export async function createMemberAction(v: {
   const admin = createAdminClient();
   const created = await admin.auth.admin.createUser({ email, password: v.password, email_confirm: true });
   if (created.error || !created.data.user) {
-    const msg = created.error?.message ?? "";
-    if (/already|registered|exists/i.test(msg)) {
-      return { ok: false, error: "Bu e-posta ile zaten bir hesap var. Başka bir e-posta deneyin." };
-    }
-    return { ok: false, error: `Hesap oluşturulamadı: ${msg || "bilinmeyen hata"}` };
+    // E-postanın başka bir hesapta kayıtlı olup olmadığını sızdırmayan genel mesaj
+    return { ok: false, error: "Çalışan eklenemedi. Bilgileri kontrol edip tekrar deneyin veya başka bir e-posta deneyin." };
   }
   const userId = created.data.user.id;
 
@@ -137,7 +135,7 @@ export async function createMemberAction(v: {
   });
   if (insErr) {
     await admin.auth.admin.deleteUser(userId);
-    return { ok: false, error: `Çalışan kaydedilemedi, hesap geri alındı: ${insErr.message}` };
+    return { ok: false, error: `Çalışan eklenemedi, hesap geri alındı. ${toUserMessage(insErr)}` };
   }
 
   revalidatePath("/ayarlar");
@@ -186,7 +184,7 @@ export async function setMemberActiveAction(memberId: string, active: boolean): 
     .eq("id", memberId)
     .eq("tenant_id", ctx.member.tenant_id)
     .select("id");
-  if (error || !data?.length) return { ok: false, error: `Güncellenemedi: ${error?.message ?? "yetki yok"}` };
+  if (error || !data?.length) return { ok: false, error: error ? toUserMessage(error) : "Güncellenemedi. Yetkiniz olmayabilir." };
   revalidatePath("/ayarlar");
   return { ok: true };
 }
@@ -212,7 +210,7 @@ export async function setMemberRoleAction(memberId: string, role: "manager" | "a
     .eq("id", memberId)
     .eq("tenant_id", ctx.member.tenant_id)
     .select("id");
-  if (error || !data?.length) return { ok: false, error: `Rol değiştirilemedi: ${error?.message ?? "yetki yok"}` };
+  if (error || !data?.length) return { ok: false, error: error ? toUserMessage(error) : "Rol değiştirilemedi. Yetkiniz olmayabilir." };
   revalidatePath("/ayarlar");
   return { ok: true };
 }
@@ -234,7 +232,7 @@ export async function setPermissionAction(memberId: string, key: PermKey, value:
     .eq("id", memberId)
     .eq("tenant_id", ctx.member.tenant_id)
     .select("id");
-  if (error || !data?.length) return { ok: false, error: `Yetki kaydedilemedi: ${error?.message ?? "yetki yok"}` };
+  if (error || !data?.length) return { ok: false, error: error ? toUserMessage(error) : "Yetki kaydedilemedi. Yetkiniz olmayabilir." };
   revalidatePath("/ayarlar");
   return { ok: true };
 }
