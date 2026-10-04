@@ -12,7 +12,7 @@ import {
   type IconProps,
 } from "@/components/icons";
 
-export type NavKey = "bugun" | "musteriler" | "havuz" | "huni" | "yonetim" | "ayarlar";
+export type NavKey = "bugun" | "musteriler" | "havuz" | "huni" | "yonetim" | "raporlar" | "ayarlar";
 
 const ITEMS: { key: NavKey; href: string; label: string; Icon: (p: IconProps) => React.ReactElement }[] = [
   { key: "bugun", href: "/bugun", label: "Bugün", Icon: IconHome },
@@ -20,6 +20,7 @@ const ITEMS: { key: NavKey; href: string; label: string; Icon: (p: IconProps) =>
   { key: "havuz", href: "/havuz", label: "Havuz", Icon: IconPool },
   { key: "huni", href: "/huni", label: "Huni", Icon: IconFunnel },
   { key: "yonetim", href: "/yonetim", label: "Yönetim", Icon: IconChart },
+  { key: "raporlar", href: "/raporlar", label: "Raporlar", Icon: IconChart },
   { key: "ayarlar", href: "/ayarlar", label: "Ayarlar", Icon: IconGear },
 ];
 

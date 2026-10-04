@@ -5,6 +5,10 @@ import { supabaseEnv } from "./env";
 
 /** Oturumu yeniler; oturumsuzu /giris'e, oturumluyu /giris'ten /bugun'a yönlendirir. */
 export async function updateSession(request: NextRequest) {
+  // Telegram webhook'u ve zamanlayıcı kendi sırlarıyla doğrulanır; oturum yönlendirmesinden muaf.
+  const p = request.nextUrl.pathname;
+  if (p === "/api/telegram/webhook" || p.startsWith("/api/cron/")) return NextResponse.next({ request });
+
   let response = NextResponse.next({ request });
   const { url, anonKey } = supabaseEnv();
 

@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const isManager = member.role === "manager";
 
   const visible: NavKey[] = ["bugun", "musteriler", "havuz", "huni"];
-  if (isManager || can(member, "view_reports")) visible.push("yonetim");
+  if (isManager || can(member, "view_reports")) visible.push("yonetim", "raporlar");
   if (isManager) visible.push("ayarlar");
 
   const brandName = settings.brand_name;
@@ -38,13 +38,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <MainNav visible={visible} />
           <div className="tools">
             <ThemeToggle />
-            <div className="me">
+            <Link href="/profil" className="me" aria-label="Profil" style={{ textDecoration: "none", color: "inherit" }}>
               <Avatar name={member.full_name} />
               <div>
                 <small>{isManager ? "Yönetici" : "Çalışan"}</small>
                 <b>{member.full_name}</b>
               </div>
-            </div>
+            </Link>
             <form action={signOutAction}>
               <RoundButton label="Çıkış yap" type="submit">
                 <IconLogout />
