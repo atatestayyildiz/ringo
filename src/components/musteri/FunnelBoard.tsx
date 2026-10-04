@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Avatar, Card, EmptyState, useToast } from "@/components/ui";
+import {
+  Avatar,
+  Card,
+  EmptyState,
+  SelectBase,
+  useToast,
+} from "@/components/ui";
 import { IconFunnel } from "@/components/icons";
 import { formatPhone } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
@@ -35,14 +41,15 @@ export function FunnelBoard({
   reached: number[];
 }) {
   const [foldOpen, setFoldOpen] = useState(false);
-  const by = (stage: string) => customers.filter((c) => c.pipeline_stage === stage);
+  const by = (stage: string) =>
+    customers.filter((c) => c.pipeline_stage === stage);
 
   if (customers.length === 0) {
     return (
       <Card>
         <EmptyState title="Huni boş" icon={<IconFunnel />}>
-          Randevu alınan müşteriler burada aşama aşama görünür. Müşteri detayından veya aramada &quot;Dükkana gelecek&quot;
-          seçerek başlatın.
+          Randevu alınan müşteriler burada aşama aşama görünür. Müşteri
+          detayından veya aramada &quot;Dükkana gelecek&quot; seçerek başlatın.
         </EmptyState>
       </Card>
     );
@@ -56,9 +63,15 @@ export function FunnelBoard({
         {MAIN_STAGES.map((stage, i) => {
           const list = by(stage);
           const prev = i > 0 ? reached[i - 1] : 0;
-          const conv = i > 0 && prev > 0 ? Math.round((reached[i] / prev) * 100) : null;
+          const conv =
+            i > 0 && prev > 0 ? Math.round((reached[i] / prev) * 100) : null;
           return (
-            <section key={stage} className="mu-col" role="listitem" aria-label={STAGE_LABEL[stage]}>
+            <section
+              key={stage}
+              className="mu-col"
+              role="listitem"
+              aria-label={STAGE_LABEL[stage]}
+            >
               <div className="mu-col-head">
                 <b>{STAGE_LABEL[stage]}</b>
                 <span className="count">{list.length}</span>
@@ -67,7 +80,11 @@ export function FunnelBoard({
                 className="mu-conv"
                 title="Bu aşamaya ulaşan müşterilerin, bir önceki aşamaya ulaşanlara oranı"
               >
-                {i === 0 ? `${reached[0]} müşteri ulaştı` : conv === null ? "Önceki aşamada kimse yok" : `Bir öncekine göre %${conv}`}
+                {i === 0
+                  ? `${reached[0]} müşteri ulaştı`
+                  : conv === null
+                    ? "Önceki aşamada kimse yok"
+                    : `Bir öncekine göre %${conv}`}
               </div>
               <Cards list={list} members={members} viewer={viewer} />
             </section>
@@ -84,14 +101,22 @@ export function FunnelBoard({
           onClick={() => setFoldOpen((o) => !o)}
         >
           <span>
-            {SIDE_STAGES.map((s) => `${STAGE_LABEL[s]} ${by(s).length}`).join(", ")}
+            {SIDE_STAGES.map((s) => `${STAGE_LABEL[s]} ${by(s).length}`).join(
+              ", ",
+            )}
           </span>
-          <span aria-hidden="true">{foldOpen ? "Gizle" : sideCount > 0 ? "Göster" : "Aç"}</span>
+          <span aria-hidden="true">
+            {foldOpen ? "Gizle" : sideCount > 0 ? "Göster" : "Aç"}
+          </span>
         </button>
         {foldOpen ? (
           <div id="mu-fold" className="mu-fold-body">
             {SIDE_STAGES.map((stage) => (
-              <section key={stage} className="mu-col" aria-label={STAGE_LABEL[stage]}>
+              <section
+                key={stage}
+                className="mu-col"
+                aria-label={STAGE_LABEL[stage]}
+              >
                 <div className="mu-col-head">
                   <b>{STAGE_LABEL[stage]}</b>
                   <span className="count">{by(stage).length}</span>
@@ -106,8 +131,17 @@ export function FunnelBoard({
   );
 }
 
-function Cards({ list, members, viewer }: { list: Customer[]; members: MemberLite[]; viewer: V }) {
-  if (list.length === 0) return <div className="mu-empty-col">Bu aşamada müşteri yok</div>;
+function Cards({
+  list,
+  members,
+  viewer,
+}: {
+  list: Customer[];
+  members: MemberLite[];
+  viewer: V;
+}) {
+  if (list.length === 0)
+    return <div className="mu-empty-col">Bu aşamada müşteri yok</div>;
   return (
     <>
       {list.map((c) => (
@@ -117,7 +151,15 @@ function Cards({ list, members, viewer }: { list: Customer[]; members: MemberLit
   );
 }
 
-function FunnelCard({ c, members, viewer }: { c: Customer; members: MemberLite[]; viewer: V }) {
+function FunnelCard({
+  c,
+  members,
+  viewer,
+}: {
+  c: Customer;
+  members: MemberLite[];
+  viewer: V;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
@@ -127,7 +169,10 @@ function FunnelCard({ c, members, viewer }: { c: Customer; members: MemberLite[]
   const move = async (stage: string) => {
     if (!stage || stage === c.pipeline_stage) return;
     setBusy(true);
-    const { error } = await createClient().rpc("set_pipeline_stage", { p_customer: c.id, p_stage: stage });
+    const { error } = await createClient().rpc("set_pipeline_stage", {
+      p_customer: c.id,
+      p_stage: stage,
+    });
     setBusy(false);
     if (error) {
       toast(toUserMessage(error), "error");
@@ -138,11 +183,14 @@ function FunnelCard({ c, members, viewer }: { c: Customer; members: MemberLite[]
   };
 
   return (
-    <article className="mu-card">
+    <article className="mu-card" title={c.full_name}>
       <div className="mu-who">
         <Avatar name={c.full_name} />
         <span style={{ minWidth: 0 }}>
-          <b>{c.full_name}</b>
+          <b>
+              <span className="mu-first">{c.full_name.split(" ")[0]}</span>
+              <span className="mu-rest">{c.full_name.slice(c.full_name.split(" ")[0].length)}</span>
+            </b>
           <span>{formatPhone(c.phone)}</span>
         </span>
       </div>
@@ -152,20 +200,20 @@ function FunnelCard({ c, members, viewer }: { c: Customer; members: MemberLite[]
       </div>
       {c.last_note ? <p className="quote">{c.last_note}</p> : null}
       {canMove ? (
-        <select
-          className="input"
+        <SelectBase
+          className="mu-move"
           aria-label={`${c.full_name} için aşamayı değiştir`}
           value=""
           disabled={busy}
           onChange={(e) => move(e.target.value)}
         >
-          <option value="">Aşamayı değiştir</option>
+          <option value="" hidden>Aşamayı değiştir</option>
           {ALL_STAGES.filter((s) => s !== c.pipeline_stage).map((s) => (
             <option key={s} value={s}>
               {STAGE_LABEL[s]}
             </option>
           ))}
-        </select>
+        </SelectBase>
       ) : null}
     </article>
   );
