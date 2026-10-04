@@ -81,6 +81,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
     return s ? `/musteriler?${s}` : "/musteriler";
   };
 
+  const canExport = can(member, "export");
+  const exportParams = new URLSearchParams();
+  for (const [k, v] of Object.entries({ q: one(sp.q), durum, asama, operator, atanan })) if (v) exportParams.set(k, v);
+  const exportHref = `/api/export/customers${exportParams.size ? `?${exportParams}` : ""}`;
+
   const filtered = Boolean(q || durum || asama || operator || atanan);
 
   return (
@@ -94,12 +99,21 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
               : "Bugün sana atanan müşteriler."}
           </p>
         </div>
-        {viewer.canImport ? (
+        {viewer.canImport || canExport ? (
           <div className="mu-actions">
-            <AddCustomerButton />
-            <Link href="/musteriler/ice-aktar" className={buttonClass("soft")}>
-              Excel içe aktar
-            </Link>
+            {viewer.canImport ? (
+              <>
+                <AddCustomerButton />
+                <Link href="/musteriler/ice-aktar" className={buttonClass("soft")}>
+                  Excel içe aktar
+                </Link>
+              </>
+            ) : null}
+            {canExport ? (
+              <a href={exportHref} className={buttonClass("soft")} download>
+                Dışa aktar
+              </a>
+            ) : null}
           </div>
         ) : null}
       </div>
