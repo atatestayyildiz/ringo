@@ -197,12 +197,28 @@
   .kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .kpis > :last-child {
+  .kpis > :first-child {
     grid-column: span 2;
+  }
+  .kpis > :first-child b {
+    font-size: 44px;
   }
   .f {
     grid-template-columns: 92px 1fr 32px;
     gap: 10px;
+  }
+}
+@media (max-width: 560px) {
+  .bar > button,
+  .bar > input {
+    min-height: 44px;
+  }
+  .bar > button[aria-label] {
+    min-width: 44px;
+    font-size: 18px;
+  }
+  .right button {
+    min-height: 44px;
   }
 }
 @media (max-width: 460px) {
