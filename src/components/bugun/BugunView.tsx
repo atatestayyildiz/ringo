@@ -1,10 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { distributeDayAction, logCallAction } from "@/app/(app)/bugun/actions";
 import { IconArrow, IconChat, IconClock, IconInfo } from "@/components/icons";
-import { Avatar, Button, Card, EmptyState, StatusBadge, useToast } from "@/components/ui";
+import {
+  Avatar,
+  Button,
+  Card,
+  EmptyState,
+  StatusBadge,
+  useToast,
+} from "@/components/ui";
 import { relativeTime } from "@/lib/format";
 import { CallbackDialog, ReasonDialog } from "./Dialogs";
 import { FocusCard } from "./FocusCard";
@@ -38,6 +45,8 @@ type Props = {
   team: TeamRow[] | null;
 };
 
+const QUEUE_LIMIT = 6;
+
 const LEGEND: [Tone, string][] = [
   ["wait", "Bekliyor"],
   ["retry", "Tekrar ara"],
@@ -49,22 +58,34 @@ const LEGEND: [Tone, string][] = [
 /** Sunucu cevabı gelmeden gösterilen geçici durum; kesin değer RPC dönüşüyle gelir. */
 function provisional(outcome: Outcome): Item["status"] {
   if (outcome === "appointment" || outcome === "not_interested") return "done";
-  if (outcome === "disqualified" || outcome === "wrong_number") return "disqualified";
+  if (outcome === "disqualified" || outcome === "wrong_number")
+    return "disqualified";
   return "retry";
 }
 
 function defaultCursor(items: Item[]): string | null {
-  return (items.find((i) => i.status === "pending") ?? items.find((i) => i.status === "retry") ?? items[0])?.id ?? null;
+  return (
+    (
+      items.find((i) => i.status === "pending") ??
+      items.find((i) => i.status === "retry") ??
+      items[0]
+    )?.id ?? null
+  );
 }
 
 /** Sıradaki bekleyen müşteri (mevcuttan sonra, başa sararak); yoksa vakti gelmiş tekrar. */
 function pickNext(items: Item[], fromId: string): string | null {
   const idx = items.findIndex((i) => i.id === fromId);
-  const ordered = [...items.slice(idx + 1), ...items.slice(0, Math.max(idx, 0))];
+  const ordered = [
+    ...items.slice(idx + 1),
+    ...items.slice(0, Math.max(idx, 0)),
+  ];
   const now = Date.now();
   return (
     ordered.find((i) => i.status === "pending")?.id ??
-    ordered.find((i) => i.status === "retry" && new Date(i.nextCallAt).getTime() <= now)?.id ??
+    ordered.find(
+      (i) => i.status === "retry" && new Date(i.nextCallAt).getTime() <= now,
+    )?.id ??
     null
   );
 }
@@ -75,33 +96,40 @@ export function BugunView(props: Props) {
 
   const [prevItems, setPrevItems] = useState(props.items);
   const [items, setItems] = useState(props.items);
-  const [curId, setCurId] = useState<string | null>(() => defaultCursor(props.items));
+  const [curId, setCurId] = useState<string | null>(() =>
+    defaultCursor(props.items),
+  );
   const [nonce, setNonce] = useState(0);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const [distributing, setDistributing] = useState(false);
-  const [dialog, setDialog] = useState<{ kind: "callback" | "reason"; note: string } | null>(null);
+  const [dialog, setDialog] = useState<{
+    kind: "callback" | "reason";
+    note: string;
+  } | null>(null);
 
   // Sunucu verisi yenilenince (revalidatePath, Dağıt) yerel durumu ona eşitle
   if (props.items !== prevItems) {
     setPrevItems(props.items);
     setItems(props.items);
-    if (curId === null || !props.items.some((i) => i.id === curId)) setCurId(defaultCursor(props.items));
+    if (curId === null || !props.items.some((i) => i.id === curId))
+      setCurId(defaultCursor(props.items));
   }
 
-  const slotsRef = useRef<HTMLDivElement>(null);
+  const [showAll, setShowAll] = useState(false);
   const focusRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    slotsRef.current?.querySelector('[aria-current="true"]')?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
-  }, [curId]);
 
   const cur = items.find((i) => i.id === curId) ?? null;
   const count = (t: Tone) => items.filter((i) => toneOf(i.status) === t).length;
   const left = count("wait");
   const finished = count("done") + count("bad") + count("pool");
 
-  async function submit(item: Item, outcome: Outcome, note: string, callbackAt?: Date) {
+  async function submit(
+    item: Item,
+    outcome: Outcome,
+    note: string,
+    callbackAt?: Date,
+  ) {
     // Aynı render içindeki çift dokunuşu engelle (state kapanışı henüz güncellenmemiş olabilir)
     if (busyRef.current || !isCallOpen(item.status)) return;
     busyRef.current = true;
@@ -109,7 +137,11 @@ export function BugunView(props: Props) {
     const trimmed = note.trim();
     const after = items.map((x) =>
       x.id === item.id
-        ? { ...x, status: provisional(outcome), log: [...x.log, { outcome, note: trimmed || null }].slice(-3) }
+        ? {
+            ...x,
+            status: provisional(outcome),
+            log: [...x.log, { outcome, note: trimmed || null }].slice(-3),
+          }
         : x,
     );
     setBusy(true);
@@ -122,7 +154,12 @@ export function BugunView(props: Props) {
       focusRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
     }
 
-    const res = await logCallAction(item.id, outcome, trimmed || null, callbackAt ? callbackAt.toISOString() : null);
+    const res = await logCallAction(
+      item.id,
+      outcome,
+      trimmed || null,
+      callbackAt ? callbackAt.toISOString() : null,
+    );
     busyRef.current = false;
     setBusy(false);
     if (!res.ok) {
@@ -133,17 +170,32 @@ export function BugunView(props: Props) {
       return;
     }
     setItems((l) =>
-      l.map((x) => (x.id === item.id ? { ...x, status: res.status, tries: res.attempts, nextCallAt: res.nextCallAt } : x)),
+      l.map((x) =>
+        x.id === item.id
+          ? {
+              ...x,
+              status: res.status,
+              tries: res.attempts,
+              nextCallAt: res.nextCallAt,
+            }
+          : x,
+      ),
     );
     const who = firstName(item.name);
     if (res.status === "pool") {
-      toast(`${who} ${rules.maxAttempts} denemeyi doldurdu, ${rules.poolWaitDays} gün sonra listeye döner.`);
+      toast(
+        `${who} ${rules.maxAttempts} denemeyi doldurdu, ${rules.poolWaitDays} gün sonra listeye döner.`,
+      );
     } else if (res.status === "unreachable") {
-      toast(`${who} için ${rules.maxRounds} tur denendi, ulaşılamadı olarak kapandı.`);
+      toast(
+        `${who} için ${rules.maxRounds} tur denendi, ulaşılamadı olarak kapandı.`,
+      );
     } else if (outcome === "callback") {
       toast(`Kaydedildi. ${who} ${relativeTime(res.nextCallAt)} aranacak.`);
     } else if (res.status === "retry") {
-      toast(`Kaydedildi. ${who} tekrar listesinde (${res.attempts}/${rules.maxAttempts} deneme).`);
+      toast(
+        `Kaydedildi. ${who} tekrar listesinde (${res.attempts}/${rules.maxAttempts} deneme).`,
+      );
     } else {
       toast("Kaydedildi");
     }
@@ -152,7 +204,8 @@ export function BugunView(props: Props) {
   function pick(outcome: Outcome, note: string) {
     if (!cur || busy || busyRef.current || !isCallOpen(cur.status)) return;
     if (outcome === "callback") return setDialog({ kind: "callback", note });
-    if (outcome === "disqualified" && !note.trim()) return setDialog({ kind: "reason", note });
+    if (outcome === "disqualified" && !note.trim())
+      return setDialog({ kind: "reason", note });
     void submit(cur, outcome, note);
   }
 
@@ -161,12 +214,17 @@ export function BugunView(props: Props) {
     const res = await distributeDayAction();
     setDistributing(false);
     if (!res.ok) return toast(res.error, "error");
-    toast(res.count > 0 ? `${res.count} müşteri dağıtıldı.` : "Dağıtılacak yeni müşteri yok.");
+    toast(
+      res.count > 0
+        ? `${res.count} müşteri dağıtıldı.`
+        : "Dağıtılacak yeni müşteri yok.",
+    );
   }
 
   const retryItems = items.filter((i) => i.status === "retry");
   const queue = [...items].sort((a, b) => {
-    const r = (i: Item) => (i.status === "pending" ? 0 : i.status === "retry" ? 1 : 2);
+    const r = (i: Item) =>
+      i.status === "pending" ? 0 : i.status === "retry" ? 1 : 2;
     return r(a) - r(b);
   });
 
@@ -205,7 +263,11 @@ export function BugunView(props: Props) {
         </div>
         {items.length > 0 ? (
           <div className={styles.slotsWrap}>
-            <div className={styles.slots} ref={slotsRef} role="group" aria-label="Bugünün listesi">
+            <div
+              className={styles.slots}
+              role="group"
+              aria-label="Bugünün listesi"
+            >
               {items.map((c, i) => {
                 const t = toneOf(c.status);
                 return (
@@ -232,139 +294,98 @@ export function BugunView(props: Props) {
                 </span>
               ))}
             </div>
+            {teamView ? <DayProgress items={items} count={count} /> : null}
           </div>
         ) : null}
       </section>
 
       {items.length === 0 ? (
         <Card style={{ marginTop: 18 }}>
-          <EmptyState title="Bugün listen boş.">Yönetici dağıtım yapınca burada görünecek.</EmptyState>
+          <EmptyState title="Bugün listen boş.">
+            Yönetici dağıtım yapınca burada görünecek.
+          </EmptyState>
         </Card>
       ) : null}
 
       <div className={styles.grid}>
-        {cur ? (
-          <section className={`card ${styles.s7} ${styles.focus}`} aria-live="polite" ref={focusRef}>
-            <FocusCard key={`${cur.id}:${nonce}`} item={cur} busy={busy} onPick={pick} />
-          </section>
-        ) : null}
+        <div className={styles.colMain}>
+          {cur ? (
+            <section
+              className={`card ${styles.focus}`}
+              aria-live="polite"
+              ref={focusRef}
+            >
+              <FocusCard
+                key={`${cur.id}:${nonce}`}
+                item={cur}
+                busy={busy}
+                onPick={pick}
+              />
+            </section>
+          ) : null}
 
-        {items.length > 0 ? (
-          <div className={`${styles.stack} ${styles.s5}`}>
-            <Card>
+          {items.length > 0 ? (
+            <Card className={styles.queueCard}>
               <h2>
-                Tekrar aranacaklar
-                <Link href="/musteriler" className={styles.open} aria-label="Tümünü aç">
-                  <IconArrow />
-                </Link>
+                Bugünün sırası
+                <span className={styles.headNote}>
+                  {finished} / {items.length} bitti
+                </span>
               </h2>
-              {retryItems.length ? (
-                retryItems.map((x) => {
-                  const last = x.log[x.log.length - 1];
-                  const future = last?.outcome === "callback";
-                  return (
-                    <div className={styles.row} key={x.id}>
-                      <Avatar name={x.name} size={40} radius={14} />
-                      <div className={styles.rowT}>
-                        <b>{x.name}</b>
-                        <span>{future ? `Geri arama ${relativeTime(x.nextCallAt)}` : last ? logText(last) : "Tekrar aranacak"}</span>
-                      </div>
-                      <div className={styles.tries} title={`${x.tries}/${rules.maxAttempts} deneme`}>
-                        {Array.from({ length: rules.maxAttempts }, (_, i) => (
-                          <i key={i} data-on={i < x.tries} />
-                        ))}
-                      </div>
+              <div>
+                {(showAll ? queue : queue.slice(0, QUEUE_LIMIT)).map((x) => (
+                  <button
+                    key={x.id}
+                    type="button"
+                    className={`${styles.q}${x.id === curId ? ` ${styles.cur}` : ""}`}
+                    onClick={() => {
+                      setCurId(x.id);
+                      focusRef.current?.scrollIntoView({
+                        block: "start",
+                        behavior: "smooth",
+                      });
+                    }}
+                  >
+                    <Avatar name={x.name} size={42} radius={15} />
+                    <div className={styles.qT}>
+                      <b>{x.name}</b>
+                      <span>
+                        {[
+                          x.operator
+                            ? (OPERATORS[x.operator] ?? x.operator)
+                            : null,
+                          x.owner ?? x.appliedLabel,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
                     </div>
-                  );
-                })
-              ) : (
-                <p className={styles.empty}>Şu an tekrar aranacak kimse yok.</p>
-              )}
-              <div className={styles.rule}>
-                <IconInfo />
-                <div>
-                  {props.rulesText}
-                  {isManager ? (
-                    <>
-                      {" "}
-                      <Link href="/ayarlar">Kuralları değiştir</Link>
-                    </>
-                  ) : null}
-                </div>
+                    <StatusBadge status={x.status} />
+                  </button>
+                ))}
               </div>
-            </Card>
-
-            {birthday ? <BirthdayCard b={birthday} /> : null}
-          </div>
-        ) : null}
-
-        {items.length > 0 ? (
-          <Card className={styles.s7}>
-            <h2>
-              Bugünün sırası
-              <span className={styles.headNote}>
-                {finished} / {items.length} bitti
-              </span>
-            </h2>
-            <div>
-              {queue.map((x) => (
+              {queue.length > QUEUE_LIMIT ? (
                 <button
-                  key={x.id}
                   type="button"
-                  className={`${styles.q}${x.id === curId ? ` ${styles.cur}` : ""}`}
-                  onClick={() => {
-                    setCurId(x.id);
-                    focusRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
-                  }}
+                  className={styles.more}
+                  aria-expanded={showAll}
+                  onClick={() => setShowAll((v) => !v)}
                 >
-                  <Avatar name={x.name} size={42} radius={15} />
-                  <div className={styles.qT}>
-                    <b>{x.name}</b>
-                    <span>
-                      {[x.operator ? (OPERATORS[x.operator] ?? x.operator) : null, x.owner ?? x.appliedLabel]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </span>
-                  </div>
-                  <StatusBadge status={x.status} />
+                  {showAll
+                    ? "Daha az göster"
+                    : `Tümünü göster (${queue.length})`}
                 </button>
-              ))}
-            </div>
-          </Card>
-        ) : null}
+              ) : null}
+            </Card>
+          ) : null}
 
-        <div className={`${styles.stack} ${styles.s5}`}>
-          <Card>
-            <h2>
-              Havuz
-              <Link href="/havuz" className={styles.open} aria-label="Havuzu aç">
-                <IconArrow />
-              </Link>
-            </h2>
-            <div className={styles.poolBig}>
-              <b>{pool.count}</b>
-              <span>kişi bekliyor</span>
-            </div>
-            <p className={styles.empty}>
-              {pool.count === 0 || pool.nearestDays === null ? (
-                "Havuz şu an boş."
-              ) : (
-                <>
-                  En yakın dönüş <b>{pool.nearestDays === 0 ? "bugün" : `${pool.nearestDays} gün sonra`}</b>.
-                  {pool.thisWeek > 0 ? ` ${pool.thisWeek} kişi bu hafta listeye geri çıkacak.` : ""}
-                </>
-              )}
-            </p>
-          </Card>
-        </div>
-
-        {isManager && team ? (
-          <>
-            <Card className={styles.s7}>
+          {isManager && team ? (
+            <Card className={styles.teamCard}>
               <h2>
                 Ekibin bugünkü ilerlemesi
                 <span className={styles.headNote}>
-                  {team.reduce((s, t) => s + t.done, 0)} / {team.reduce((s, t) => s + t.assigned, 0)} bitti
+                  {team.reduce((s, t) => s + t.done, 0)} /{" "}
+                  {team.reduce((s, t) => s + t.assigned, 0)} bitti
                 </span>
               </h2>
               {team.length ? (
@@ -374,7 +395,11 @@ export function BugunView(props: Props) {
                     <div className={styles.rowT}>
                       <b>{t.name}</b>
                       <div className={styles.mini}>
-                        <i style={{ width: `${t.assigned ? (t.done / t.assigned) * 100 : 0}%` }} />
+                        <i
+                          style={{
+                            width: `${t.assigned ? (t.done / t.assigned) * 100 : 0}%`,
+                          }}
+                        />
                       </div>
                     </div>
                     <span className={styles.teamCount}>
@@ -386,19 +411,132 @@ export function BugunView(props: Props) {
                 <p className={styles.empty}>Henüz atama yok.</p>
               )}
             </Card>
-            <div className={`${styles.stack} ${styles.s5}`}>
+          ) : null}
+        </div>
+        <div className={styles.colSide}>
+          {items.length > 0 ? (
+            <div className={`${styles.stack} ${styles.retryStack}`}>
+              <Card>
+                <h2>
+                  Tekrar aranacaklar
+                  <Link
+                    href="/musteriler"
+                    className={styles.open}
+                    aria-label="Tümünü aç"
+                  >
+                    <IconArrow />
+                  </Link>
+                </h2>
+                {retryItems.length ? (
+                  retryItems.map((x) => {
+                    const last = x.log[x.log.length - 1];
+                    const future = last?.outcome === "callback";
+                    return (
+                      <div className={styles.row} key={x.id}>
+                        <Avatar name={x.name} size={40} radius={14} />
+                        <div className={styles.rowT}>
+                          <b>{x.name}</b>
+                          <span>
+                            {future
+                              ? `Geri arama ${relativeTime(x.nextCallAt)}`
+                              : last
+                                ? logText(last)
+                                : "Tekrar aranacak"}
+                          </span>
+                        </div>
+                        <div
+                          className={styles.tries}
+                          title={`${x.tries}/${rules.maxAttempts} deneme`}
+                        >
+                          {Array.from({ length: rules.maxAttempts }, (_, i) => (
+                            <i key={i} data-on={i < x.tries} />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className={styles.empty}>
+                    Şu an tekrar aranacak kimse yok.
+                  </p>
+                )}
+                <div className={styles.rule}>
+                  <IconInfo />
+                  <div>
+                    {props.rulesText}
+                    {isManager ? (
+                      <>
+                        {" "}
+                        <Link href="/ayarlar">Kuralları değiştir</Link>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+              </Card>
+
+              {birthday ? <BirthdayCard b={birthday} /> : null}
+            </div>
+          ) : null}
+
+          <div className={`${styles.stack} ${styles.poolStack}`}>
+            <Card>
+              <h2>
+                Havuz
+                <Link
+                  href="/havuz"
+                  className={styles.open}
+                  aria-label="Havuzu aç"
+                >
+                  <IconArrow />
+                </Link>
+              </h2>
+              <div className={styles.poolBig}>
+                <b>{pool.count}</b>
+                <span>kişi bekliyor</span>
+              </div>
+              <p className={styles.empty}>
+                {pool.count === 0 || pool.nearestDays === null ? (
+                  "Havuz şu an boş."
+                ) : (
+                  <>
+                    En yakın dönüş{" "}
+                    <b>
+                      {pool.nearestDays === 0
+                        ? "bugün"
+                        : `${pool.nearestDays} gün sonra`}
+                    </b>
+                    .
+                    {pool.thisWeek > 0
+                      ? ` ${pool.thisWeek} kişi bu hafta listeye geri çıkacak.`
+                      : ""}
+                  </>
+                )}
+              </p>
+            </Card>
+          </div>
+
+          {isManager && team ? (
+            <div className={`${styles.stack} ${styles.distStack}`}>
               <Card>
                 <h2>Dağıtım</h2>
                 <div className={styles.distribute}>
-                  <p>Bekleyen müşterileri bugünün listesine çalışanlar arasında eşit dağıtır. Aynı gün tekrar çalıştırırsan yalnız yeni gelenler eklenir.</p>
-                  <Button variant="brand" onClick={distribute} disabled={distributing}>
+                  <p>
+                    Bekleyen müşterileri bugünün listesine çalışanlar arasında
+                    eşit dağıtır. Aynı gün tekrar çalıştırırsan yalnız yeni
+                    gelenler eklenir.
+                  </p>
+                  <Button
+                    variant="brand"
+                    onClick={distribute}
+                    disabled={distributing}
+                  >
                     {distributing ? "Dağıtılıyor" : "Dağıt"}
                   </Button>
                 </div>
               </Card>
             </div>
-          </>
-        ) : null}
+          ) : null}
+        </div>
       </div>
 
       <CallbackDialog
@@ -422,8 +560,69 @@ export function BugunView(props: Props) {
   );
 }
 
+const PROGRESS_PARTS: [Tone, string][] = [
+  ["done", "Tamamlandı"],
+  ["retry", "Tekrar ara"],
+  ["bad", "Uygun değil"],
+  ["pool", "Havuza düştü"],
+];
+
+/** Bugünün ilerleme çubuğu: toplam = %100, aranmış kısım durum renkleriyle bölünür, bekleyen nötr iz. */
+function DayProgress({
+  items,
+  count,
+}: {
+  items: Item[];
+  count: (t: Tone) => number;
+}) {
+  const total = items.length;
+  const waiting = count("wait");
+  const called = total - waiting;
+  const pct = total ? Math.round((called / total) * 100) : 0;
+  const parts = PROGRESS_PARTS.map(([t, label]) => ({ t, label, n: count(t) }));
+  const summary = [
+    `${called} / ${total} arandı, %${pct}`,
+    ...parts.map((p) => `${p.label} ${p.n}`),
+    `Bekliyor ${waiting}`,
+  ].join(". ");
+  return (
+    <div className={styles.progress}>
+      <div className={styles.progressHead}>
+        <span>
+          <b>{called}</b> / {total} arandı
+        </span>
+        <b className={styles.progressPct}>%{pct}</b>
+      </div>
+      <div className={styles.bar} role="img" aria-label={summary}>
+        {parts.map((p) =>
+          p.n > 0 ? (
+            <i
+              key={p.t}
+              className={styles.seg}
+              style={{ flexGrow: p.n, background: `var(--c-${p.t})` }}
+            />
+          ) : null,
+        )}
+        {waiting > 0 ? (
+          <i
+            className={`${styles.seg} ${styles.segWait}`}
+            style={{ flexGrow: waiting }}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function statusLabel(s: Item["status"]): string {
-  return { pending: "Bekliyor", retry: "Tekrar ara", pool: "Havuzda", done: "Tamamlandı", unreachable: "Ulaşılamadı", disqualified: "Uygun değil" }[s];
+  return {
+    pending: "Bekliyor",
+    retry: "Tekrar ara",
+    pool: "Havuzda",
+    done: "Tamamlandı",
+    unreachable: "Ulaşılamadı",
+    disqualified: "Uygun değil",
+  }[s];
 }
 
 function BirthdayCard({ b }: { b: BirthdayInfo }) {
@@ -431,7 +630,14 @@ function BirthdayCard({ b }: { b: BirthdayInfo }) {
     <Card className={styles.bday}>
       <h2>Doğum günü yaklaşıyor</h2>
       <div className={styles.bdayBig}>
-        {b.daysLeft === 0 ? "Bugün" : <>{b.daysLeft}<small>gün kaldı</small></>}
+        {b.daysLeft === 0 ? (
+          "Bugün"
+        ) : (
+          <>
+            {b.daysLeft}
+            <small>gün kaldı</small>
+          </>
+        )}
       </div>
       <p>
         <b>{b.name}</b> · {b.dateLabel}

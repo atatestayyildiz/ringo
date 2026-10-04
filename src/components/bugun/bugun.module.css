@@ -49,68 +49,85 @@
   box-shadow: var(--shadow);
   padding: 22px 26px 20px;
 }
-.slots {
-  display: flex;
-  gap: 9px;
-  align-items: flex-end;
-  height: 112px;
-  overflow-x: auto;
-  padding: 10px 6px 6px;
-  scrollbar-width: none;
+.slotsWrap {
+  --edge: rgba(14, 14, 17, 0.1);
+  --wait-fill: color-mix(in srgb, var(--c-wait) 9%, var(--surface));
+  --wait-line: color-mix(in srgb, var(--c-wait) 55%, transparent);
+  --wait-ink: var(--c-wait);
 }
-.slots::-webkit-scrollbar {
-  display: none;
+:global(:root[data-theme="dark"]) .slotsWrap {
+  --edge: rgba(255, 255, 255, 0.2);
+  --wait-fill: color-mix(in srgb, var(--c-wait) 16%, var(--surface));
+  --wait-line: color-mix(in srgb, var(--c-wait) 75%, transparent);
+  --wait-ink: color-mix(in srgb, var(--c-wait) 60%, #fff);
+}
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .slotsWrap {
+    --edge: rgba(255, 255, 255, 0.2);
+    --wait-fill: color-mix(in srgb, var(--c-wait) 16%, var(--surface));
+    --wait-line: color-mix(in srgb, var(--c-wait) 75%, transparent);
+    --wait-ink: color-mix(in srgb, var(--c-wait) 60%, #fff);
+  }
+}
+/* sabit hucre: sayi kac olursa olsun her hap ayni genislik ve yukseklikte; cok olunca satirlara sarar */
+.slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 56px);
+  grid-auto-rows: 36px;
+  gap: 8px;
+  justify-content: start;
+  padding: 6px 2px 4px;
 }
 .slot {
-  min-height: 44px;
-  flex: 1 0 34px;
-  max-width: 78px;
-  height: 100%;
+  width: 56px;
+  height: 36px;
+  min-height: 36px;
   border: 0;
   border-radius: 999px;
   position: relative;
-  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.35s;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding-bottom: 9px;
-  background: repeating-linear-gradient(135deg, var(--hatch) 0 2px, transparent 2px 7px);
-  color: var(--ink-3);
-  font-size: 11px;
+  padding: 0;
+  font-size: 12px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s;
 }
 .slot[data-s="wait"] {
-  box-shadow: inset 0 0 0 1.5px var(--hatch);
+  background: var(--wait-fill);
+  color: var(--wait-ink);
+  box-shadow: inset 0 0 0 1.5px var(--wait-line);
 }
 .slot[data-s="done"] {
   background: var(--c-done);
-  color: #fff;
-  height: 72%;
+  box-shadow: inset 0 0 0 1px var(--edge);
 }
 .slot[data-s="retry"] {
   background: var(--c-retry);
-  color: #fff;
-  height: 58%;
+  box-shadow: inset 0 0 0 1px var(--edge);
 }
 .slot[data-s="bad"] {
   background: var(--c-bad);
-  color: #fff;
-  height: 40%;
+  box-shadow: inset 0 0 0 1px var(--edge);
 }
 .slot[data-s="pool"] {
   background: var(--c-pool);
-  color: #fff;
-  height: 34%;
+  box-shadow: inset 0 0 0 1px var(--edge);
 }
 .slot:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 .slot.cur {
-  transform: translateY(-6px);
   box-shadow: 0 0 0 2.5px var(--surface), 0 0 0 5px var(--brand);
+  z-index: 1;
+}
+.slot[data-s="wait"].cur {
+  box-shadow: inset 0 0 0 1.5px var(--wait-line), 0 0 0 2.5px var(--surface), 0 0 0 5px var(--brand);
 }
 .slot.cur:hover {
-  transform: translateY(-6px);
+  transform: none;
 }
 .legend {
   display: flex;
@@ -272,12 +289,32 @@
   width: 16px;
   height: 16px;
 }
-.btnSoft {
-  background: var(--surface-2);
+.callRow .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 54px;
+  padding: 0 18px;
+  font-size: 15px;
+  gap: 9px;
+}
+.callRow .ring {
+  width: 26px;
+  height: 26px;
+}
+.callRow .ring :global(svg.i) {
+  width: 14px;
+  height: 14px;
+}
+.btnWa {
+  background: color-mix(in srgb, #25d366 14%, var(--surface-2));
   color: var(--ink);
-  min-width: 58px;
-  padding-left: 18px;
-  padding-right: 18px;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #25d366 38%, transparent);
+}
+.waGlyph {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  fill: #25d366;
 }
 .btnDisabled {
   opacity: 0.5;
@@ -635,14 +672,17 @@
 }
 @media (max-width: 560px) {
   .slotsWrap {
-    padding: 18px 16px 16px;
+    padding: 16px 12px 16px;
   }
   .slots {
-    height: 96px;
-    gap: 7px;
+    grid-template-columns: repeat(auto-fill, 48px);
+    grid-auto-rows: 44px;
+    gap: 6px;
   }
   .slot {
-    flex: 0 0 44px;
+    width: 48px;
+    height: 44px;
+    min-height: 44px;
   }
   .quick button {
     min-height: 44px;
@@ -669,5 +709,102 @@
   }
   .legend {
     gap: 12px 18px;
+  }
+}
+
+/* ---------- yonetici ilerleme cubugu ---------- */
+.progress {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.progressHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+.progressHead b {
+  color: var(--ink);
+  font-weight: 650;
+}
+.progressPct {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.bar {
+  display: flex;
+  gap: 3px;
+  height: 14px;
+}
+.seg {
+  display: block;
+  flex-basis: 0;
+  min-width: 8px;
+  height: 100%;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+.segWait {
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1.5px var(--edge);
+}
+
+/* ---------- kuyruk genisletme ---------- */
+.more {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 650;
+  transition: background 0.15s;
+}
+.more:hover {
+  background: color-mix(in srgb, var(--ink) 8%, var(--surface-2));
+}
+
+/* ---------- iki sutun: sol akis kendi icinde, bosluk kalmaz ---------- */
+.colMain {
+  grid-column: span 7;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.colSide {
+  grid-column: span 5;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.colMain > .s7,
+.colSide > .s5 {
+  grid-column: auto;
+}
+@media (max-width: 980px) {
+  /* mobilde sutunlar kaybolur; kartlar eski sirasiyla tek sutun */
+  .colMain,
+  .colSide {
+    display: contents;
+  }
+  .focus { order: 1; }
+  .retryStack { order: 2; }
+  .queueCard { order: 3; }
+  .poolStack { order: 4; }
+  .teamCard { order: 5; }
+  .distStack { order: 6; }
+  .colMain > *,
+  .colSide > * {
+    grid-column: span 12;
   }
 }
