@@ -3,7 +3,8 @@ import { IconLogout } from "@/components/icons";
 import { MainNav, type NavKey } from "@/components/shell/MainNav";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { Avatar, RoundButton, ToastProvider } from "@/components/ui";
-import { can, getSessionContext } from "@/lib/session";
+import { navKeys } from "@/lib/access";
+import { getSessionContext } from "@/lib/session";
 import { signOutAction } from "./actions";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -12,9 +13,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { member, settings } = await getSessionContext();
   const isManager = member.role === "manager";
 
-  const visible: NavKey[] = ["bugun", "musteriler", "havuz", "huni"];
-  if (isManager || can(member, "view_reports")) visible.push("yonetim", "raporlar");
-  if (isManager) visible.push("ayarlar");
+  // Raporlar herkese (kapsam DB'de), Yönetim yönetici veya view_team, Ayarlar yönetici
+  const visible: NavKey[] = navKeys(member);
 
   const brandName = settings.brand_name;
   const mark = (brandName.trim()[0] ?? "M").toLocaleUpperCase("tr");

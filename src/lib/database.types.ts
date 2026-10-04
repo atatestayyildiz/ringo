@@ -473,6 +473,9 @@ isOneToOne: true
 "report_range":
 { Args: { "p_from": string,"p_to": string }; Returns: Json
                            },
+"report_range_member":
+{ Args: { "p_from": string,"p_member": string,"p_to": string }; Returns: Json
+                           },
 "rules_summary_text":
 { Args: Record<PropertyKey, never>; Returns: string
                            },

@@ -19,7 +19,7 @@ const APP = (process.env.PROBE_APP_URL ?? "http://localhost:3200").replace(/\/+$
 const PASSWORD = process.env.PROBE_PASSWORD ?? "Demo1234!";
 const USERS = {
   manager: "yonetici@demo.test",
-  elif: "elif@demo.test", // view_reports + import_customers, export yok
+  elif: "elif@demo.test", // view_reports + view_team + import_customers, export yok
   ayse: "ayse@demo.test", // yetkisiz ajan
   can: "can@demo.test", // yetkisiz ajan
 };
@@ -258,6 +258,7 @@ async function main() {
     ["_notification_finish", { p_id: 0, p_status: "sent", p_error: null }],
     ["_notification_done", { p_member: randomUUID(), p_kind: "morning", p_day: "2000-01-01" }],
     ["_telegram_link_limited", { p_chat_id: 1 }],
+    ["_report_range", { p_tenant: fakeTenant, p_member: null, p_from: "2026-01-01", p_to: "2026-01-31" }],
   ];
   for (const [fn, args] of internalCalls) {
     await check(GI, `${fn}: authenticated reddedilir`, async () => expectError(await elif.rpc(fn, args), DENIED));
@@ -299,12 +300,59 @@ async function main() {
 
   // ===== Faz 2: DB =====
   const G2 = "F2 DB";
-  await check(G2, "report_range: yetkisiz ajan (Ayşe) 42501", async () =>
-    expectError(await ayse.rpc("report_range", { p_from: "2026-01-01", p_to: "2026-01-31" }), DENIED),
+  // Rapor kapsamı (20261004001100): yetkisiz ajan reddedilmez, yalnız kendi kapsamını alır
+  const RANGE = { p_from: "2026-09-01", p_to: "2026-10-04" };
+  const onlySelf = (r, memberId) => {
+    if (r.error) return `hata ${r.error.code}`;
+    if (r.data?.scope !== "member") return `kapsam ${r.data?.scope}`;
+    if (r.data?.member_id !== memberId) return "kapsam başka üyeye ait";
+    const others = (r.data?.by_member ?? []).filter((x) => x.member_id !== memberId);
+    return others.length === 0 ? true : `${others.length} başka çalışan satırı`;
+  };
+  await check(G2, "report_range: yetkisiz ajan (Ayşe) yalnız kendi kapsamı", async () =>
+    onlySelf(await ayse.rpc("report_range", RANGE), M.ayse.id),
   );
-  await check(G2, "report_range: yetkisiz ajan (Can) 42501", async () =>
-    expectError(await can.rpc("report_range", { p_from: "2026-01-01", p_to: "2026-01-31" }), DENIED),
+  await check(G2, "report_range: yetkisiz ajan (Can) yalnız kendi kapsamı", async () =>
+    onlySelf(await can.rpc("report_range", RANGE), M.can.id),
   );
+  await check(G2, "report_range: ajanın deneme sayısı yalnız kendi denemeleri", async () => {
+    const r = await ayse.rpc("report_range", RANGE);
+    if (r.error) return `hata ${r.error.code}`;
+    const { count, error } = await admin
+      .from("call_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("member_id", M.ayse.id)
+      .gte("created_at", "2026-09-01T00:00:00+03:00")
+      .lt("created_at", "2026-10-05T00:00:00+03:00");
+    if (error) return `sayım hatası ${error.code}`;
+    return r.data.totals.attempts === count ? true : `rapor ${r.data.totals.attempts}, gerçek ${count}`;
+  });
+  await check(G2, "report_range_member: ajan başkasının (Elif) kapsamını alamaz 42501", async () =>
+    expectError(await ayse.rpc("report_range_member", { ...RANGE, p_member: M.elif.id }), DENIED),
+  );
+  await check(G2, "report_range_member: ajan yöneticinin kapsamını alamaz 42501", async () =>
+    expectError(await can.rpc("report_range_member", { ...RANGE, p_member: M.manager.id }), DENIED),
+  );
+  await check(G2, "report_range_member: ajan kendi kapsamını alır", async () =>
+    onlySelf(await ayse.rpc("report_range_member", { ...RANGE, p_member: M.ayse.id }), M.ayse.id),
+  );
+  await check(G2, "report_range_member: bilinmeyen üye 42501 (view_reports ajan)", async () =>
+    expectError(await elif.rpc("report_range_member", { ...RANGE, p_member: randomUUID() }), DENIED),
+  );
+  await check(G2, "report_range_member: anon reddedilir", async () =>
+    expectError(await anonClient.rpc("report_range_member", { ...RANGE, p_member: M.ayse.id }), FN_DENIED),
+  );
+  await check(G2, "report_range: view_reports ajan (Elif) ekip kapsamı", async () => {
+    const r = await elif.rpc("report_range", RANGE);
+    return r.error ? `hata ${r.error.code}` : r.data?.scope === "team" ? true : `kapsam ${r.data?.scope}`;
+  });
+  await check(G2, "day_summary: view_team yok (Ayşe) 42501", async () => expectError(await ayse.rpc("day_summary", {}), DENIED));
+  await check(G2, "daily_assignments: view_team yok (Ayşe) yalnız kendi satırları", async () => {
+    const r = await ayse.from("daily_assignments").select("member_id").limit(500);
+    if (r.error) return `hata ${r.error.code}`;
+    const others = r.data.filter((x) => x.member_id !== M.ayse.id);
+    return others.length === 0 ? true : `${others.length} başka üye satırı`;
+  });
   await check(G2, "report_range: anon reddedilir", async () =>
     expectError(await anonClient.rpc("report_range", { p_from: "2026-01-01", p_to: "2026-01-31" }), FN_DENIED),
   );
@@ -496,9 +544,37 @@ async function main() {
           const r = await rawRequest("POST", "/api/telegram/test", { cookie: ayseCookie.header });
           return r.status !== 200 ? true : "200 döndü";
         });
-        await check(GH, "/raporlar: yetkisiz ajan sayfayı göremez", async () => {
+        await check(GH, "/raporlar: yetkisiz ajan ekip tablosunu ve başka çalışanı göremez", async () => {
           const r = await rawRequest("GET", "/raporlar", { cookie: ayseCookie.header });
-          return r.status !== 200 || !/Çalışanlar/.test(r.body) ? true : "rapor içeriği döndü";
+          if (r.status === 200 && /Çalışanlar/.test(r.body)) return "ekip tablosu döndü";
+          if (r.status === 200 && /Elif Demo|Can Demo/.test(r.body)) return "başka çalışanın adı döndü";
+          if (r.status === 200 && /Raporu indir/.test(r.body)) return "CSV düğmesi döndü";
+          return true;
+        });
+        await check(GH, "/raporlar: yetkisiz ajan sayfayı kendi kapsamıyla açar (200)", async () => {
+          const r = await rawRequest("GET", "/raporlar", { cookie: ayseCookie.header });
+          if (r.status !== 200) return `durum ${r.status}`;
+          return /Yalnız sizin sonuçlarınız|Bu aralıkta kayıt yok/.test(r.body) ? true : "kendi kapsamı işareti yok";
+        });
+        await check(GH, "/yonetim: view_team (Elif) sayfayı açar (200)", async () => {
+          const r = await rawRequest("GET", "/yonetim", { cookie: elifCookie.header });
+          return r.status === 200 && /Son işlemler/.test(r.body) ? true : `durum ${r.status}`;
+        });
+        await check(GH, "/yonetim: view_team yok (Ayşe) sayfa açılmaz", async () => {
+          const r = await rawRequest("GET", "/yonetim", { cookie: ayseCookie.header });
+          return r.status !== 200 || !/Son işlemler/.test(r.body) ? true : "Yönetim içeriği döndü";
+        });
+        await check(GH, "/yonetim: yalnız view_reports (view_team yok) sayfa açılmaz", async () => {
+          const before = M.elif.permissions;
+          const { view_team: _vt, ...rest } = before ?? {};
+          void _vt;
+          await admin.from("members").update({ permissions: rest }).eq("id", M.elif.id);
+          try {
+            const r = await rawRequest("GET", "/yonetim", { cookie: elifCookie.header });
+            return r.status !== 200 || !/Son işlemler/.test(r.body) ? true : "Yönetim içeriği döndü";
+          } finally {
+            await admin.from("members").update({ permissions: before }).eq("id", M.elif.id);
+          }
         });
       }
       await ayseCookie.client.auth.signOut().catch(() => {});

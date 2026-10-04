@@ -4,7 +4,8 @@ import { TeamList, type TeamRow } from "@/components/yonetim/TeamList";
 import { OUTCOME_LABEL, STAGE_LABEL, firstName, shortName } from "@/components/yonetim/labels";
 import s from "@/components/yonetim/yonetim.module.css";
 import { dayKey, formatTime, formatWeekday } from "@/lib/format";
-import { can, requireAccess } from "@/lib/session";
+import { canViewTeam } from "@/lib/access";
+import { requireAccess } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Yönetim" };
@@ -19,7 +20,7 @@ function parseDay(raw: string | undefined, today: string): string {
 }
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ gun?: string }> }) {
-  const ctx = await requireAccess(({ member }) => member.role === "manager" || can(member, "view_reports"));
+  const ctx = await requireAccess(({ member }) => canViewTeam(member));
   const isManager = ctx.member.role === "manager";
   const sp = await searchParams;
   const today = dayKey(new Date());

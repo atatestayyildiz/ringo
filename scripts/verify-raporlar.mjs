@@ -76,12 +76,19 @@ fs.mkdirSync("scripts/screens", { recursive: true });
   await context.close();
 }
 
-// --- ayse: yetkisiz, /bugun'a yönlenir
+// --- ayse: yetkisiz; Raporlar yalnız kendi kapsamı, Yönetim -> /bugun
 {
   const { context, page } = await login(browser, "ayse@demo.test", { width: 1280, height: 800 });
   await page.goto(`${BASE}/raporlar`);
+  await page.waitForSelector("h1");
+  const body = await page.locator("main").innerText();
+  check("ayse /raporlar açılır", /\/raporlar/.test(page.url()), page.url());
+  check("ayse yalnız kendi kapsamı", /Yalnız sizin sonuçlarınız|Bu aralıkta kayıt yok/.test(body));
+  check("ayse ekip tablosu yok", !/Çalışanlar/.test(body));
+  check("ayse CSV düğmesi yok", (await page.getByText("Raporu indir (CSV)").count()) === 0);
+  await page.goto(`${BASE}/yonetim`);
   await page.waitForURL(/\/bugun/);
-  check("ayse /raporlar -> /bugun", /\/bugun/.test(page.url()), page.url());
+  check("ayse /yonetim -> /bugun", /\/bugun/.test(page.url()), page.url());
   const r = await page.request.get(`${BASE}/api/export/customers`);
   check("ayse customers 403", r.status() === 403, String(r.status()));
   await context.close();

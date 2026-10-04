@@ -16,20 +16,8 @@ export type SessionContext = {
   settings: TenantSettings;
 };
 
-export type Permission =
-  | "view_all_customers"
-  | "import_customers"
-  | "reassign"
-  | "export"
-  | "view_reports"
-  | "delete_customers";
-
-/** manager her zaman true; agent için permissions jsonb anahtarı. */
-export function can(member: Pick<Member, "role" | "permissions">, perm: Permission): boolean {
-  if (member.role === "manager") return true;
-  const p = member.permissions as Record<string, unknown> | null;
-  return p?.[perm] === true;
-}
+/** Yetki anahtarları ve can(): src/lib/access.ts (saf, testli). */
+export { can, type Permission } from "@/lib/access";
 
 /** Oturum, üyelik ve kiracı ayarı. Eksikse /giris?hata=uye'ye yönlendirir (çerezi proxy temizler). */
 export const getSessionContext = cache(async (): Promise<SessionContext> => {

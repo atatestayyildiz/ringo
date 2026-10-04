@@ -1,4 +1,4 @@
-/** report_range JSON yapısı (supabase/migrations/20261004000800_faz2.sql). */
+/** report_range / report_range_member JSON yapısı (supabase/migrations/20261004001100_report_scope_view_team.sql). */
 export type ReportTotals = {
   attempts: number;
   customers_called: number;
@@ -14,9 +14,16 @@ export type ReportTotals = {
   pooled: number;
   unreachable: number;
   new_customers: number;
+  /** Aralıktaki günlük atama satırı (çalışan x gün). */
+  assigned: number;
 };
 
+/** team: kiracı geneli (yönetici veya view_reports); member: tek çalışan. Kapsamı DB belirler. */
+export type ReportScope = "team" | "member";
+
 export type Report = {
+  scope: ReportScope;
+  member_id: string | null;
   totals: ReportTotals;
   rates: { reach_rate: number; appointment_rate: number; visit_rate: number; close_rate: number };
   by_member: { member_id: string; full_name: string; attempts: number; reached: number; appointments: number; completed: number }[];
@@ -55,7 +62,7 @@ export function ratio(n: number, d: number): number {
 
 export function isEmptyReport(r: Report): boolean {
   const t = r.totals;
-  return t.attempts === 0 && t.visited === 0 && t.applied === 0 && t.approved === 0 && t.completed === 0 && t.new_customers === 0;
+  return t.attempts === 0 && t.visited === 0 && t.applied === 0 && t.approved === 0 && t.completed === 0 && t.new_customers === 0 && t.assigned === 0;
 }
 
 /** Dönen Json'u güvenli biçimde Report'a çevirir; eksik alanlar boş/0. */
@@ -64,6 +71,9 @@ export function normalizeReport(raw: unknown): Report {
   const t = (o.totals ?? {}) as Partial<ReportTotals>;
   const n = (v: unknown) => (typeof v === "number" ? v : 0);
   return {
+    // Bilinmeyen kapsam ekip sayılmaz: dar görünüm güvenli taraf
+    scope: o.scope === "team" ? "team" : "member",
+    member_id: typeof o.member_id === "string" ? o.member_id : null,
     totals: {
       attempts: n(t.attempts),
       customers_called: n(t.customers_called),
@@ -79,6 +89,7 @@ export function normalizeReport(raw: unknown): Report {
       pooled: n(t.pooled),
       unreachable: n(t.unreachable),
       new_customers: n(t.new_customers),
+      assigned: n(t.assigned),
     },
     rates: {
       reach_rate: n(o.rates?.reach_rate),

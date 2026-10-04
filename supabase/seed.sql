@@ -55,7 +55,7 @@ insert into public.members (id, tenant_id, user_id, full_name, role, permissions
    'aaaaaaaa-0000-4000-8000-000000000001', 'Deniz Yönetici', 'manager', '{}'),
   ('bbbbbbbb-0000-4000-8000-000000000002', '11111111-1111-1111-1111-111111111111',
    'aaaaaaaa-0000-4000-8000-000000000002', 'Elif Demo', 'agent',
-   '{"import_customers": true, "view_reports": true}'),
+   '{"import_customers": true, "view_reports": true, "view_team": true}'),
   ('bbbbbbbb-0000-4000-8000-000000000003', '11111111-1111-1111-1111-111111111111',
    'aaaaaaaa-0000-4000-8000-000000000003', 'Ayşe Demo', 'agent', '{}'),
   ('bbbbbbbb-0000-4000-8000-000000000004', '11111111-1111-1111-1111-111111111111',

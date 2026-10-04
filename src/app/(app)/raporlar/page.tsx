@@ -5,7 +5,8 @@ import { OPERATOR_NAME, OUTCOME_NAME, isEmptyReport, normalizeReport, pct, ratio
 import s from "@/components/raporlar/raporlar.module.css";
 import { toUserMessage } from "@/lib/errors";
 import { dayKey, formatDate } from "@/lib/format";
-import { can, requireAccess } from "@/lib/session";
+import { canExportReport, canViewTeamReports } from "@/lib/access";
+import { getSessionContext } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Raporlar" };
@@ -23,16 +24,25 @@ const PRESETS: { key: Exclude<Preset, "custom">; label: string }[] = [
 const day = (k: string) => formatDate(`${k}T12:00:00+03:00`);
 
 export default async function Page({ searchParams }: { searchParams: Promise<SP> }) {
-  const { member } = await requireAccess(({ member }) => member.role === "manager" || can(member, "view_reports"));
+  // Raporlar herkese açık. Kapsamı DB belirler: yönetici/view_reports ekip, diğerleri yalnız kendisi.
+  const { member } = await getSessionContext();
+  const teamAllowed = canViewTeamReports(member);
   const sp = await searchParams;
+  // "Ben" görünümü yalnız ekip kapsamı olanlar için anlamlı; diğerleri zaten kendini görür
+  const wantSelf = teamAllowed && one(sp.kapsam) === "ben";
   const today = dayKey(new Date());
   const { from, to, error: rangeError } = parseRange(one(sp.from) || undefined, one(sp.to) || undefined, today);
   const preset = activePreset(from, to, today);
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("report_range", { p_from: from, p_to: to });
+  const { data, error } = wantSelf
+    ? await supabase.rpc("report_range_member", { p_from: from, p_to: to, p_member: member.id })
+    : await supabase.rpc("report_range", { p_from: from, p_to: to });
   const report = error ? null : normalizeReport(data);
-  const canExport = member.role === "manager" || can(member, "export");
+  const isTeam = report?.scope === "team";
+  // CSV her zaman ekip geneli: yalnız ekip görünümünde ve export + view_reports ile
+  const canExport = isTeam && canExportReport(member);
+  const scopeQ = wantSelf ? "&kapsam=ben" : "";
   const t = report?.totals;
 
   const funnel: [string, string, number][] = t
@@ -53,7 +63,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
         <div className={s.headRow}>
           <div>
             <h1>Raporlar</h1>
-            <p>{from === to ? day(from) : `${day(from)} - ${day(to)}`}</p>
+            <p>
+              {from === to ? day(from) : `${day(from)} - ${day(to)}`}
+              {report && !isTeam ? ". Yalnız sizin sonuçlarınız." : null}
+            </p>
           </div>
           {canExport ? (
             <a
@@ -66,6 +79,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
           ) : null}
         </div>
 
+        {teamAllowed ? (
+          <nav className={s.bar} aria-label="Rapor kapsamı">
+            <a className={s.pill} href={`/raporlar?from=${from}&to=${to}`} aria-current={!wantSelf ? "true" : undefined}>
+              Ekip
+            </a>
+            <a className={s.pill} href={`/raporlar?from=${from}&to=${to}&kapsam=ben`} aria-current={wantSelf ? "true" : undefined}>
+              Ben
+            </a>
+          </nav>
+        ) : null}
+
         <nav className={s.bar} aria-label="Tarih aralığı">
           {PRESETS.map((p) => {
             const r = presetRange(p.key, today);
@@ -73,7 +97,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
               <a
                 key={p.key}
                 className={s.pill}
-                href={`/raporlar?from=${r.from}&to=${r.to}`}
+                href={`/raporlar?from=${r.from}&to=${r.to}${scopeQ}`}
                 aria-current={preset === p.key ? "true" : undefined}
               >
                 {p.label}
@@ -82,6 +106,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
           })}
         </nav>
         <form className={s.custom} method="get" action="/raporlar" aria-label="Özel tarih aralığı">
+          {wantSelf ? <input type="hidden" name="kapsam" value="ben" /> : null}
           <label>
             Başlangıç
             <input className={`input ${s.dateInput}`} type="date" name="from" defaultValue={from} max={today} required />
@@ -120,6 +145,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
             <div className={s.kpi}>
               <small>Aranan müşteri</small>
               <b>{t.customers_called}</b>
+              <em>{t.assigned} atama</em>
             </div>
             <div className={s.kpi}>
               <small>Deneme</small>
@@ -195,36 +221,38 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
             </Card>
           </div>
 
-          <Card>
-            <h2>Çalışanlar</h2>
-            <div className={s.scrollx}>
-              <table className={s.table}>
-                <caption className={s.srOnly}>Çalışan bazında arama sonuçları</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Çalışan</th>
-                    <th scope="col" className={s.num}>Deneme</th>
-                    <th scope="col" className={s.num}>Ulaşılan</th>
-                    <th scope="col" className={s.num}>Ulaşma</th>
-                    <th scope="col" className={s.num}>Randevu</th>
-                    <th scope="col" className={s.num}>İşlem tamam</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.by_member.map((m) => (
-                    <tr key={m.member_id}>
-                      <th scope="row">{m.full_name}</th>
-                      <td className={s.num}>{m.attempts}</td>
-                      <td className={s.num}>{m.reached}</td>
-                      <td className={s.num}>{pct(ratio(m.reached, m.attempts))}</td>
-                      <td className={s.num}>{m.appointments}</td>
-                      <td className={s.num}>{m.completed}</td>
+          {isTeam ? (
+            <Card>
+              <h2>Çalışanlar</h2>
+              <div className={s.scrollx}>
+                <table className={s.table}>
+                  <caption className={s.srOnly}>Çalışan bazında arama sonuçları</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Çalışan</th>
+                      <th scope="col" className={s.num}>Deneme</th>
+                      <th scope="col" className={s.num}>Ulaşılan</th>
+                      <th scope="col" className={s.num}>Ulaşma</th>
+                      <th scope="col" className={s.num}>Randevu</th>
+                      <th scope="col" className={s.num}>İşlem tamam</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+                  </thead>
+                  <tbody>
+                    {report.by_member.map((m) => (
+                      <tr key={m.member_id}>
+                        <th scope="row">{m.full_name}</th>
+                        <td className={s.num}>{m.attempts}</td>
+                        <td className={s.num}>{m.reached}</td>
+                        <td className={s.num}>{pct(ratio(m.reached, m.attempts))}</td>
+                        <td className={s.num}>{m.appointments}</td>
+                        <td className={s.num}>{m.completed}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          ) : null}
 
           <div className={s.two}>
             <Card>

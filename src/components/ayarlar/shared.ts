@@ -40,7 +40,12 @@ export const PERMISSIONS: { key: PermKey; label: string; desc: string }[] = [
   { key: "import_customers", label: "Müşteri eklesin", desc: "Tek tek ekler ve Excel ile toplu içe aktarır." },
   { key: "reassign", label: "Devredebilsin", desc: "Müşteriyi başka çalışana aktarır." },
   { key: "export", label: "Dışa aktarabilsin", desc: "Müşteri listesini dosya olarak indirir." },
-  { key: "view_reports", label: "Raporları görsün", desc: "Yönetim ekranındaki ekip ve özet kartlarını açar." },
+  {
+    key: "view_reports",
+    label: "Ekibin raporlarını görsün",
+    desc: "Raporlar sayfasında tüm ekibin toplamlarını görür, müşteri listesi açmaz. Kapalıysa yalnız kendi sonuçlarını görür.",
+  },
+  { key: "view_team", label: "Yönetim ekranını görsün", desc: "Ekip özet kartları, kim ne yaptı ve havuz durumu." },
   { key: "delete_customers", label: "Müşteri silebilsin", desc: "Müşteriyi kalıcı siler (KVKK silme talebi)." },
 ];
 
@@ -50,6 +55,7 @@ export type PermKey =
   | "reassign"
   | "export"
   | "view_reports"
+  | "view_team"
   | "delete_customers";
 
 export const PERM_KEYS = PERMISSIONS.map((p) => p.key);

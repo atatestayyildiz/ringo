@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 const bad = (msg: string) => NextResponse.json({ error: msg }, { status: 400 });
 
 export async function GET(req: NextRequest) {
+  // Rapor CSV'si her zaman ekip geneli: export + view_reports (yetkisiz çalışan kendi kapsamını da indiremez)
   const auth = await authorizeExport((m) => can(m, "view_reports"), "Raporları görme yetkiniz yok.");
   if (!auth.ok) return auth.response;
   const { supabase } = auth;
@@ -23,6 +24,8 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase.rpc("report_range", { p_from: from, p_to: to });
   if (error) return NextResponse.json({ error: toUserMessage(error) }, { status: error.code === "42501" ? 403 : 500 });
   const r = normalizeReport(data);
+  // Savunma: DB ekip kapsamı vermediyse dosya üretilmez
+  if (r.scope !== "team") return NextResponse.json({ error: "Raporları görme yetkiniz yok." }, { status: 403 });
   const t = r.totals;
 
   const rows: CsvCell[][] = [];
@@ -38,6 +41,7 @@ export async function GET(req: NextRequest) {
     "Özet",
     ["Gösterge", "Değer"],
     [
+      ["Atanan", t.assigned],
       ["Aranan müşteri", t.customers_called],
       ["Deneme", t.attempts],
       ["Ulaşılan deneme", t.reached],

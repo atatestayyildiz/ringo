@@ -450,20 +450,23 @@ select ok((select count(*) from public.audit_log where action = 'telegram_unlink
 -- ---------------------------------------------------------------------------
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d4","role":"authenticated"}', true);
 set local role authenticated;
-select throws_ok($$select public.report_range(public.tr_today(), public.tr_today())$$,
-                 '42501', 'Raporları görme yetkiniz yok.', 'rapor: yetkisiz ajan (yalnız export) reddedilir');
+-- 20261004001100: view_reports'suz ajan reddedilmez, yalnız kendi kapsamını alır (ayrıntı 13_report_scope)
+select is((select public.report_range(public.tr_today(), public.tr_today()) ->> 'scope') || '/' ||
+          (public.report_range(public.tr_today(), public.tr_today()) -> 'totals' ->> 'attempts'),
+          'member/1', 'rapor: yetkisiz ajan (yalnız export) yalnız kendi kapsamını görür');
 reset role;
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d2","role":"authenticated"}', true);
 set local role authenticated;
-select throws_ok($$select public.report_range(public.tr_today(), public.tr_today())$$,
-                 '42501', 'Raporları görme yetkiniz yok.', 'rapor: yetkisiz ajan reddedilir');
+select is((select public.report_range(public.tr_today(), public.tr_today()) ->> 'scope') || '/' ||
+          (public.report_range(public.tr_today(), public.tr_today()) -> 'totals' ->> 'attempts'),
+          'member/4', 'rapor: yetkisiz ajan yalnız kendi kapsamını görür');
 reset role;
 
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d1","role":"authenticated"}', true);
 set local role authenticated;
 select is((select public.report_range(public.tr_today(), public.tr_today()) -> 'totals'),
           '{"attempts":7,"customers_called":7,"reached":4,"appointments":1,"visited":1,"applied":1,"approved":1,
-            "completed":1,"rejected":1,"not_interested":1,"disqualified":1,"pooled":2,"unreachable":1,"new_customers":7}'::jsonb,
+            "completed":1,"rejected":1,"not_interested":1,"disqualified":1,"pooled":2,"unreachable":1,"new_customers":7,"assigned":7}'::jsonb,
           'rapor: totals bilinen veri kümesinde doğru');
 select is((select public.report_range(public.tr_today(), public.tr_today()) -> 'rates'),
           '{"reach_rate":0.5714,"appointment_rate":0.25,"visit_rate":1,"close_rate":1}'::jsonb,
