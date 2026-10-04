@@ -137,13 +137,13 @@ isOneToOne: false
                   ]
                 },"members": {
                   Row: {
-                    "absent_on": string | null,"created_at": string | null,"full_name": string,"id": string,"is_active": boolean,"permissions": NonNullable<Json>,"role": string,"tenant_id": string,"user_id": string
+                    "absent_on": string | null,"created_at": string | null,"full_name": string,"id": string,"is_active": boolean,"notify_morning": boolean,"notify_reminder": boolean,"notify_summary": boolean,"permissions": NonNullable<Json>,"role": string,"telegram_chat_id": number | null,"telegram_linked_at": string | null,"tenant_id": string,"user_id": string
                   }
                   Insert: {
-                    "absent_on"?: string | null,"created_at"?: string | null,"full_name": string,"id"?: string,"is_active"?: boolean,"permissions"?: NonNullable<Json>,"role": string,"tenant_id": string,"user_id": string
+                    "absent_on"?: string | null,"created_at"?: string | null,"full_name": string,"id"?: string,"is_active"?: boolean,"notify_morning"?: boolean,"notify_reminder"?: boolean,"notify_summary"?: boolean,"permissions"?: NonNullable<Json>,"role": string,"telegram_chat_id"?: number | null,"telegram_linked_at"?: string | null,"tenant_id": string,"user_id": string
                   }
                   Update: {
-                    "absent_on"?: string | null,"created_at"?: string | null,"full_name"?: string,"id"?: string,"is_active"?: boolean,"permissions"?: NonNullable<Json>,"role"?: string,"tenant_id"?: string,"user_id"?: string
+                    "absent_on"?: string | null,"created_at"?: string | null,"full_name"?: string,"id"?: string,"is_active"?: boolean,"notify_morning"?: boolean,"notify_reminder"?: boolean,"notify_summary"?: boolean,"permissions"?: NonNullable<Json>,"role"?: string,"telegram_chat_id"?: number | null,"telegram_linked_at"?: string | null,"tenant_id"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -152,6 +152,31 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "tenants"
       referencedColumns: ["id"]
+    }
+                  ]
+                },"notification_log": {
+                  Row: {
+                    "created_at": string | null,"day": string,"error": string | null,"id": number,"kind": string,"member_id": string,"status": string,"tenant_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string | null,"day": string,"error"?: string | null,"id"?: number,"kind": string,"member_id": string,"status": string,"tenant_id": string
+                  }
+                  Update: {
+                    "created_at"?: string | null,"day"?: string,"error"?: string | null,"id"?: number,"kind"?: string,"member_id"?: string,"status"?: string,"tenant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notification_log_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "notification_log_tenant_id_member_id_fkey"
+      columns: ["tenant_id","member_id"]
+isOneToOne: false
+      referencedRelation: "members"
+      referencedColumns: ["tenant_id","id"]
     }
                   ]
                 },"pipeline_events": {
@@ -185,15 +210,40 @@ isOneToOne: false
       referencedColumns: ["tenant_id","id"]
     }
                   ]
-                },"tenant_settings": {
+                },"telegram_link_codes": {
                   Row: {
-                    "birthday_notice_days": number,"brand_color": string,"brand_name": string,"distribution_hour": number,"distribution_mode": string,"logo_url": string | null,"max_attempts": number,"max_rounds": number,"pool_wait_days": number,"summary_hour": number,"tenant_id": string
+                    "code": string,"expires_at": string,"member_id": string,"tenant_id": string,"used_at": string | null
                   }
                   Insert: {
-                    "birthday_notice_days"?: number,"brand_color"?: string,"brand_name"?: string,"distribution_hour"?: number,"distribution_mode"?: string,"logo_url"?: string | null,"max_attempts"?: number,"max_rounds"?: number,"pool_wait_days"?: number,"summary_hour"?: number,"tenant_id": string
+                    "code": string,"expires_at": string,"member_id": string,"tenant_id": string,"used_at"?: string | null
                   }
                   Update: {
-                    "birthday_notice_days"?: number,"brand_color"?: string,"brand_name"?: string,"distribution_hour"?: number,"distribution_mode"?: string,"logo_url"?: string | null,"max_attempts"?: number,"max_rounds"?: number,"pool_wait_days"?: number,"summary_hour"?: number,"tenant_id"?: string
+                    "code"?: string,"expires_at"?: string,"member_id"?: string,"tenant_id"?: string,"used_at"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "telegram_link_codes_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "telegram_link_codes_tenant_id_member_id_fkey"
+      columns: ["tenant_id","member_id"]
+isOneToOne: false
+      referencedRelation: "members"
+      referencedColumns: ["tenant_id","id"]
+    }
+                  ]
+                },"tenant_settings": {
+                  Row: {
+                    "birthday_notice_days": number,"brand_color": string,"brand_name": string,"distribution_hour": number,"distribution_mode": string,"logo_url": string | null,"max_attempts": number,"max_rounds": number,"pool_wait_days": number,"reminder_hour": number,"summary_hour": number,"telegram_bot_username": string | null,"telegram_enabled": boolean,"tenant_id": string
+                  }
+                  Insert: {
+                    "birthday_notice_days"?: number,"brand_color"?: string,"brand_name"?: string,"distribution_hour"?: number,"distribution_mode"?: string,"logo_url"?: string | null,"max_attempts"?: number,"max_rounds"?: number,"pool_wait_days"?: number,"reminder_hour"?: number,"summary_hour"?: number,"telegram_bot_username"?: string | null,"telegram_enabled"?: boolean,"tenant_id": string
+                  }
+                  Update: {
+                    "birthday_notice_days"?: number,"brand_color"?: string,"brand_name"?: string,"distribution_hour"?: number,"distribution_mode"?: string,"logo_url"?: string | null,"max_attempts"?: number,"max_rounds"?: number,"pool_wait_days"?: number,"reminder_hour"?: number,"summary_hour"?: number,"telegram_bot_username"?: string | null,"telegram_enabled"?: boolean,"tenant_id"?: string
                   }
                   Relationships: [
                     {
@@ -244,10 +294,21 @@ isOneToOne: true
 "_normalize_operator":
 { Args: { "p": string }; Returns: string
                            },
+"_notification_record":
+{ Args: { "p_day": string,"p_error": string,"p_kind": string,"p_member": string,"p_status": string,"p_tenant": string }; Returns: undefined
+                           },
+"_notification_targets":
+{ Args: { "p_now": string }; Returns: {
+              "chat_id": number,"kind": string,"member_id": string,"payload": Json,"tenant_id": string
+            }[]
+                           },
 "_recipients":
 { Args: { "p_day": string,"p_exclude"?: string,"p_tenant": string }; Returns: {
               "full_name": string,"id": string
             }[]
+                           },
+"_telegram_consume_link_code":
+{ Args: { "p_chat_id": number,"p_code": string }; Returns: Json
                            },
 "auth_assigned_today":
 { Args: { "p_customer": string }; Returns: boolean
@@ -280,8 +341,13 @@ isOneToOne: true
 "full_name": string,
 "id": string,
 "is_active": boolean,
+"notify_morning": boolean,
+"notify_reminder": boolean,
+"notify_summary": boolean,
 "permissions": NonNullable<Json>,
 "role": string,
+"telegram_chat_id": number | null,
+"telegram_linked_at": string | null,
 "tenant_id": string,
 "user_id": string
             }
@@ -335,6 +401,9 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"log_export":
+{ Args: { "p_filters"?: Json,"p_kind": string,"p_rows": number }; Returns: undefined
+                           },
 "login_branding":
 { Args: Record<PropertyKey, never>; Returns: {
               "brand_color": string,"brand_name": string,"logo_url": string
@@ -376,11 +445,17 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"report_range":
+{ Args: { "p_from": string,"p_to": string }; Returns: Json
+                           },
 "rules_summary_text":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
 "run_scheduled_distribution":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"set_notify_prefs":
+{ Args: { "p_morning": boolean,"p_reminder": boolean,"p_summary": boolean }; Returns: undefined
                            },
 "set_pipeline_stage":
 { Args: { "p_customer": string,"p_note"?: string,"p_stage": string }; Returns: {
@@ -412,6 +487,12 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"telegram_create_link_code":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"telegram_unlink":
+{ Args: { "p_member"?: string }; Returns: undefined
+                           },
 "tr_day_start":
 { Args: { "p_day": string }; Returns: string
                            },
