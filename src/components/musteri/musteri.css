@@ -1,0 +1,606 @@
+/* Müşteri ekranları: bugun.html tasarım dili. globals.css'e dokunmadan, mu- önekiyle. */
+
+.mu-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.mu-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- araç çubuğu ---------- */
+.mu-tools {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(4, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.mu-tools .input {
+  padding: 11px 14px;
+  font-size: 14px;
+  border-radius: 999px;
+  background-color: var(--surface);
+  box-shadow: var(--shadow);
+}
+.mu-tools select.input {
+  padding-right: 36px;
+}
+@media (max-width: 900px) {
+  .mu-tools {
+    grid-template-columns: 1fr 1fr;
+  }
+  .mu-tools > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---------- satır listesi ---------- */
+.mu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.mu-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) 0.9fr 1fr 1.2fr 1.1fr minmax(0, 1.6fr);
+  align-items: center;
+  gap: 14px;
+  padding: 12px 8px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  text-align: left;
+  border-radius: 16px;
+  transition: background 0.15s;
+}
+.mu-list li:first-child .mu-row {
+  border-top-color: transparent;
+}
+.mu-row:hover {
+  background: var(--surface-2);
+}
+.mu-who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.mu-who .avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  font-size: 14px;
+}
+.mu-who b {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mu-who span {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.mu-cell {
+  font-size: 13px;
+  color: var(--ink-2);
+  font-weight: 550;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mu-cell small {
+  display: none;
+}
+.mu-note {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mu-colhead {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) 0.9fr 1fr 1.2fr 1.1fr minmax(0, 1.6fr);
+  gap: 14px;
+  padding: 0 8px 10px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink-3);
+}
+@media (max-width: 900px) {
+  .mu-colhead {
+    display: none;
+  }
+  .mu-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 10px;
+  }
+  .mu-row .mu-who {
+    grid-column: 1;
+  }
+  .mu-row .mu-st {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .mu-row .mu-cell,
+  .mu-row .mu-note {
+    grid-column: 1 / -1;
+    padding-left: 52px;
+  }
+  .mu-row .mu-cell.mu-hide-m {
+    display: none;
+  }
+  .mu-meta-m {
+    display: flex !important;
+  }
+}
+.mu-meta-m {
+  display: none;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  grid-column: 1 / -1;
+  padding-left: 52px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  font-weight: 550;
+}
+
+.mu-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--ink-2);
+  font-weight: 550;
+}
+.mu-pager .btn[aria-disabled="true"] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ---------- detay paneli ---------- */
+.mu-sec {
+  margin-top: 22px;
+}
+.mu-sec h3 {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink-3);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mu-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.mu-hero .avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 20px;
+  font-size: 20px;
+}
+.mu-hero b {
+  display: block;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.mu-hero span {
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.mu-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.mu-kv {
+  background: var(--surface-2);
+  border-radius: 18px;
+  padding: 6px 16px;
+}
+.mu-kv div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+.mu-kv div:first-child {
+  border-top: 0;
+}
+.mu-kv dt {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.mu-kv dd {
+  font-weight: 600;
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mu-form {
+  display: grid;
+  gap: 12px;
+}
+.mu-inline {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.mu-inline > .field {
+  flex: 1;
+  min-width: 0;
+}
+.mu-tl {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+.mu-tl li {
+  position: relative;
+  padding: 0 0 16px 22px;
+  font-size: 14px;
+}
+.mu-tl li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--c-wait);
+}
+.mu-tl li::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 18px;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+.mu-tl li:last-child::after {
+  display: none;
+}
+.mu-tl li[data-k="stage"]::before {
+  background: var(--brand);
+}
+.mu-tl li b {
+  font-weight: 600;
+}
+.mu-tl li small {
+  display: block;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+.mu-tl li p {
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+}
+.mu-danger {
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.btn-danger {
+  background: color-mix(in srgb, var(--c-bad) 14%, transparent);
+  color: var(--c-bad);
+}
+.btn-danger-solid {
+  background: var(--c-bad);
+  color: #fff;
+}
+.mu-warn {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+
+/* ---------- havuz ---------- */
+.mu-pool-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) 1.4fr 1fr minmax(0, 1.6fr);
+  gap: 14px;
+  align-items: center;
+  padding: 12px 8px;
+  border-top: 1px solid var(--line);
+}
+.mu-list li:first-child .mu-pool-row {
+  border-top-color: transparent;
+}
+.mu-days b {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+}
+.mu-days span {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+@media (max-width: 760px) {
+  .mu-pool-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 10px;
+  }
+  .mu-pool-row .mu-note {
+    grid-column: 1 / -1;
+    padding-left: 52px;
+  }
+}
+
+/* ---------- huni ---------- */
+.mu-board {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 4px 2px 16px;
+  scroll-snap-type: x proximity;
+  max-width: 100%;
+}
+.mu-col {
+  flex: 0 0 282px;
+  scroll-snap-align: start;
+  background: var(--surface-2);
+  border-radius: 24px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.mu-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 4px;
+}
+.mu-col-head b {
+  font-size: 14.5px;
+  font-weight: 650;
+}
+.mu-col-head .count {
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+.mu-conv {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  padding: 0 4px;
+  margin-top: -6px;
+}
+.mu-card {
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.mu-card .mu-who b {
+  font-size: 14px;
+}
+.mu-card .mu-who .avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+.mu-card .meta {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  font-weight: 550;
+  display: flex;
+  gap: 6px 10px;
+  flex-wrap: wrap;
+}
+.mu-card .quote {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mu-card select.input {
+  padding: 8px 32px 8px 12px;
+  font-size: 13px;
+  border-radius: 999px;
+  background-color: var(--surface-2);
+  background-position: right 10px center;
+  font-weight: 600;
+}
+.mu-empty-col {
+  font-size: 13px;
+  color: var(--ink-3);
+  text-align: center;
+  padding: 18px 8px;
+  border-radius: 16px;
+  background: repeating-linear-gradient(135deg, var(--hatch) 0 2px, transparent 2px 7px);
+}
+.mu-fold-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: 0;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  border-radius: 999px;
+  padding: 14px 20px;
+  font-weight: 650;
+  font-size: 14.5px;
+}
+.mu-fold-body {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 14px 2px 4px;
+  max-width: 100%;
+}
+
+/* ---------- içe aktar ---------- */
+.mu-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 44px 20px;
+  border-radius: 24px;
+  border: 2px dashed var(--hatch);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.mu-drop:hover,
+.mu-drop[data-over="true"],
+.mu-drop:focus-within {
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 6%, var(--surface-2));
+}
+.mu-drop input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.mu-drop b {
+  font-size: 17px;
+  font-weight: 600;
+}
+.mu-drop span {
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.mu-steps {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.mu-map {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+.mu-table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+  border-radius: 18px;
+  background: var(--surface-2);
+}
+.mu-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  min-width: 620px;
+}
+.mu-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink-3);
+  padding: 10px 12px;
+  white-space: nowrap;
+}
+.mu-table td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mu-table tr[data-bad="true"] td {
+  background: color-mix(in srgb, var(--c-bad) 6%, transparent);
+}
+.mu-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.mu-stat {
+  background: var(--surface-2);
+  border-radius: 20px;
+  padding: 16px 18px;
+}
+.mu-stat b {
+  display: block;
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.mu-stat span {
+  font-size: 13px;
+  color: var(--ink-2);
+  font-weight: 550;
+}
+.mu-progress {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.mu-progress i {
+  display: block;
+  height: 100%;
+  background: var(--brand);
+  transition: width 0.2s;
+}
+.mu-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+@media (max-width: 560px) {
+  .mu-stats {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .mu-stat {
+    padding: 12px;
+  }
+  .mu-stat b {
+    font-size: 26px;
+  }
+  .mu-col {
+    flex-basis: 262px;
+  }
+}
