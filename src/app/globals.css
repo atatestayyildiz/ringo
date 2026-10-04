@@ -31,8 +31,8 @@
   --line: rgba(255, 255, 255, 0.08);
   --hatch: rgba(255, 255, 255, 0.14);
   --on-ink: #0e0e11;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 28px -12px rgba(0, 0, 0, 0.6);
-  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.5), 0 22px 44px -16px rgba(0, 0, 0, 0.8);
+  --shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 28px -12px rgba(0, 0, 0, 0.6);
+  --shadow-lift: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 2px 4px rgba(0, 0, 0, 0.5), 0 22px 44px -16px rgba(0, 0, 0, 0.8);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -45,8 +45,8 @@
     --line: rgba(255, 255, 255, 0.08);
     --hatch: rgba(255, 255, 255, 0.14);
     --on-ink: #0e0e11;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 28px -12px rgba(0, 0, 0, 0.6);
-    --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.5), 0 22px 44px -16px rgba(0, 0, 0, 0.8);
+    --shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 28px -12px rgba(0, 0, 0, 0.6);
+    --shadow-lift: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 2px 4px rgba(0, 0, 0, 0.5), 0 22px 44px -16px rgba(0, 0, 0, 0.8);
   }
 }
 
@@ -718,5 +718,193 @@ select.input {
   *::after {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* ---------- cila (tasarim gecisi): yalniz ekleme ---------- */
+/* musteri.css'teki ".mu-who span" avatarin bas harflerini soluk boyuyordu */
+.mu-who .avatar {
+  color: #fff;
+  font-weight: 700;
+}
+.mu-who b {
+  color: var(--ink);
+}
+.empty-state .ico {
+  background-color: var(--surface-2);
+}
+.empty-state .ico svg.i {
+  width: 24px;
+  height: 24px;
+}
+.empty-state b {
+  letter-spacing: -0.02em;
+}
+.page-head p {
+  max-width: 62ch;
+  line-height: 1.5;
+}
+.card h2 {
+  letter-spacing: -0.005em;
+}
+.seg {
+  max-width: 100%;
+}
+.seg button {
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+.seg button:not([aria-pressed="true"]):hover {
+  color: var(--ink);
+}
+.field > .lbl {
+  letter-spacing: 0;
+}
+.input:focus-visible {
+  outline-offset: 0;
+}
+.login-card .btn-block {
+  margin-top: 4px;
+}
+
+/* huni ve havuz: sayfa kapsayicilari (musteri.css'e dokunmadan) */
+.view-huni .mu-board {
+  margin-inline: -24px;
+  padding: 4px 24px 18px;
+  scroll-padding-inline: 24px;
+  max-width: none;
+}
+.view-huni .mu-col {
+  border-radius: 26px;
+}
+.view-huni .mu-col-head b {
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+.view-huni .mu-col-head .count {
+  font-size: 26px;
+  line-height: 1;
+}
+.view-huni .mu-conv {
+  margin-top: -4px;
+  padding-bottom: 2px;
+}
+.view-huni .mu-card {
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.view-huni .mu-card:hover {
+  box-shadow: var(--shadow-lift);
+}
+.view-huni .mu-card .mu-who {
+  align-items: center;
+}
+.view-huni .mu-fold-toggle {
+  min-height: 48px;
+}
+.view-huni .mu-fold-toggle > span:last-child {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.view-huni .mu-fold-body {
+  margin-inline: -24px;
+  padding-inline: 24px;
+}
+.view-pool .mu-pool-row {
+  padding: 14px 8px;
+}
+.view-pool .mu-days b {
+  font-variant-numeric: tabular-nums;
+}
+.view-pool .mu-note {
+  font-style: normal;
+}
+
+@media (max-width: 560px) {
+  /* mobil: tum dokunma hedefleri en az 44px */
+  .nav a {
+    padding: 12px;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+  }
+  .nav a[aria-current="page"] span,
+  .nav a span {
+    display: none;
+  }
+  .nav {
+    gap: 4px;
+  }
+  .logo {
+    min-height: 44px;
+  }
+  .btn-sm {
+    min-height: 44px;
+  }
+  .seg button {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+  select.input,
+  input.input {
+    min-height: 48px;
+  }
+  .switch {
+    min-height: 44px;
+  }
+  .view-huni .mu-board {
+    margin-inline: -16px;
+    padding-inline: 16px;
+    scroll-padding-inline: 16px;
+  }
+  .view-huni .mu-fold-body {
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+  .view-huni .mu-col {
+    flex-basis: min(84vw, 320px);
+  }
+  .view-huni .mu-card select.input {
+    min-height: 44px;
+  }
+  .view-pool .mu-pool-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .view-pool .mu-pool-row .mu-cell {
+    grid-column: 1 / -1;
+    padding-left: 52px;
+    overflow: visible;
+  }
+  .page-head h1 {
+    font-size: clamp(30px, 9vw, 40px);
+  }
+}
+
+/* giris: bugun.html'deki taramali daire imzasi */
+.login-card {
+  position: relative;
+  overflow: hidden;
+}
+.login-card::after {
+  content: "";
+  position: absolute;
+  right: -46px;
+  top: -46px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: repeating-linear-gradient(135deg, var(--hatch) 0 2px, transparent 2px 8px);
+  pointer-events: none;
+}
+.login-card > * {
+  position: relative;
+  z-index: 1;
+}
+@media (min-width: 561px) {
+  .login-card {
+    padding: 34px;
+    gap: 20px;
+  }
+  .login-card h1 {
+    font-size: 34px;
   }
 }

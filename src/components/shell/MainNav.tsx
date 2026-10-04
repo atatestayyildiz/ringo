@@ -12,6 +12,14 @@ import {
   type IconProps,
 } from "@/components/icons";
 
+function IconReport(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className="i" aria-hidden="true" focusable="false" {...props}>
+      <path d="M6 3h8l5 5v13H6zM14 3v5h5M9.5 13h6M9.5 17h4" />
+    </svg>
+  );
+}
+
 export type NavKey = "bugun" | "musteriler" | "havuz" | "huni" | "yonetim" | "raporlar" | "ayarlar";
 
 const ITEMS: { key: NavKey; href: string; label: string; Icon: (p: IconProps) => React.ReactElement }[] = [
@@ -20,7 +28,7 @@ const ITEMS: { key: NavKey; href: string; label: string; Icon: (p: IconProps) =>
   { key: "havuz", href: "/havuz", label: "Havuz", Icon: IconPool },
   { key: "huni", href: "/huni", label: "Huni", Icon: IconFunnel },
   { key: "yonetim", href: "/yonetim", label: "Yönetim", Icon: IconChart },
-  { key: "raporlar", href: "/raporlar", label: "Raporlar", Icon: IconChart },
+  { key: "raporlar", href: "/raporlar", label: "Raporlar", Icon: IconReport },
   { key: "ayarlar", href: "/ayarlar", label: "Ayarlar", Icon: IconGear },
 ];
 
