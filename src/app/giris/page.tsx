@@ -1,7 +1,9 @@
-import { Card } from "@/components/ui";
+import { Card, ToastProvider } from "@/components/ui";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
+import { isAllowedLogoUrl } from "@/lib/brand-logo";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "./LoginForm";
+import { ResetFlash } from "./ResetFlash";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -17,7 +19,7 @@ async function loadBranding(): Promise<Branding | null> {
     return {
       name: b.brand_name.trim(),
       color: HEX.test(b.brand_color ?? "") ? b.brand_color : null,
-      logo: b.logo_url && b.logo_url.startsWith("https://") ? b.logo_url : null,
+      logo: b.logo_url && isAllowedLogoUrl(b.logo_url, process.env.NEXT_PUBLIC_SUPABASE_URL) ? b.logo_url : null,
     };
   } catch {
     return null;
@@ -26,14 +28,15 @@ async function loadBranding(): Promise<Branding | null> {
 
 export const metadata = { title: "Giriş" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ hata?: string }> }) {
-  const { hata } = await searchParams;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ hata?: string; sifre?: string }> }) {
+  const { hata, sifre } = await searchParams;
   const notice =
     hata === "uye"
       ? "Hesabın bir mağazaya bağlı değil ya da pasif. Yöneticinle görüş."
       : undefined;
   const brand = await loadBranding();
   return (
+    <ToastProvider>
     <div className="login-wrap">
       {brand?.color ? <style>{`:root{--brand:${brand.color}}`}</style> : null}
       <div style={{ position: "fixed", top: 16, right: 16 }}>
@@ -59,6 +62,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
         <LoginForm notice={notice} />
       </Card>
+      <ResetFlash show={sifre === "yenilendi"} />
     </div>
+    </ToastProvider>
   );
 }

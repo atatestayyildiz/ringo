@@ -3,11 +3,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/database.types";
 import { supabaseEnv } from "./env";
 
+/** Oturum gerektirmeyen tam yollar. */
+const PUBLIC_EXACT_PATHS = new Set(["/sifre-sifirla", "/sifre-sifirla/yeni"]);
+
 /** Oturumu yeniler; oturumsuzu /giris'e, oturumluyu /giris'ten /bugun'a yönlendirir. */
 export async function updateSession(request: NextRequest) {
   // Telegram webhook'u ve zamanlayıcı kendi sırlarıyla doğrulanır; oturum yönlendirmesinden muaf.
   const p = request.nextUrl.pathname;
   if (p === "/api/telegram/webhook" || p.startsWith("/api/cron/")) return NextResponse.next({ request });
+  // Şifre sıfırlama oturumsuz erişilir: yalnız TAM yol eşleşmesi (önek yok; /sifre-sifirla-x korunur).
+  if (PUBLIC_EXACT_PATHS.has(p)) return NextResponse.next({ request });
 
   let response = NextResponse.next({ request });
   const { url, anonKey } = supabaseEnv();

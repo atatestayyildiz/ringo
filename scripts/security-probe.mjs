@@ -585,7 +585,108 @@ async function main() {
   for (const c of [elif, ayse, can, manager]) await c.auth.signOut().catch(() => {});
 }
 
+// ---------------------------------------------------------------------------
+// Logo depolama ve şifre sıfırlama (marka/sıfırlama şeridi)
+// ---------------------------------------------------------------------------
+async function logoAndResetProbe() {
+  const G = "Logo ve şifre sıfırlama";
+  const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+  const { data: mgrRow } = await admin.from("members").select("tenant_id, user_id").eq("role", "manager").limit(50);
+  const authList = await admin.auth.admin.listUsers({ perPage: 200 });
+  const mgrId = authList.data.users.find((u) => u.email === USERS.manager)?.id;
+  const tenantId = mgrRow?.find((m) => m.user_id === mgrId)?.tenant_id;
+  if (!tenantId) {
+    record(G, "yönetici kiracısı bulunabilir", false, "üye yok");
+    return;
+  }
+  const otherTenant = randomUUID();
+  const bucket = (c) => c.storage.from("brand-logos");
+  const mine = `${tenantId}/probe-${randomUUID()}.png`;
+  const created = [];
+  const mgr = await signIn(USERS.manager);
+  const elifC = await signIn(USERS.elif);
+
+  const uploadFails = async (client, path, body, type) => {
+    const r = await bucket(client).upload(path, body, { contentType: type, upsert: false });
+    if (!r.error) {
+      created.push(path);
+      return "yükleme kabul edildi";
+    }
+    return true;
+  };
+
+  await check(G, "anon logo yükleyemez", () => uploadFails(anonClient, mine, PNG, "image/png"));
+  await check(G, "çalışan (ajan) kendi kiracısına logo yükleyemez", () => uploadFails(elifC, mine, PNG, "image/png"));
+  await check(G, "yönetici başka kiracı yoluna yükleyemez", () => uploadFails(mgr, `${otherTenant}/probe.png`, PNG, "image/png"));
+  await check(G, "yönetici kök yola yükleyemez", () => uploadFails(mgr, `probe-${randomUUID()}.png`, PNG, "image/png"));
+  await check(G, "SVG yüklenemez (bucket tür sınırı)", () =>
+    uploadFails(mgr, `${tenantId}/probe-${randomUUID()}.svg`, Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'), "image/svg+xml"),
+  );
+  await check(G, "512 KB üstü dosya yüklenemez (bucket boyut sınırı)", () => {
+    const big = Buffer.alloc(600 * 1024);
+    PNG.copy(big);
+    return uploadFails(mgr, `${tenantId}/probe-${randomUUID()}.png`, big, "image/png");
+  });
+  await check(G, "anon logo listeleyemez", async () => {
+    const r = await bucket(anonClient).list(tenantId);
+    return r.error || (r.data ?? []).length === 0 ? true : `${r.data.length} dosya listelendi`;
+  });
+
+  await check(G, "yönetici kendi önekine yükler; kamu URL anon okunur; silinince erişilemez", async () => {
+    const up = await bucket(mgr).upload(mine, PNG, { contentType: "image/png", upsert: false });
+    if (up.error) return `yönetici yükleyemedi (${up.error.message})`;
+    created.push(mine);
+    const url = bucket(anonClient).getPublicUrl(mine).data.publicUrl;
+    const r1 = await fetch(url);
+    if (r1.status !== 200 || !(r1.headers.get("content-type") ?? "").startsWith("image/png")) return `kamu URL ${r1.status}`;
+    const del = await bucket(mgr).remove([mine]);
+    if (del.error) return "yönetici silemedi";
+    created.splice(created.indexOf(mine), 1);
+    const r2 = await fetch(url);
+    return r2.status === 200 ? "silinen dosya hâlâ okunuyor" : true;
+  });
+
+  await check(G, "çalışan yöneticinin dosyasını silemez", async () => {
+    const p = `${tenantId}/probe-${randomUUID()}.png`;
+    const up = await bucket(mgr).upload(p, PNG, { contentType: "image/png" });
+    if (up.error) return "hazırlık yüklemesi başarısız";
+    created.push(p);
+    await bucket(elifC).remove([p]);
+    const url = bucket(anonClient).getPublicUrl(p).data.publicUrl;
+    const alive = (await fetch(url)).status === 200;
+    await bucket(mgr).remove([p]);
+    created.splice(created.indexOf(p), 1);
+    return alive ? true : "çalışan silebildi";
+  });
+
+  // Şifre sıfırlama yolları: tam eşleşme oturumsuz 200; varyantlar giriş sayfasına yönlenir.
+  for (const path of ["/sifre-sifirla", "/sifre-sifirla/yeni"]) {
+    await check(G, `${path} oturumsuz 200`, async () => {
+      const r = await rawRequest("GET", path);
+      return r.status === 200 ? true : `durum ${r.status}`;
+    });
+  }
+  for (const path of ["/sifre-sifirla-x", "/sifre-sifirlax", "/sifre-sifirla/yeni/x", "/sifre-sifirla/x", "/sifre-sifirla%2Fyeni", "/sifre-sifirla/yeni/..%2Fbugun", "/SIFRE-SIFIRLA", "/sifre-sifirla//yeni"]) {
+    await check(G, `${path} oturumsuz 307`, async () => {
+      const r = await rawRequest("GET", path);
+      // Çift eğik çizgi Next tarafından normalleştirilir (308 -> tam yol); korumalı içerik dönmez.
+      if (path === "/sifre-sifirla//yeni") return r.status === 307 || r.status === 308 ? true : `durum ${r.status}`;
+      return r.status === 307 ? true : `durum ${r.status}`;
+    });
+  }
+  await check(G, "Auth: kayıtsız e-posta için sıfırlama isteği hata sızdırmaz", async () => {
+    const r = await anonClient.auth.resetPasswordForEmail(`yok-${randomUUID().slice(0, 8)}@demo.test`);
+    return r.error ? `hata: ${r.error.code}` : true;
+  });
+
+  // Beklenmedik başarıyla oluşan dosyaları temizle
+  if (created.length) await admin.storage.from("brand-logos").remove(created);
+  await mgr.auth.signOut().catch(() => {});
+  await elifC.auth.signOut().catch(() => {});
+}
+
 main()
+  .then(() => logoAndResetProbe())
   .catch((e) => {
     record("kurulum", "probe çalıştı", false, e instanceof Error ? e.message : String(e));
   })

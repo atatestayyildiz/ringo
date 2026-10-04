@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { Button, Input } from "@/components/ui";
 import { signInAction, type LoginState } from "./actions";
@@ -19,6 +20,9 @@ export function LoginForm({ notice }: { notice?: string }) {
       <Button type="submit" variant="ink" block disabled={pending}>
         {pending ? "Giriş yapılıyor" : "Giriş yap"}
       </Button>
+      <Link href="/sifre-sifirla" style={{ textAlign: "center", fontSize: 14, color: "var(--ink-2)" }}>
+        Şifremi unuttum
+      </Link>
     </form>
   );
 }
