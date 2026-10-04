@@ -365,6 +365,23 @@ async function main() {
       DENIED,
     ),
   );
+  await check(G2, "members.telegram_chat_id: ajan kolonu okuyamaz (D1)", async () =>
+    expectError(await ayse.from("members").select("id, telegram_chat_id").limit(5), DENIED),
+  );
+  await check(G2, "members.telegram_chat_id: yönetici kolonu okuyamaz (D1)", async () =>
+    expectError(await manager.from("members").select("telegram_chat_id").limit(5), DENIED),
+  );
+  await check(G2, "members select *: ajan reddedilir (D1)", async () =>
+    expectError(await ayse.from("members").select("*").limit(1), DENIED),
+  );
+  await check(G2, "members.telegram_chat_id: ajan filtrede kullanamaz (D1)", async () =>
+    expectError(await ayse.from("members").select("id").not("telegram_chat_id", "is", null), DENIED),
+  );
+  await check(G2, "members: ajan diğer kolonları ve telegram_linked_at'i okur (D1)", async () => {
+    const r = await ayse.from("members").select("id, full_name, role, is_active, absent_on, telegram_linked_at, notify_morning");
+    if (r.error) return `hata ${r.error.code}`;
+    return r.data.length > 0 ? true : "0 satır döndü";
+  });
   await check(G2, "telegram_link_attempts: ajan okuyamaz", async () =>
     expectError(await elif.from("telegram_link_attempts").select("chat_id").limit(1), DENIED),
   );

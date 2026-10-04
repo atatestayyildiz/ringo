@@ -130,11 +130,14 @@ Tarih: 2026-10-04. Migration: `supabase/migrations/20261004000900_faz2_review_fi
 | D4 | Düzeltildi | `telegram_link_attempts` (RLS açık, istemci yetkisi yok). Sohbet başına saatte 5 başarısız kod denemesinden sonra kod kontrol edilmez, `rate_limited` döner, bot yanıt vermez. 24 saatten eski kayıtlar her denemede silinir. |
 | D5 | Düzeltildi | Test mesajı üye başına dakikada 1 (`_notification_claim` kind `test`, üye satırı kilitli); aşımda 429. |
 | D6 | Kısmen | 10.000 satır aşılırsa `X-Export-Truncated: 1` ve `X-Export-Total`; Müşteriler sayfasında "En fazla 10.000 satır" notu. Döngü dönen satır sayısı kadar ilerler, boş sayfada durur (`max_rows` < 1000 olsa da eksik kalmaz). Ertelendi: audit'te ham `q` (ürün kararı: maskeleme mi, uzunluk mu). Rapor CSV'si satır sınırlı değil (özet tablo), notu yok. |
-| D1 | Ertelendi | Kolon bazlı `select` profil, Bildirimler paneli, export ve diğer `members` okumalarını etkiler; ayrı tur ve RPC gerekir. |
+| D1 | Düzeltildi (2. tur) | `authenticated` için `members` SELECT kolon bazlı: `telegram_chat_id` hariç tüm kolonlar (`telegram_linked_at`, `notify_*` dahil). Ajan ve yönetici `telegram_chat_id` okuyamaz, filtrede kullanamaz, `select *` 42501. Profil, Profil durum action'ı ve Bildirimler paneli bağlı olmayı `telegram_linked_at` ile okur; `/api/telegram/test` chat id'yi oturum doğrulamasından sonra service role ile okur. Diğer istemci okumaları zaten açık kolon listesiydi. |
 | D7 | Ertelendi | Tasarım gereği; spec notu ve `source_detail` temizliği ürün kararı. |
 | D8 | Ertelendi | KVKK/ürün kararı (ad maskeleme). |
-| D9 | Ertelendi | Bu turun kapsamı dışında bırakıldı; tek satırlık koşul (`absent_on is distinct from v_day`), sonraki turda. |
+| D9 | Düzeltildi (2. tur) | `_notification_targets` morning ve reminder koşuluna `absent_on is distinct from v_day`. Dünkü/yarınki izin bugünü etkilemez; summary değişmedi. |
 | Ş1 | Açık | Vercel planı doğrulanmalı (Hobby'de saatlik cron yok). |
-| Ş2-Ş5 | Ertelendi | Ş2 unique indeks, Ş3 performans ölçümü, Ş4 tanım kararı, Ş5 pasifleştirmede bağlantı kaldırma: ayrı tur. |
+| Ş2 | Düzeltildi (2. tur) | `members_telegram_chat_id_key` kısmi unique indeks (`where telegram_chat_id is not null`; yerel veride çakışma yoktu). `_telegram_consume_link_code` eski bağlantıyı zaten kaldırıyordu; eşzamanlı tüketimde unique ihlali yakalanır, `invalid` döner (500 yok), kod kullanılmamış kalır. |
+| Ş3-Ş5 | Ertelendi | Ş3 performans ölçümü, Ş4 tanım kararı, Ş5 pasifleştirmede bağlantı kaldırma: ayrı tur. |
+
+2. tur (D9, Ş2, D1): migration `supabase/migrations/20261004001000_faz2_review_fixes2.sql`; testler `supabase/tests/database/12_faz2_review_fixes2.test.sql` (30), `src/lib/telegram/link.integration.test.ts` (istemci chat id okuyamaz, eşzamanlı tüketimde sohbet tek üyede), `scripts/security-probe.mjs` (104 kontrol).
 
 Uyarlanan eski testler (`10_faz2.test.sql`): "09:00'da hedef yok" → 07:00 (>= kuralı); "reminder saatinde başka tür yok" → yalnız summary; "retry 0 ise hedef yok" yalnız reminder türüne bakar; "failed yeniden denemeyi engeller" → 1 hedef (D3); "export audit yazmaz" kiracıya göre filtrelendi (yerel DB'deki e2e dışa aktarma kayıtları testi bozuyordu).
