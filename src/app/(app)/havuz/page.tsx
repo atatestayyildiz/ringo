@@ -35,7 +35,7 @@ export default async function Page() {
   const members = (memberRows ?? []) as MemberLite[];
 
   return (
-    <>
+    <div className="view-pool">
       <div className="page-head">
         <h1>Havuz</h1>
         <p>
@@ -91,6 +91,6 @@ export default async function Page() {
           </ul>
         )}
       </Card>
-    </>
+    </div>
   );
 }

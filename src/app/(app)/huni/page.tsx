@@ -41,7 +41,7 @@ export default async function Page() {
   const viewer: Pick<Viewer, "id" | "isManager"> = { id: member.id, isManager: member.role === "manager" };
 
   return (
-    <>
+    <div className="view-huni">
       <div className="page-head">
         <h1>Huni</h1>
         <p>Randevudan işlem tamamlanana kadar müşterilerin aşamaları.</p>
@@ -53,6 +53,6 @@ export default async function Page() {
       ) : (
         <FunnelBoard customers={customers} members={(memberRows ?? []) as MemberLite[]} viewer={viewer} reached={reached} />
       )}
-    </>
+    </div>
   );
 }
