@@ -19,17 +19,32 @@ export async function POST() {
 
   const { data: m, error } = await supabase
     .from("members")
-    .select("id, tenant_id, full_name, telegram_chat_id")
+    .select("id, tenant_id, full_name, telegram_linked_at")
     .eq("user_id", userData.user.id)
     .eq("is_active", true)
     .maybeSingle();
   if (error || !m) return Response.json({ ok: false, error: toUserMessage(error) }, { status: 400 });
-  if (m.telegram_chat_id === null) {
+  if (m.telegram_linked_at === null) {
+    return Response.json({ ok: false, error: "Önce Telegram hesabını bağla." }, { status: 400 });
+  }
+
+  // Sohbet kimliği istemci rolüne kapalı (D1); üye oturumla doğrulandıktan sonra sunucuda okunur.
+  const admin = createAdminClient();
+  const { data: chat, error: chatErr } = await admin
+    .from("members")
+    .select("telegram_chat_id")
+    .eq("id", m.id)
+    .maybeSingle();
+  if (chatErr) {
+    console.error("[telegram] sohbet kimliği okunamadı:", chatErr.message);
+    return Response.json({ ok: false, error: "Mesaj gönderilemedi. Biraz sonra tekrar dene." }, { status: 500 });
+  }
+  const chatId = chat?.telegram_chat_id ?? null;
+  if (chatId === null) {
     return Response.json({ ok: false, error: "Önce Telegram hesabını bağla." }, { status: 400 });
   }
 
   // Üye başına dakikada 1 test mesajı: önce sahiplen, sınırdaysa gönderme
-  const admin = createAdminClient();
   const claim = await admin.rpc("_notification_claim", {
     p_tenant: m.tenant_id,
     p_member: m.id,
@@ -48,7 +63,7 @@ export async function POST() {
   let status: "sent" | "failed" = "sent";
   let err: string | null = null;
   try {
-    await sendMessage(m.telegram_chat_id, testText(first));
+    await sendMessage(chatId, testText(first));
   } catch (e) {
     status = "failed";
     err = e instanceof Error ? e.message : "bilinmeyen hata";

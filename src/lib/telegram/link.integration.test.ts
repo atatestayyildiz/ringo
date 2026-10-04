@@ -17,16 +17,19 @@ describe.skipIf(!ready)("Telegram bağlama (yerel DB)", () => {
   const opts = { auth: { autoRefreshToken: false, persistSession: false } };
   let admin: SupabaseClient<Database>;
   let elif: SupabaseClient<Database>;
+  let can: SupabaseClient<Database>;
 
   beforeAll(() => {
     admin = createClient<Database>(url!, service!, opts);
     elif = createClient<Database>(url!, anon!, opts);
+    can = createClient<Database>(url!, anon!, opts);
   });
 
   afterAll(async () => {
     await elif?.rpc("telegram_unlink", {});
+    await can?.rpc("telegram_unlink", {});
     // Deneme sınırı sayacı ve sahiplenme denemesinin izleri kalmasın
-    await admin?.from("telegram_link_attempts").delete().in("chat_id", [CHAT_ID, CHAT_ID + 1, CHAT_ID + 2]);
+    await admin?.from("telegram_link_attempts").delete().in("chat_id", [CHAT_ID, CHAT_ID + 1, CHAT_ID + 2, CHAT_ID + 3]);
     await admin?.from("notification_log").delete().eq("day", CLAIM_DAY);
   });
 
@@ -46,13 +49,21 @@ describe.skipIf(!ready)("Telegram bağlama (yerel DB)", () => {
     expect(result).toBe("linked");
     expect(send).toHaveBeenCalledWith(CHAT_ID, expect.stringContaining("Bağlantı kuruldu"));
 
+    // İstemci bağlı olma bilgisini telegram_linked_at ile görür; sohbet kimliği ona kapalı (D1)
     const { data: me } = await elif
       .from("members")
-      .select("telegram_chat_id, telegram_linked_at")
+      .select("telegram_linked_at")
       .eq("user_id", login.data.user!.id)
       .maybeSingle();
-    expect(me?.telegram_chat_id).toBe(CHAT_ID);
     expect(me?.telegram_linked_at).not.toBeNull();
+    const hidden = await elif.from("members").select("telegram_chat_id").eq("user_id", login.data.user!.id);
+    expect(hidden.error?.code).toBe("42501");
+    const { data: row } = await admin
+      .from("members")
+      .select("telegram_chat_id")
+      .eq("user_id", login.data.user!.id)
+      .single();
+    expect(row?.telegram_chat_id).toBe(CHAT_ID);
 
     // Aynı kod ikinci kez kullanılamaz
     const again = await handleTelegramUpdate(
@@ -61,6 +72,31 @@ describe.skipIf(!ready)("Telegram bağlama (yerel DB)", () => {
     );
     expect(again).toBe("rejected");
     expect(send).toHaveBeenLastCalledWith(CHAT_ID + 1, expect.stringContaining("kullanılmış"));
+  });
+
+  it("aynı sohbetten iki üyenin kodu eşzamanlı tüketilirse sohbet tek üyeye bağlı kalır (Ş2)", async () => {
+    const elifCode = await elif.rpc("telegram_create_link_code");
+    expect(elifCode.error).toBeNull();
+    const login = await can.auth.signInWithPassword({ email: "can@demo.test", password: "Demo1234!" });
+    expect(login.error).toBeNull();
+    const canCode = await can.rpc("telegram_create_link_code");
+    expect(canCode.error).toBeNull();
+
+    const chat = CHAT_ID + 3;
+    const results = await Promise.all(
+      [elifCode.data!, canCode.data!].map((code) =>
+        admin.rpc("_telegram_consume_link_code", { p_code: code, p_chat_id: chat }),
+      ),
+    );
+    for (const r of results) expect(r.error).toBeNull();
+    const oks = results.filter((r) => (r.data as { ok?: boolean } | null)?.ok === true).length;
+    expect(oks).toBeGreaterThanOrEqual(1);
+
+    const { count } = await admin
+      .from("members")
+      .select("id", { count: "exact", head: true })
+      .eq("telegram_chat_id", chat);
+    expect(count).toBe(1);
   });
 
   it("rastgele kod reddedilir", async () => {

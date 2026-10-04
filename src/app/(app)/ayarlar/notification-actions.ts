@@ -33,7 +33,7 @@ export async function loadNotificationsAction(): Promise<Result<{ data: Notifica
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("members")
-    .select("id, full_name, role, is_active, telegram_chat_id, telegram_linked_at")
+    .select("id, full_name, role, is_active, telegram_linked_at")
     .eq("is_active", true)
     .order("full_name");
   if (error) return { ok: false, error: toUserMessage(error) };
@@ -48,7 +48,7 @@ export async function loadNotificationsAction(): Promise<Result<{ data: Notifica
         id: m.id,
         full_name: m.full_name,
         role: m.role,
-        linked: m.telegram_chat_id !== null,
+        linked: m.telegram_linked_at !== null,
         linkedAt: m.telegram_linked_at,
       })),
     },

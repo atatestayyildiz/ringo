@@ -25,11 +25,11 @@ export async function telegramStatusAction(): Promise<Result<{ linked: boolean; 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("members")
-    .select("telegram_chat_id, telegram_linked_at")
+    .select("telegram_linked_at")
     .eq("id", ctx.member.id)
     .maybeSingle();
   if (error || !data) return { ok: false, error: toUserMessage(error) };
-  return { ok: true, linked: data.telegram_chat_id !== null, linkedAt: data.telegram_linked_at };
+  return { ok: true, linked: data.telegram_linked_at !== null, linkedAt: data.telegram_linked_at };
 }
 
 export async function unlinkSelfAction(): Promise<Result> {

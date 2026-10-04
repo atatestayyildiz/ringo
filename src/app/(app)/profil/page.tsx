@@ -14,7 +14,7 @@ export default async function Page() {
   const supabase = await createClient();
   const { data: me } = await supabase
     .from("members")
-    .select("telegram_chat_id, telegram_linked_at, notify_morning, notify_reminder, notify_summary")
+    .select("telegram_linked_at, notify_morning, notify_reminder, notify_summary")
     .eq("id", ctx.member.id)
     .maybeSingle();
 
@@ -30,7 +30,7 @@ export default async function Page() {
       <div className={s.cols}>
         <div className={s.stack}>
           <TelegramCard
-            linked={me?.telegram_chat_id != null}
+            linked={me?.telegram_linked_at != null}
             linkedAt={me?.telegram_linked_at ?? null}
             botUsername={ctx.settings.telegram_bot_username}
             tenantEnabled={ctx.settings.telegram_enabled}
