@@ -808,3 +808,7 @@
     grid-column: span 12;
   }
 }
+
+.noteInput {
+  display: block;
+}

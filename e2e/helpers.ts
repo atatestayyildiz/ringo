@@ -24,6 +24,9 @@ export async function loginOk(page: Page, who: UserKey) {
 
 export async function logout(page: Page) {
   await page.getByRole("button", { name: "Çıkış yap" }).click();
+  const dialog = page.getByRole("dialog", { name: "Çıkış yapılsın mı?" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Çıkış yap" }).click();
   await expect(page).toHaveURL(/\/giris/);
 }
 

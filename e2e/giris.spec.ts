@@ -29,4 +29,19 @@ test.describe("giriş", () => {
     await page.goto("/bugun");
     await expect(page).toHaveURL(/\/giris/);
   });
+
+  test("çıkış onay ister: İptal ve Esc oturumu korur", async ({ page }) => {
+    await loginOk(page, "elif");
+    const dialog = page.getByRole("dialog", { name: "Çıkış yapılsın mı?" });
+    await page.getByRole("button", { name: "Çıkış yap" }).click();
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "İptal" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page).toHaveURL(/\/bugun/);
+    await page.getByRole("button", { name: "Çıkış yap" }).click();
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(page).toHaveURL(/\/bugun/);
+  });
 });

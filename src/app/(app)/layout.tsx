@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { IconLogout } from "@/components/icons";
 import { MainNav, type NavKey } from "@/components/shell/MainNav";
+import { SignOutButton } from "@/components/shell/SignOutButton";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
-import { Avatar, RoundButton, ToastProvider } from "@/components/ui";
+import { Avatar, ToastProvider } from "@/components/ui";
 import { navKeys } from "@/lib/access";
 import { getSessionContext } from "@/lib/session";
 import { signOutAction } from "./actions";
@@ -45,11 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <b>{member.full_name}</b>
               </div>
             </Link>
-            <form action={signOutAction}>
-              <RoundButton label="Çıkış yap" type="submit">
-                <IconLogout />
-              </RoundButton>
-            </form>
+            <SignOutButton action={signOutAction} />
           </div>
         </header>
         <main>{children}</main>
