@@ -10,6 +10,7 @@ import {
   type PermKey,
   type RulesValues,
 } from "@/components/ayarlar/shared";
+import { isAllowedLogoUrl } from "@/lib/brand-logo";
 import { toUserMessage } from "@/lib/errors";
 import { getSessionContext } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -76,13 +77,8 @@ export async function saveBrandAction(v: {
   if (!HEX_RE.test(v.brand_color)) return { ok: false, error: "Renk #RRGGBB biçiminde olmalı, örneğin #FF5E2B." };
   const logo = v.logo_url.trim();
   if (logo) {
-    let ok = false;
-    try {
-      const u = new URL(logo);
-      ok = u.protocol === "https:";
-    } catch {
-      ok = false;
-    }
+    // https adresi ya da bu uygulamanın kendi logo deposu (yerelde http olabilir).
+    const ok = isAllowedLogoUrl(logo, process.env.NEXT_PUBLIC_SUPABASE_URL);
     if (!ok) return { ok: false, error: "Logo adresi https:// ile başlayan geçerli bir bağlantı olmalı." };
   }
 
