@@ -109,7 +109,8 @@ audit_log(id bigserial pk, tenant_id, member_id uuid null, action text, entity t
   - `import_customers`: müşteri ekler, Excel içe aktarır.
   - `reassign`: müşteriyi başka çalışana devreder.
   - `export`: listeyi dışa aktarır (Faz 2 düğmesi, anahtar şimdiden var).
-  - `view_reports`: yönetim ekranındaki ekip/özet kartlarını görür.
+  - `view_reports`: Raporlar'da ekip geneli kapsamı görür (yetkisiz çalışan yalnız kendi raporunu görür).
+  - `view_team`: Yönetim ekranını görür (Faz 2, migration `20261004001100`; ayrıntı `spec-faz2.md`).
   - `delete_customers`: müşteri siler (KVKK silme talebi).
 - Ayarlar (kurallar, marka, ekip, yetki) yalnız `manager`.
 
@@ -128,7 +129,7 @@ Hepsi `security definer`, `search_path = public`, ilk iş çağıranın üyeliğ
 | `reassign_customer(p_customer uuid, p_member uuid) returns customers` | manager veya `reassign`. `assigned_to` ve bugünkü atamayı taşır. |
 | `import_customers(p_rows jsonb, p_source_detail text) returns jsonb` | Satırlar: `{full_name, phone, phone_alt?, operator?, birth_date?, applied_at?, note?}`. Telefonu normalize eder; geçersizi atlar; aynı kiracıda telefon varsa mükerrer sayar ve eklemez. Döner: `{inserted, duplicates, invalid, invalid_rows:[{index, reason}]}`. manager veya `import_customers`. |
 | `upcoming_birthdays(p_days int default null) returns table(customer_id, full_name, birth_date, days_left int)` | Görünür müşterilerden doğum günü `p_days` (null ise ayardaki) gün içinde olanlar. Yıl dönümü hesabı 29 Şubat'ı 28 Şubat sayar. |
-| `day_summary(p_day date default today) returns table(member_id, full_name, assigned int, done int, reached int, appointments int, retries int)` | manager veya `view_reports`. |
+| `day_summary(p_day date default today) returns table(member_id, full_name, assigned int, done int, reached int, appointments int, retries int)` | manager, `view_team` veya `view_reports` (Faz 2). |
 | `rules_summary_text() returns text` | Ayarlardan düz Türkçe kural özeti. Örnek: "Ulaşılamayan müşteri aynı gün tekrar aranır. 3 başarısız denemeden sonra havuza düşer ve 7 gün sonra listeye geri çıkar. Havuza en fazla 2 kez düşer, sonra 'ulaşılamadı' olarak kapanır." |
 
 ### log_call kural motoru
@@ -159,7 +160,7 @@ Tüm tablolarda RLS açık. Ortak koşul: `tenant_id = auth_tenant_id()`.
 
 - `tenants`, `tenant_settings`, `members`: select tüm üyeler. update/insert/delete yalnız manager (members için yeni kullanıcı oluşturma sunucu tarafında service role ile yapılır).
 - `customers` select: manager veya `view_all_customers` veya `assigned_to = auth_member_id()`. insert: manager veya `import_customers`. update: yalnız manager (ajanlar RPC kullanır). delete: manager veya `delete_customers`.
-- `daily_assignments` select: manager veya `view_reports` veya `member_id = auth_member_id()`. Yazma yalnız fonksiyonlar.
+- `daily_assignments` select: manager veya `view_team` (Faz 2; önce `view_reports`) veya `member_id = auth_member_id()`. Yazma yalnız fonksiyonlar.
 - `call_attempts`, `pipeline_events` select: ilgili müşteriyi görebilen. Yazma yalnız fonksiyonlar.
 - `audit_log` select yalnız manager. Yazma yalnız fonksiyonlar.
 
@@ -175,7 +176,7 @@ Tasarım dili: `tasarim/bugun.html` prototipi kaynak gerçektir (token'lar, hap 
 | `/musteriler/ice-aktar` | aynı | .xlsx/.xls/.csv yükle, ilk satırdan sütun eşleme (otomatik tahmin: ad, soyad, telefon, operatör, doğum tarihi, tarih, not), önizleme (geçerli/geçersiz/mükerrer işaretli), onayla. CSV kodlama: önce UTF-8, `�` çıkarsa `windows-1254` ile yeniden çöz. "Ad" ve "Soyad" ayrı sütunsa birleştir. |
 | `/havuz` | görebildiği kadar | `call_status='pool'` listesi, dönüş tarihi ve kalan gün, havuz sayısı. |
 | `/huni` | görebildiği kadar | Aşama sütunları (appointment, visited, applied, approved, completed; rejected ve not_interested ayrı katlanır), kart taşıma menüyle (sürükle-bırak gerekmez), aşama sayıları ve dönüşüm oranları. |
-| `/yonetim` | manager veya `view_reports` | Bugünün özeti (`day_summary`), çalışan kartları, son işlemler (`call_attempts` + `pipeline_events` son 30), "Bugün yok" işaretle (`mark_absent`, manager). |
+| `/yonetim` | manager veya `view_team` | Bugünün özeti (`day_summary`), çalışan kartları, son işlemler (`call_attempts` + `pipeline_events` son 30), "Bugün yok" işaretle (`mark_absent`, manager). |
 | `/ayarlar` | manager | Sekmeler: Kurallar (sayılar + canlı düz Türkçe özet), Ekip (çalışan ekle: ad, e-posta, geçici şifre; rol; yetki anahtarları; pasifleştir), Marka (ad, renk, logo URL, canlı önizleme). |
 
 Boş durumlar yön gösterir ("Bugün listen boş. Yönetici dağıtım yapınca burada görünecek."). Hata mesajları ne olduğunu ve ne yapılacağını söyler.
