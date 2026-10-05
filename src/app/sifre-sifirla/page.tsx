@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui";
+import { MadeBy } from "@/components/shell/MadeBy";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { RequestForm } from "./RequestForm";
 
@@ -17,6 +18,7 @@ export default function ResetRequestPage() {
         </div>
         <RequestForm />
       </Card>
+      <MadeBy />
     </div>
   );
 }

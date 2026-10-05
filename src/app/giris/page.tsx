@@ -1,4 +1,5 @@
 import { Card, ToastProvider } from "@/components/ui";
+import { MadeBy } from "@/components/shell/MadeBy";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { isAllowedLogoUrl } from "@/lib/brand-logo";
 import { createClient } from "@/lib/supabase/server";
@@ -62,6 +63,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
         <LoginForm notice={notice} />
       </Card>
+      <MadeBy />
       <ResetFlash show={sifre === "yenilendi"} />
     </div>
     </ToastProvider>

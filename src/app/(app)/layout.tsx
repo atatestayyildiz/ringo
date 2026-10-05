@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CallbackReminder } from "@/components/shell/CallbackReminder";
+import { MadeBy } from "@/components/shell/MadeBy";
 import { MainNav, type NavKey } from "@/components/shell/MainNav";
 import { MobileMenu } from "@/components/shell/MobileMenu";
 import { SignOutButton } from "@/components/shell/SignOutButton";
@@ -64,6 +65,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <CallbackReminder memberId={member.id} />
       <div className="app">
         <main>{children}</main>
+        <MadeBy />
       </div>
     </ToastProvider>
   );
