@@ -4,24 +4,29 @@ import { revalidatePath } from "next/cache";
 import { checkHour, checkMinute } from "@/components/ayarlar/shared";
 import type { TablesUpdate } from "@/lib/database.types";
 import { toUserMessage } from "@/lib/errors";
+import { vapidConfigured } from "@/lib/push/send";
 import { getSessionContext } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { botTokenConfigured } from "@/lib/telegram/client";
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 const NOT_MANAGER = "Bu işlemi yalnız yönetici yapabilir.";
-const BOT_RE = /^[A-Za-z0-9_]{3,64}$/;
+const LEADS = new Set([30, 60, 120]);
 
-export type TeamTelegramRow = { id: string; full_name: string; role: string; linked: boolean; linkedAt: string | null };
+export type TeamPushRow = {
+  id: string;
+  full_name: string;
+  devices: number;
+  notify_callback: boolean;
+  notify_appointment: boolean;
+};
 
 export type NotificationsData = {
   /** Yalnız boolean: değerler istemciye gitmez. */
-  botConfigured: boolean;
-  webhookSecretConfigured: boolean;
+  vapidConfigured: boolean;
   cronSecretConfigured: boolean;
-  appUrl: string;
-  team: TeamTelegramRow[];
+  appUrlConfigured: boolean;
+  team: TeamPushRow[];
 };
 
 async function requireManager() {
@@ -33,51 +38,48 @@ export async function loadNotificationsAction(): Promise<Result<{ data: Notifica
   const ctx = await requireManager();
   if (!ctx) return { ok: false, error: NOT_MANAGER };
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("members")
-    .select("id, full_name, role, is_active, telegram_linked_at")
-    .eq("is_active", true)
-    .order("full_name");
+  const { data, error } = await supabase.rpc("push_team_status");
   if (error) return { ok: false, error: toUserMessage(error) };
   return {
     ok: true,
     data: {
-      botConfigured: botTokenConfigured(),
-      webhookSecretConfigured: Boolean(process.env.TELEGRAM_WEBHOOK_SECRET),
+      vapidConfigured: vapidConfigured(),
       cronSecretConfigured: Boolean(process.env.CRON_SECRET),
-      appUrl: (process.env.APP_URL ?? "").replace(/\/+$/, ""),
-      team: (data ?? []).map((m) => ({
-        id: m.id,
-        full_name: m.full_name,
-        role: m.role,
-        linked: m.telegram_linked_at !== null,
-        linkedAt: m.telegram_linked_at,
-      })),
+      appUrlConfigured: Boolean(process.env.APP_URL),
+      team: (data ?? [])
+        .map((m) => ({
+          id: m.member_id,
+          full_name: m.full_name,
+          devices: m.devices,
+          notify_callback: m.notify_callback,
+          notify_appointment: m.notify_appointment,
+        }))
+        .sort((a, b) => a.full_name.localeCompare(b.full_name, "tr")),
     },
   };
 }
 
-/** Verilen alanlar güncellenir; verilmeyenlere dokunulmaz. */
+/** Mağaza push anahtarı ve randevu hatırlatma süresi (set_push_settings). */
+export async function savePushSettingsAction(v: { enabled: boolean; lead: number }): Promise<Result> {
+  const ctx = await requireManager();
+  if (!ctx) return { ok: false, error: NOT_MANAGER };
+  if (!LEADS.has(v.lead)) return { ok: false, error: "Randevu hatırlatma süresi 30, 60 veya 120 dakika olmalı." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_push_settings", { p_enabled: Boolean(v.enabled), p_lead: v.lead });
+  if (error) return { ok: false, error: toUserMessage(error) };
+  revalidatePath("/ayarlar");
+  return { ok: true };
+}
+
+/** Dağıtım saati (bildirim değil, dağıtım ayarı). Verilmeyenlere dokunulmaz. */
 export async function saveNotificationSettingsAction(v: {
-  telegram_enabled?: boolean;
-  telegram_bot_username?: string;
   distribution_hour?: number;
   distribution_minute?: number;
-  summary_hour?: number;
-  summary_minute?: number;
 }): Promise<Result> {
   const ctx = await requireManager();
   if (!ctx) return { ok: false, error: NOT_MANAGER };
 
   const patch: TablesUpdate<"tenant_settings"> = {};
-  if (v.telegram_enabled !== undefined) patch.telegram_enabled = Boolean(v.telegram_enabled);
-  if (v.telegram_bot_username !== undefined) {
-    const bot = v.telegram_bot_username.trim().replace(/^@/, "");
-    if (bot !== "" && !BOT_RE.test(bot)) {
-      return { ok: false, error: "Bot kullanıcı adı 3 ile 64 arası harf, rakam veya alt çizgi olmalı." };
-    }
-    patch.telegram_bot_username = bot === "" ? null : bot;
-  }
   if (v.distribution_hour !== undefined) {
     const err = checkHour(Number(v.distribution_hour), "Sabah listesi saati");
     if (err) return { ok: false, error: err };
@@ -87,16 +89,6 @@ export async function saveNotificationSettingsAction(v: {
     const err = checkMinute(Number(v.distribution_minute), "Sabah listesi saati");
     if (err) return { ok: false, error: err };
     patch.distribution_minute = v.distribution_minute;
-  }
-  if (v.summary_hour !== undefined) {
-    const err = checkHour(Number(v.summary_hour), "Akşam özeti saati");
-    if (err) return { ok: false, error: err };
-    patch.summary_hour = v.summary_hour;
-  }
-  if (v.summary_minute !== undefined) {
-    const err = checkMinute(Number(v.summary_minute), "Akşam özeti saati");
-    if (err) return { ok: false, error: err };
-    patch.summary_minute = v.summary_minute;
   }
   if (Object.keys(patch).length === 0) return { ok: true };
 
@@ -109,17 +101,6 @@ export async function saveNotificationSettingsAction(v: {
   if (error) return { ok: false, error: toUserMessage(error) };
   if (!data || data.length === 0) return { ok: false, error: "Ayarlar kaydedilemedi. Yetkinizi kontrol edip tekrar deneyin." };
 
-  revalidatePath("/ayarlar");
-  revalidatePath("/profil");
-  return { ok: true };
-}
-
-export async function unlinkMemberTelegramAction(memberId: string): Promise<Result> {
-  const ctx = await requireManager();
-  if (!ctx) return { ok: false, error: NOT_MANAGER };
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("telegram_unlink", { p_member: memberId });
-  if (error) return { ok: false, error: toUserMessage(error) };
   revalidatePath("/ayarlar");
   return { ok: true };
 }

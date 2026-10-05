@@ -1,5 +1,5 @@
 import "server-only";
-// YALNIZ SUNUCU: service role istemcisi. Yalnız Telegram/cron route'ları kullanır.
+// YALNIZ SUNUCU: service role istemcisi. Yalnız cron ve push route'ları kullanır.
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 

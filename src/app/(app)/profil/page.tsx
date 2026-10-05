@@ -1,13 +1,13 @@
 import { AccentCard } from "@/components/profil/AccentCard";
 import { PasswordCard } from "@/components/profil/PasswordCard";
 import { SecurityCard } from "@/components/profil/SecurityCard";
-import { TelegramCard } from "@/components/profil/TelegramCard";
+import { PushCard } from "@/components/push/PushCard";
 import s from "@/components/profil/profil.module.css";
 import { Avatar, Card, Chip } from "@/components/ui";
-import { can, getSessionContext } from "@/lib/session";
+import { parsePushStatus } from "@/lib/push/status";
+import { getSessionContext } from "@/lib/session";
 import { parseLockStatus } from "@/components/lock/activity";
 import { createClient } from "@/lib/supabase/server";
-import { botTokenConfigured } from "@/lib/telegram/client";
 
 export const metadata = { title: "Profil" };
 export const dynamic = "force-dynamic";
@@ -17,20 +17,20 @@ export default async function Page() {
   const supabase = await createClient();
   const { data: me } = await supabase
     .from("members")
-    .select("telegram_linked_at, notify_morning, notify_summary, accent_color")
+    .select("accent_color")
     .eq("id", ctx.member.id)
     .maybeSingle();
+  const { data: pushData } = await supabase.rpc("push_status");
   const { data: lockData } = await supabase.rpc("lock_status");
   const autoLockMinutes = parseLockStatus(lockData)?.auto_lock_minutes ?? 10;
 
   const isManager = ctx.member.role === "manager";
-  const showSummary = isManager || can(ctx.member, "view_reports");
 
   return (
     <>
       <div className="page-head">
         <h1>Profil</h1>
-        <p>{isManager ? "Arayüz rengi ve hesap güvenliği." : "Telegram bildirimleri, arayüz rengi ve hesap güvenliği."}</p>
+        <p>Bildirimler, arayüz rengi ve hesap güvenliği.</p>
       </div>
       <div className={s.bento}>
         <div className={`${s.cell} ${s.who12}`}>
@@ -45,23 +45,10 @@ export default async function Page() {
             </div>
           </Card>
         </div>
-        {isManager ? null : (
-          <div className={`${s.cell} ${s.tg}`}>
-            <TelegramCard
-              linked={me?.telegram_linked_at != null}
-              linkedAt={me?.telegram_linked_at ?? null}
-              botUsername={ctx.settings.telegram_bot_username}
-              tenantEnabled={ctx.settings.telegram_enabled}
-              botConfigured={botTokenConfigured()}
-              prefs={{
-                morning: me?.notify_morning ?? true,
-                summary: me?.notify_summary ?? true,
-              }}
-              showSummary={showSummary}
-            />
-          </div>
-        )}
-        <div className={`${s.cell} ${isManager ? s.accSolo : s.acc}`}>
+        <div className={`${s.cell} ${s.tg}`}>
+          <PushCard initial={parsePushStatus(pushData)} />
+        </div>
+        <div className={`${s.cell} ${s.acc}`}>
           <AccentCard current={me?.accent_color ?? null} brandColor={ctx.settings.brand_color} isManager={isManager} />
         </div>
         <div className={`${s.cell} ${s.pw}`}>

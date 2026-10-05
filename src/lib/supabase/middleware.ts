@@ -12,9 +12,9 @@ const PUBLIC_EXACT_PATHS = new Set(["/sifre-sifirla", "/sifre-sifirla/yeni"]);
  * Panel kilidi: PIN yoksa /pin-belirle, kilitliyse /kilit (ikisi dışındaki tüm oturumlu yollar).
  */
 export async function updateSession(request: NextRequest) {
-  // Telegram webhook'u ve zamanlayıcı kendi sırlarıyla doğrulanır; oturum yönlendirmesinden muaf.
+  // Zamanlayıcı kendi sırrıyla doğrulanır; oturum yönlendirmesinden muaf.
   const p = request.nextUrl.pathname;
-  if (p === "/api/telegram/webhook" || p.startsWith("/api/cron/")) return NextResponse.next({ request });
+  if (p.startsWith("/api/cron/")) return NextResponse.next({ request });
   // Şifre sıfırlama oturumsuz erişilir: yalnız TAM yol eşleşmesi (önek yok; /sifre-sifirla-x korunur).
   if (PUBLIC_EXACT_PATHS.has(p)) return NextResponse.next({ request });
 

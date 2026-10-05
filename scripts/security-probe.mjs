@@ -150,7 +150,7 @@ async function main() {
 
   const { data: members, error: mErr } = await admin
     .from("members")
-    .select("id, user_id, tenant_id, role, permissions, is_active, telegram_chat_id");
+    .select("id, user_id, tenant_id, role, permissions, is_active");
   if (mErr) throw new Error(`üyeler okunamadı (${mErr.code})`);
   const { data: authList } = await admin.auth.admin.listUsers({ perPage: 200 });
   const byEmail = new Map(authList.users.map((u) => [u.email, u.id]));
@@ -228,7 +228,7 @@ async function main() {
   );
   await check(G1, "ajan tenant_settings güncelleyemez", async () => {
     const { data: s } = await admin.from("tenant_settings").select("*").eq("tenant_id", tenant).single();
-    const r = await elif.from("tenant_settings").update({ telegram_enabled: s.telegram_enabled, brand_name: s.brand_name }).eq("tenant_id", tenant).select("tenant_id");
+    const r = await elif.from("tenant_settings").update({ push_enabled: s.push_enabled, brand_name: s.brand_name }).eq("tenant_id", tenant).select("tenant_id");
     return expectNoRows(r);
   });
   for (const [table, row] of [
@@ -251,13 +251,10 @@ async function main() {
     ["_has_perm", { m: {}, p_perm: "export" }],
     ["_name_initials", { p: "Probe Kişi" }],
     ["_normalize_operator", { p: "x" }],
-    ["_telegram_consume_link_code", { p_code: "AAAAAAAA", p_chat_id: 1 }],
     ["_notification_targets", { p_now: new Date().toISOString() }],
-    ["_notification_record", { p_tenant: fakeTenant, p_member: randomUUID(), p_kind: "test", p_day: "2000-01-01", p_status: "sent", p_error: null }],
     ["_notification_claim", { p_tenant: fakeTenant, p_member: randomUUID(), p_kind: "test", p_day: "2000-01-01" }],
     ["_notification_finish", { p_id: 0, p_status: "sent", p_error: null }],
-    ["_notification_done", { p_member: randomUUID(), p_kind: "morning", p_day: "2000-01-01" }],
-    ["_telegram_link_limited", { p_chat_id: 1 }],
+    ["_notification_done", { p_member: randomUUID(), p_kind: "callback", p_day: "2000-01-01" }],
     ["_report_range", { p_tenant: fakeTenant, p_member: null, p_from: "2026-01-01", p_to: "2026-01-31" }],
     ["_move_open_work", { p_tenant: fakeTenant, p_from: randomUUID(), p_to: [], p_day: "2000-01-01" }],
     ["_open_claim_count", { p_tenant: fakeTenant, p_member: randomUUID() }],
@@ -416,77 +413,76 @@ async function main() {
     const s = await ayse.rpc("list_pool").select("phone").limit(1);
     return s.error ? true : "phone sütunu seçilebildi";
   });
-  await check(G2, "telegram_unlink: ajan başkasınınkini kaldıramaz", async () =>
-    expectError(await ayse.rpc("telegram_unlink", { p_member: M.elif.id }), DENIED),
-  );
-  await check(G2, "telegram_unlink: yönetici kiracı dışı üyeye P0002", async () =>
-    expectError(await manager.rpc("telegram_unlink", { p_member: randomUUID() }), ["P0002"]),
-  );
-  await check(G2, "telegram_create_link_code: anon reddedilir", async () =>
-    expectError(await anonClient.rpc("telegram_create_link_code"), FN_DENIED),
-  );
-  await check(G2, "set_notify_prefs: anon reddedilir", async () =>
-    expectError(await anonClient.rpc("set_notify_prefs", { p_morning: false, p_reminder: false, p_summary: false }), FN_DENIED),
-  );
   await check(G2, "set_my_accent: anon reddedilir", async () =>
     expectError(await anonClient.rpc("set_my_accent", { p_color: "#1d4ed8" }), FN_DENIED),
-  );
-  await check(G2, "telegram_link_codes: ajan okuyamaz", async () => expectError(await elif.from("telegram_link_codes").select("code").limit(1), DENIED));
-  await check(G2, "telegram_link_codes: ajan yazamaz", async () =>
-    expectError(await elif.from("telegram_link_codes").insert({ code: "ABCDEFGH", tenant_id: tenant, member_id: M.elif.id, expires_at: new Date(Date.now() + 6e5).toISOString() }), DENIED),
   );
   await check(G2, "notification_log: ajan okuyamaz (0 satır)", async () => expectNoRows(await elif.from("notification_log").select("id").limit(5)));
   await check(G2, "notification_log: yönetici yazamaz", async () =>
     expectError(await manager.from("notification_log").insert({ tenant_id: tenant, member_id: M.manager.id, kind: "test", day: "2000-01-01", status: "sent" }), DENIED),
   );
-  await check(G2, "members.telegram_chat_id: ajan kendine yazamaz", async () =>
-    expectError(await ayse.from("members").update({ telegram_chat_id: 42 }).eq("id", M.ayse.id).select("id"), DENIED),
-  );
-  await check(G2, "members.telegram_chat_id: yönetici başkasına yazamaz", async () =>
-    expectError(await manager.from("members").update({ telegram_chat_id: 42 }).eq("id", M.ayse.id).select("id"), DENIED),
-  );
   await check(G2, "members.notify_*: doğrudan update kapalı", async () =>
     expectError(await ayse.from("members").update({ notify_summary: true }).eq("id", M.ayse.id).select("id"), DENIED),
   );
-  await check(G2, "members insert: yönetici telegram_chat_id yazamaz (D2)", async () =>
-    expectError(
-      await manager.from("members").insert({ tenant_id: tenant, user_id: randomUUID(), full_name: "Probe Kişi", role: "agent", telegram_chat_id: 4242 }),
-      DENIED,
-    ),
-  );
-  await check(G2, "members insert: yönetici telegram_linked_at / notify_* yazamaz (D2)", async () =>
+  await check(G2, "members insert: yönetici notify_* yazamaz (D2)", async () =>
     expectError(
       await manager.from("members").insert({ tenant_id: tenant, user_id: randomUUID(), full_name: "Probe Kişi", role: "agent", notify_morning: false }),
       DENIED,
     ),
   );
-  await check(G2, "members.telegram_chat_id: ajan kolonu okuyamaz (D1)", async () =>
-    expectError(await ayse.from("members").select("id, telegram_chat_id").limit(5), DENIED),
-  );
-  await check(G2, "members.telegram_chat_id: yönetici kolonu okuyamaz (D1)", async () =>
-    expectError(await manager.from("members").select("telegram_chat_id").limit(5), DENIED),
-  );
   await check(G2, "members select *: ajan reddedilir (D1)", async () =>
     expectError(await ayse.from("members").select("*").limit(1), DENIED),
   );
-  await check(G2, "members.telegram_chat_id: ajan filtrede kullanamaz (D1)", async () =>
-    expectError(await ayse.from("members").select("id").not("telegram_chat_id", "is", null), DENIED),
-  );
-  await check(G2, "members: ajan diğer kolonları ve telegram_linked_at'i okur (D1)", async () => {
-    const r = await ayse.from("members").select("id, full_name, role, is_active, absent_on, telegram_linked_at, notify_morning");
+  await check(G2, "members: ajan izinli kolonları ve notify_* okur (D1)", async () => {
+    const r = await ayse.from("members").select("id, full_name, role, is_active, absent_on, notify_callback, notify_appointment, notify_morning");
     if (r.error) return `hata ${r.error.code}`;
     return r.data.length > 0 ? true : "0 satır döndü";
   });
-  await check(G2, "telegram_link_attempts: ajan okuyamaz", async () =>
-    expectError(await elif.from("telegram_link_attempts").select("chat_id").limit(1), DENIED),
-  );
-  await check(G2, "telegram_link_attempts: yönetici yazamaz/silemez", async () => {
-    const ins = expectError(await manager.from("telegram_link_attempts").insert({ chat_id: 1 }), DENIED);
-    if (ins !== true) return ins;
-    return expectError(await manager.from("telegram_link_attempts").delete().eq("chat_id", 1), DENIED);
-  });
   await check(G2, "notification_log: yönetici sahiplenme kolonlarını güncelleyemez", async () =>
     expectError(await manager.from("notification_log").update({ attempts: 1, status: "failed" }).eq("tenant_id", tenant).select("id"), DENIED),
+  );
+
+  // ===== Push bildirim (20261006000100) =====
+  const GP = "Push";
+  const pushEndpoint = "https://push.example.test/probe-endpoint";
+  const pushKeys = { p_p256dh: "BProbeProbeProbeProbeProbeProbeProbeProbeProbeProbeProbeProbeProbeProbeProbeProbeProbeProbeProbeProbeProbe", p_auth: "ProbeProbeProbeProbe" };
+  for (const [fn, args] of [
+    ["push_subscribe", { p_endpoint: pushEndpoint, ...pushKeys }],
+    ["push_unsubscribe", { p_endpoint: pushEndpoint }],
+    ["push_status", {}],
+    ["set_push_prefs", { p_callback: false, p_appointment: false }],
+    ["push_team_status", {}],
+    ["set_push_settings", { p_enabled: false, p_lead: 30 }],
+  ]) {
+    await check(GP, `${fn}: anon reddedilir`, async () => expectError(await anonClient.rpc(fn, args), FN_DENIED));
+  }
+  await check(GP, "push_subscriptions: authenticated p256dh okuyamaz", async () =>
+    expectError(await ayse.from("push_subscriptions").select("p256dh").limit(1), DENIED),
+  );
+  await check(GP, "push_subscriptions: authenticated auth okuyamaz", async () =>
+    expectError(await ayse.from("push_subscriptions").select("auth").limit(1), DENIED),
+  );
+  await check(GP, "push_subscriptions: select * reddedilir", async () =>
+    expectError(await manager.from("push_subscriptions").select("*").limit(1), DENIED),
+  );
+  await check(GP, "push_subscriptions: doğrudan INSERT kapalı", async () =>
+    expectError(
+      await ayse.from("push_subscriptions").insert({ tenant_id: tenant, member_id: M.ayse.id, endpoint: pushEndpoint, p256dh: "x", auth: "y" }),
+      DENIED,
+    ),
+  );
+  await check(GP, "push_team_status: çalışan çağıramaz (42501)", async () =>
+    expectError(await ayse.rpc("push_team_status"), DENIED),
+  );
+  await check(GP, "set_push_settings: çalışan çağıramaz (42501)", async () => {
+    const r = expectError(await ayse.rpc("set_push_settings", { p_enabled: false, p_lead: 30 }), DENIED);
+    const { data: s } = await admin.from("tenant_settings").select("push_enabled, appointment_lead_minutes").eq("tenant_id", tenant).single();
+    return s && s.push_enabled === false ? "mağaza ayarı değişti" : r;
+  });
+  await check(GP, "tenant_settings.push_enabled: ajan doğrudan güncelleyemez", async () =>
+    expectNoRows(await ayse.from("tenant_settings").update({ push_enabled: false }).eq("tenant_id", tenant).select("tenant_id")),
+  );
+  await check(GP, "members.notify_callback: doğrudan update kapalı", async () =>
+    expectError(await ayse.from("members").update({ notify_callback: false }).eq("id", M.ayse.id).select("id"), DENIED),
   );
 
   // ===== Randevu zamanı (20261005000500) =====
@@ -527,19 +523,6 @@ async function main() {
   if (!appUp) {
     record(GH, "uygulama erişilebilir", false, `${APP} yanıt vermiyor`);
   } else {
-    const startBody = { update_id: 1, message: { message_id: 1, text: "/start ABCDEFGH", chat: { id: 1, type: "private" } } };
-    await check(GH, "webhook: sır başlığı yok 401", async () => {
-      const r = await rawRequest("POST", "/api/telegram/webhook", {}, startBody);
-      return r.status === 401 ? true : `durum ${r.status}`;
-    });
-    await check(GH, "webhook: yanlış sır 401", async () => {
-      const r = await rawRequest("POST", "/api/telegram/webhook", { "x-telegram-bot-api-secret-token": randomUUID() }, startBody);
-      return r.status === 401 ? true : `durum ${r.status}`;
-    });
-    await check(GH, "webhook: boş sır başlığı 401", async () => {
-      const r = await rawRequest("POST", "/api/telegram/webhook", { "x-telegram-bot-api-secret-token": "" }, startBody);
-      return r.status === 401 ? true : `durum ${r.status}`;
-    });
     await check(GH, "cron: Authorization yok 401", async () => {
       const r = await rawRequest("GET", "/api/cron/notify?dry=1");
       return r.status === 401 ? true : `durum ${r.status}`;
@@ -564,12 +547,11 @@ async function main() {
       "/api/cron/../export/customers",
       "/api/cron/..%2fexport/customers",
       "/api/cron/%2e%2e/export/customers",
-      "/api/telegram/webhook/../test",
-      "/api/telegram/webhook/..%2ftest",
+      "/api/push/test/../../export/customers",
+      "/api/push/test/..%2f..%2fexport%2fcustomers",
       "/api/cron-x",
       "/api/cronx/notify",
-      "/api/telegram/webhook/",
-      "/api/telegram/webhook%2f..%2f..%2fexport%2fcustomers",
+      "/api/cron%2f..%2f..%2fexport%2fcustomers",
     ]) {
       await check(GH, `proxy muafiyeti kaçamağı yok: ${p}`, async () => {
         const r = await rawRequest("GET", p);
@@ -585,9 +567,14 @@ async function main() {
       const r = await rawRequest("GET", "/api/export/report?from=2026-10-01&to=2026-10-04");
       return isOkData(r) ? "200 döndü" : true;
     });
-    await check(GH, "telegram/test: oturumsuz reddedilir", async () => {
-      const r = await rawRequest("POST", "/api/telegram/test");
-      return isOkData(r) ? "200 döndü" : true;
+    await check(GH, "push/test: oturumsuz reddedilir (401 veya 307)", async () => {
+      const r = await rawRequest("POST", "/api/push/test");
+      return r.status === 401 || r.status === 307 ? true : `durum ${r.status}`;
+    });
+    await check(GH, "sw.js: oturumsuz erişilir ve önbelleğe alınmaz", async () => {
+      const r = await rawRequest("GET", "/sw.js");
+      if (r.status !== 200) return `durum ${r.status}`;
+      return /no-store/.test(String(r.headers["cache-control"] ?? "")) ? true : "Cache-Control no-store değil";
     });
 
     let ayseCookie, elifCookie;
@@ -617,11 +604,9 @@ async function main() {
           const r = await rawRequest("GET", "/api/export/report?from=2026-10-01&to=2026-10-04", { cookie: ayseCookie.header });
           return r.status === 403 ? true : `durum ${r.status}`;
         });
-        await check(GH, "telegram/test: bağlı olmayan üye için gönderim yok", async () => {
-          const { data } = await admin.from("members").select("telegram_chat_id").eq("id", M.ayse.id).single();
-          if (data.telegram_chat_id !== null) return true; // bağlıysa bu kontrol uygulanmaz
-          const r = await rawRequest("POST", "/api/telegram/test", { cookie: ayseCookie.header });
-          return r.status !== 200 ? true : "200 döndü";
+        await check(GH, "push/test: aboneliği olmayan üye için gönderim yok (409/503)", async () => {
+          const r = await rawRequest("POST", "/api/push/test", { cookie: ayseCookie.header });
+          return r.status === 409 || r.status === 503 ? true : `durum ${r.status}`;
         });
         await check(GH, "/raporlar: yetkisiz ajan ekip tablosunu ve başka çalışanı göremez", async () => {
           const r = await rawRequest("GET", "/raporlar", { cookie: ayseCookie.header });

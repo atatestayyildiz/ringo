@@ -8,9 +8,9 @@ Kurulumun sonunda:
 - Uygulama: **Vercel** (ücretsiz). GitHub'a her gönderimde (push) kendiliğinden yeniden yayınlanır.
 - Sabah dağıtımı: Supabase içindeki zamanlayıcı (pg_cron) çalıştırır. Vercel'de ayrı zamanlayıcı yoktur.
 
-> **İlk kurulumda Telegram YOK (karar 2026-10-05).** Bölüm 6 (Vault) ve Bölüm 8 (Telegram) atlanır; Ayarlar'da "Telegram aktif" kapalı kalır. Sabah dağıtımı Telegram'dan bağımsız çalışır. Bölüm 0'da yalnız CRON_SECRET üretin; Vercel'de Telegram değişkenlerini boş bırakın. İleride bildirim istenirse 6 ve 8 uygulanır.
+> **Bildirimler web push ile gelir (karar 2026-10-06).** Uygulama telefona doğrudan bildirim gönderir (Android Chrome, iPhone'da ana ekrana eklenmiş uygulama). Dış hesap ya da bot gerekmez. Bölüm 0'da VAPID anahtarı üretilir, Bölüm 5'te Vercel'e eklenir, Bölüm 6 (Vault) bildirim zamanlayıcısı için zorunludur, Bölüm 8 bildirimlerin açılmasını anlatır. (Eskiden bildirimler Telegram'dan gidiyordu; kaldırıldı.)
 
-> **Gizli değerler hakkında:** Şifreler ve anahtarlar (service_role, CRON_SECRET, Telegram token) hiçbir dosyaya, nota, sohbete yazılmaz. Yalnız ilgili panele (Supabase, Vercel) yapıştırılır. Bir yere geçici not almanız gerekirse parola yöneticisi kullanın.
+> **Gizli değerler hakkında:** Şifreler ve anahtarlar (service_role, CRON_SECRET, VAPID özel anahtarı) hiçbir dosyaya, nota, sohbete yazılmaz. Yalnız ilgili panele (Supabase, Vercel) yapıştırılır. Bir yere geçici not almanız gerekirse parola yöneticisi kullanın.
 
 Bu gece toplam süre: yaklaşık 1,5 - 2 saat.
 
@@ -18,16 +18,19 @@ Bu gece toplam süre: yaklaşık 1,5 - 2 saat.
 
 ## 0. Hazırlık: gizli değerleri üretin
 
-İki rastgele değer gerekiyor. Her birini ayrı ayrı üretip parola yöneticisine kaydedin:
+Bir rastgele değer ve bir VAPID anahtar çifti gerekiyor. Hepsini parola yöneticisine kaydedin.
 
-```powershell
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
+1. **CRON_SECRET** (zamanlayıcının uygulamaya kimliği):
+   ```powershell
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+2. **VAPID anahtar çifti** (push bildirimlerinin imzası):
+   ```powershell
+   npx web-push generate-vapid-keys
+   ```
+   Çıktıdaki **Public Key** `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, **Private Key** `VAPID_PRIVATE_KEY` olur. Özel anahtarı kimseyle paylaşmayın, dosyaya yazmayın. Üçüncü değer `VAPID_SUBJECT`: `mailto:sizin@adresiniz.com` biçiminde iletişim e-postanız.
 
-1. Bir kez çalıştırın: çıkan değer **CRON_SECRET**.
-2. (Yalnız Telegram açılacaksa) bir kez daha çalıştırın: çıkan değer **TELEGRAM_WEBHOOK_SECRET**.
-
-(İkisi farklı olmalı. Yalnız harf ve rakamdan oluşurlar; Telegram bu biçimi kabul eder.)
+Anahtar çiftini bir kez üretin ve değiştirmeyin: değişirse tüm cihazların bildirimi yeniden açması gerekir.
 
 ---
 
@@ -141,9 +144,10 @@ Supabase panelinde **Authentication** bölümü:
    | `NEXT_PUBLIC_SUPABASE_URL` | Supabase Project URL (1. adım) |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon / publishable anahtar |
    | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service_role / secret anahtar |
-   | `TELEGRAM_BOT_TOKEN` | BotFather'dan (8. adım). Şimdi yoksa boş bırakıp sonra ekleyin |
-   | `TELEGRAM_WEBHOOK_SECRET` | 0. adımda ürettiğiniz ikinci değer |
-   | `CRON_SECRET` | 0. adımda ürettiğiniz ilk değer |
+   | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | 0. adımdaki VAPID Public Key |
+   | `VAPID_PRIVATE_KEY` | 0. adımdaki VAPID Private Key |
+   | `VAPID_SUBJECT` | `mailto:sizin@adresiniz.com` |
+   | `CRON_SECRET` | 0. adımda ürettiğiniz değer |
    | `APP_URL` | Vercel adresiniz, sonunda `/` olmadan (ilk yayından sonra öğrenirsiniz, aşağıya bakın) |
 
 5. **Deploy**. 1-3 dakika sürer. Bitince **Visit** ile açılan adres (ör. `https://telefoncu-xxxx.vercel.app`) uygulamanızdır. İsterseniz **Settings > Domains** içinde `telefoncu-magaza.vercel.app` gibi daha kısa bir ad seçin; nihai adres budur.
@@ -157,9 +161,9 @@ Bundan sonra GitHub'a her `git push` Vercel'de kendiliğinden yeni yayın başla
 
 ---
 
-## 6. Zamanlayıcı sırları (Supabase Vault) (İSTEĞE BAĞLI: yalnız Telegram açılınca)
+## 6. Zamanlayıcı sırları (Supabase Vault)
 
-Bildirim zamanlayıcısı uygulamanın adresini ve CRON_SECRET'i Supabase Vault'tan okur. Bunlar tanımlanmazsa zamanlayıcı hiçbir şey yapmaz (zarar vermez, yalnız Telegram bildirimi gitmez).
+Bildirimler pg_cron ile tetiklenir (5 dakikada bir uygulamanın `/api/cron/notify` adresi çağrılır). Zamanlayıcı uygulamanın adresini ve CRON_SECRET'i Supabase Vault'tan okur, bu yüzden **app_url ve cron_secret zorunludur**. Tanımlanmazsa hiçbir bildirim gitmez.
 
 Supabase panelinde **SQL Editor > New query**, aşağıdakini kendi değerlerinizle doldurup **Run**:
 
@@ -213,21 +217,17 @@ Remove-Item Env:SUPABASE_SERVICE_ROLE_KEY
 
 ---
 
-## 8. Telegram botu (İSTEĞE BAĞLI: ilk kurulumda atlanır)
+## 8. Push bildirimlerini açma ve deneme
 
-1. Telegram'da **@BotFather**'ı açın > `/newbot` > bot görünen adı (ör. "Mağaza Bildirim") > kullanıcı adı (sonu `bot` ile biter, ör. `magazaadi_bildirim_bot`).
-2. BotFather'ın verdiği **token**'ı Vercel'de `TELEGRAM_BOT_TOKEN` olarak ekleyin, sonra **Redeploy**.
-3. Webhook'u kurun (Telegram'a mesajları uygulamaya iletmesini söyler). PowerShell:
-   ```powershell
-   $token  = Read-Host "Telegram bot token"
-   $secret = Read-Host "TELEGRAM_WEBHOOK_SECRET"
-   $app    = "https://<vercel-adresiniz>"
-   Invoke-RestMethod -Method Post -Uri "https://api.telegram.org/bot$token/setWebhook" -Body @{ url = "$app/api/telegram/webhook"; secret_token = $secret; allowed_updates = '["message"]' }
-   Invoke-RestMethod -Uri "https://api.telegram.org/bot$token/getWebhookInfo"
-   ```
-   İlk komut `ok: True` dönmeli. İkincisinde `url` doğru, `last_error_message` boş olmalı.
-4. Uygulamada **Ayarlar > Bildirimler**: **Telegram bildirimleri açık** işaretleyin, **Bot kullanıcı adı** alanına `@` olmadan bot kullanıcı adını yazın, kaydedin. Sabah dağıtım ve akşam özet saatlerini buradan ayarlayın.
-5. Her çalışan kendi **Profil** sayfasındaki Telegram bölümünden bağlantı kodu alır, bota gönderir; "bağlandı" yanıtı gelir.
+Bildirimler iki türdür: **Geri arama vakti** (Sonra ara saati gelince) ve **Randevu hatırlatma** (randevudan 30, 60 ya da 120 dakika önce, Ayarlar'dan seçilir). Bildirim yalnız müşterinin atandığı çalışana gider; müşteri adı ve soyadının baş harfi görünür, telefon numarası görünmez.
+
+1. Bölüm 5'teki üç VAPID değişkeninin Vercel'de (Production) tanımlı olduğundan ve sonrasında **Redeploy** yapıldığından emin olun.
+2. **Android (Chrome):** uygulamayı açın, **Profil > Bildirimler > Bu cihazda bildirimleri aç**'a dokunun, çıkan izin sorusuna **İzin ver** deyin.
+3. **iPhone (iOS 16.4 ve üstü):** bildirim yalnız ana ekrana eklenmiş uygulamada çalışır. Safari'de uygulamayı açın > **Paylaş** > **Ana Ekrana Ekle**. Sonra ana ekrandaki simgeden açıp 2. adımı uygulayın. Safari sekmesinde düğme çalışmaz, ekranda bu rehber görünür.
+4. **Test bildirimi gönder** düğmesine dokunun. Birkaç saniye içinde "Ringo test bildirimi" gelmeli (dakikada en çok bir kez gönderilebilir).
+5. Yönetici: **Ayarlar > Bildirimler**'de mağaza anahtarını ve randevu hatırlatma süresini ayarlayın; ekip tablosundan kimin kaç cihazda bildirim açtığını görün.
+
+Bildirim izni reddedildiyse tarayıcı (Android) ya da telefon ayarlarından (iPhone: Ayarlar > Bildirimler > uygulama) izni açıp sayfayı yenileyin.
 
 ---
 
@@ -246,10 +246,10 @@ Yönetici olarak, **Ayarlar** sayfasında:
 - [ ] Her telefonda tarayıcıdan uygulama adresini açın (Android: Chrome, iPhone: Safari).
 - [ ] **Ana ekrana ekle:** Android Chrome menü > "Ana ekrana ekle"; iPhone Safari paylaş > "Ana Ekrana Ekle".
 - [ ] Her çalışan kendi e-postası + geçici şifresiyle girer, **kendi PIN'ini** belirler, **Profil > Şifre** ile şifresini değiştirir.
-- [ ] Her çalışan **Profil > Telegram** ile bota bağlanır; bota "bağlandı" mesajı gelir.
+- [ ] Her çalışan **Profil > Bildirimler** ile bildirimleri açar ve **Test bildirimi gönder** ile dener (iPhone'da önce ana ekrana eklenir).
 - [ ] Yönetici: **Bugün** ekranında dağıtım görünüyor mu? (Otomatik dağıtım ayarlı saatte çalışır; hemen görmek için elle dağıtın.)
 - [ ] Bir test araması kaydı girip **Raporlar**'da göründüğünü kontrol edin (sonra gerekirse silin).
-- [ ] Ayarlanan özet saatinde Telegram mesajı geldi mi?
+- [ ] Bir müşteri için kısa bir "Sonra ara" saati verin: saati gelince bildirim geldi mi?
 - [ ] Bir çalışanla "Şifremi unuttum" deneyin: e-posta gelmeli (SMTP kurulduysa).
 
 ---
@@ -313,16 +313,12 @@ Sahada acil düzeltme için. Bir kez yapılır:
 - E-postadaki bağlantı localhost'a gidiyorsa: **URL Configuration > Site URL** canlı adres olmalı.
 - Aynı kişiye 60 saniyeden sık gönderilmez; bekleyip tekrar deneyin.
 
-**Telegram mesajı gelmiyor**
-- `getWebhookInfo` (8. adım) çıktısında `last_error_message` var mı? 401 ise `TELEGRAM_WEBHOOK_SECRET` webhook kurulumundakiyle aynı değil; webhook komutunu doğru değerle tekrar çalıştırın.
-- Vercel'de `TELEGRAM_BOT_TOKEN` tanımlı ve sonrasında **Redeploy** yapıldı mı?
-- Ayarlar > Bildirimler'de "Telegram bildirimleri açık" işaretli ve bot kullanıcı adı doğru mu? Çalışan Profil'den bağlandı mı?
-- Zamanlayıcı çalışıyor mu? 6. adımdaki kontrol sorguları. Vault'ta `app_url` ve `cron_secret` yoksa hiç istek gitmez.
-- Elle deneme (gönderim yapmaz, yalnız sırada ne olduğunu gösterir):
-  ```powershell
-  $cs = Read-Host "CRON_SECRET"
-  Invoke-RestMethod -Uri "https://<vercel-adresiniz>/api/cron/notify?dry=1" -Headers @{ Authorization = "Bearer $cs" }
-  ```
+**Push bildirimi gelmiyor**
+- Profil > Bildirimler kartında "Bu cihazda açık" yazıyor mu? Değilse düğmeyle açın (iPhone'da ana ekrana eklenmiş uygulamadan).
+- **Test bildirimi gönder** çalışıyor ama gerçek bildirim gelmiyorsa: Ayarlar > Bildirimler'de "Bildirimler açık" işaretli mi, çalışanın ilgili tür anahtarı açık mı, müşteri o çalışana atanmış mı?
+- Test de gelmiyorsa Vercel'de üç VAPID değişkeni tanımlı ve sonrasında **Redeploy** yapıldı mı? Eksikse Ayarlar > Bildirimler'de kırmızı uyarı görünür.
+- Zamanlayıcı: Bölüm 6'daki kontrol sorgusunda `status_code` 200 mü? 401 ise CRON_SECRET iki yerde farklı, 503 ise Vercel'de CRON_SECRET ya da VAPID değişkenleri eksiktir.
+- Aynı cihazda izin reddedildiyse tarayıcı/telefon ayarlarından izni açın.
 
 **Supabase projesi duraklatıldı ("paused")**
 - Ücretsiz projeler bir hafta hiç kullanılmazsa duraklar. Panelden **Restore project** ile açılır. Her gün kullanıldığı sürece sorun olmaz.

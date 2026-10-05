@@ -80,7 +80,7 @@
     <li>Giriş ve güvenlik</li>
     <li>Ekranlar tek tek</li>
     <li>Roller ve yetkiler</li>
-    <li>İsteğe bağlı: telefona bildirim (Telegram)</li>
+    <li>Telefona bildirim</li>
     <li>Meta (Facebook ve Instagram) reklam formları</li>
     <li>Sık sorulanlar ve sorun giderme</li>
     <li>Kısa günlük kullanım akışı</li>
@@ -227,7 +227,7 @@
 <h3>Ertelendi grubu</h3>
 <p>Başka bir günde aranmak üzere ertelenen müşteriler (Sonra ara ile ileri bir gün seçilenler) "Kalan" sayısına katılmaz. <b>Ertelendi</b> adlı katlanır grupta durur ve vakti gelince listenize kendiliğinden döner.</p>
 <h3>Geri arama hatırlatma kartı</h3>
-<p>"Sonra ara" ile seçtiğiniz saat geldiğinde ekranda <b>Geri arama vakti</b> kartı belirir ve kimi aramanız gerektiğini gösterir. Kartı küçültüp tek satıra indirebilirsiniz. Bu aramalar bitince kart kendiliğinden kaybolur. Tekrar arama hatırlatmaları Telegram'dan gelmez, yalnız bu kart ile yapılır.</p>
+<p>"Sonra ara" ile seçtiğiniz saat geldiğinde ekranda <b>Geri arama vakti</b> kartı belirir ve kimi aramanız gerektiğini gösterir. Kartı küçültüp tek satıra indirebilirsiniz. Bu aramalar bitince kart kendiliğinden kaybolur. Aynı hatırlatma telefonunuza bildirim olarak da gelir (bkz. bölüm 5).</p>
 <h3>Serbest havuz modunda</h3>
 <p>Mağazanın dağıtım yöntemi <b>Serbest havuz</b> ise liste sabah hazır gelmez. Bunun yerine üstte <b>Sıradaki müşteriyi al</b> kartı görünür: bekleyen müşteri sayısını, sizde kaç açık müşteri olduğunu ve izin verilen sınırı gösterir. <kbd>Sıradaki müşteriyi al</kbd> ile bir müşteri listenize eklenir ve odak kartında açılır. Sınıra gelince veya bekleyen kalmayınca düğme kapanır ve nedenini yazar.</p>
 <h3>Diğer kartlar</h3>
@@ -307,7 +307,7 @@
 <ul>
   <li><b>Arayüz rengi:</b> programın düğme ve vurgu rengini kendiniz için seçin. Seçim tüm cihazlarınızda geçerlidir ve mağazanın ana rengini değiştirmez.</li>
   <li><b>Şifre değiştir:</b> mevcut şifre ve iki kez yeni şifre (en az 8 karakter). Değişince diğer cihazlardaki oturumlarınız kapanır.</li>
-  <li><b>Telegram:</b> isteğe bağlı bildirim kartı. Yalnız yönetici Telegram bildirimlerini açtıysa anlamlıdır; şu an kapalıdır ve kullanmanız gerekmez. Bkz. bölüm 5.</li>
+  <li><b>Bildirimler:</b> bu cihazda telefon bildirimlerini açıp kapatma, test bildirimi gönderme ve hangi bildirimleri alacağınızı seçme. Bkz. bölüm 5.</li>
   <li><b>Güvenlik:</b> PIN değiştirme ve Otomatik kilit süresi. Bkz. bölüm 2.</li>
 </ul>
 
@@ -345,10 +345,11 @@
 
 <h3>Bildirimler</h3>
 <ul>
-  <li><b>Telegram bildirimleri açık</b> anahtarı mağaza için Telegram mesajlarını açar. Şu an <b>kapalıdır</b> ve kapalı kalması normaldir; program Telegram olmadan eksiksiz çalışır. Bot ilk kez kurulacaksa sayfada "Kurulum" adımları ve <b>Bot kullanıcı adı</b> alanı vardır; bu bir kerelik teknik adımdır.</li>
-  <li><b>Gönderim saatleri:</b> sabah listesi (varsayılan 08:00; müşteri dağıtımı da bu saatte yapılır ve Telegram açık olmasa da çalışır) ve akşam özeti (varsayılan 19:00). Saatler SS:DD biçiminde yazılır, örneğin 08:30. Kaydetmek için <kbd>Saatleri kaydet</kbd>.</li>
-  <li><b>Telegram bağlantıları:</b> kimin bağlı olduğu listelenir. Yönetici başkasının bağlantısını kaldırabilir.</li>
-  <li><b>Telegram hesabım:</b> yöneticinin kendi Telegram bağlantısı ve test mesajı burada yapılır.</li>
+  <li><b>Hangi bildirimler gönderilir:</b> <b>Geri arama vakti</b> ve <b>Randevu hatırlatma</b> şu an açıktır. Sabah özeti, Akşam özeti, Yeni devir ve atama, PIN kilitlendi bildirimleri <b>Yakında</b> etiketiyle listelenir; henüz gönderilmez.</li>
+  <li><b>Mağaza ayarı:</b> <b>Bildirimler açık</b> anahtarı tüm mağaza için bildirimleri açar ya da durdurur. <b>Randevu hatırlatma süresi</b> randevudan 30, 60 ya da 120 dakika önce haber verilmesini seçer. Kaydetmek için <kbd>Kaydet</kbd>.</li>
+  <li><b>Dağıtım saati:</b> sabah listesi saati (varsayılan 08:00); müşteri dağıtımı bu saatte yapılır. Saat SS:DD biçiminde yazılır, örneğin 08:30. Kaydetmek için <kbd>Saati kaydet</kbd>.</li>
+  <li><b>Ekip bildirimleri:</b> kimin kaç cihazında bildirimin açık olduğu ve hangi türleri seçtiği listelenir.</li>
+  <li><b>Bu cihazdaki bildirimlerim:</b> yöneticinin kendi telefonunda bildirimi açıp denemesi için Profil'deki kartın aynısı.</li>
 </ul>
 
 <h3>Marka</h3>
@@ -375,37 +376,32 @@
 </table>
 <div class="note"><b>Tavsiye.</b> Yetkileri en az gerektiği kadar verin. Müşteri listesi kişisel veri içerir; özellikle "Dışa aktarabilsin", "Tüm müşterileri görsün" ve "Müşteri eklesin / silsin" yetkilerini yalnız güvendiğiniz kişilere açın.</div>
 
-<h1>5. İsteğe bağlı: telefona bildirim (Telegram)</h1>
-<div class="note"><b>Şu an kapalı.</b> Bu kurulumda Telegram bildirimleri <b>kullanılmamaktadır</b> (Ayarlar > Bildirimler'de Telegram kapalıdır). Bu bölümü okumanız ve bir şey yapmanız gerekmez. Yönetici isterse sonradan Ayarlar > Bildirimler'den açabilir; o zaman aşağıdaki adımlar geçerli olur.</div>
-<div class="note"><b>Önemli.</b> Sabah müşteri dağıtımı ve program içindeki tüm özellikler Telegram'dan <b>bağımsız</b> çalışır. Telegram kapalıyken de her sabah liste kendiliğinden hazırlanır (otomatik dağıtımda); yalnızca telefona mesaj gelmez.</div>
-<p>Telegram açılırsa program, günlük özet bilgileri telefona mesaj olarak gönderebilir. Mesajları almak için her kişi hesabını bir kez bağlar. Bağlamak tamamen isteğe bağlıdır.</p>
+<h1>5. Telefona bildirim</h1>
+<p>Program, telefonunuza doğrudan bildirim gönderebilir. Ekran kilitliyken ya da program kapalıyken de gelir. Ek bir uygulama ya da hesap gerekmez. (Eskiden bildirimler Telegram'dan gidiyordu; artık kullanılmaz.)</p>
 
-<h2>5.1 Bot ne gönderir</h2>
+<h2>5.1 Hangi bildirimler gelir</h2>
 <table>
-  <thead><tr><th style="width:20%">Mesaj</th><th style="width:26%">Kime</th><th>İçerik</th></tr></thead>
+  <thead><tr><th style="width:22%">Bildirim</th><th style="width:26%">Kime</th><th>İçerik</th></tr></thead>
   <tbody>
-    <tr><td><b>Sabah listesi</b></td><td>Listesinde müşteri olan herkes</td><td>Kaç kişi aranacak (kaçı tekrar arama, kaçı yeni), bugün kaç müşterinin dükkana geleceği ve doğum günü yaklaşan müşteriler. Listenizde müşteri yoksa mesaj gelmez. Örnek: "Günaydın Elif. Bugün 12 kişi aranacak: 3 tekrar arama, 9 yeni."</td></tr>
-    <tr><td><b>Akşam özeti</b></td><td>Yönetici ve "Ekibin raporlarını görsün" yetkisi olanlar</td><td>Günün toplamı: atama, tamamlanan, ulaşılan, randevu ve tekrar sayıları ile çalışan bazında kısa durum.</td></tr>
-    <tr><td><b>Test mesajı</b></td><td>İsteyen herkes</td><td>Bağlantının çalıştığını denemek için kendinize gönderirsiniz.</td></tr>
+    <tr><td><b>Geri arama vakti</b></td><td>Müşteri kime atanmışsa o çalışana</td><td>"Sonra ara" ile seçilen saat gelince: "Esra U. için 14:30 aramasının vakti geldi."</td></tr>
+    <tr><td><b>Randevu hatırlatma</b></td><td>Müşteri kime atanmışsa o çalışana</td><td>Dükkana gelecek randevudan 30, 60 ya da 120 dakika önce (yönetici seçer): "16:00 Can Y. dükkana gelecek."</td></tr>
+    <tr><td><b>Test bildirimi</b></td><td>İsteyen herkes</td><td>Bildirimin bu telefonda çalıştığını denemek için kendinize gönderirsiniz (dakikada bir).</td></tr>
   </tbody>
 </table>
-<p>Saatler yönetici tarafından Ayarlar > Bildirimler'de belirlenir (varsayılan sabah 08:00, akşam 19:00). Her mesaj günde en fazla bir kez gönderilir.</p>
-<div class="note"><b>Önemli.</b> Tekrar arama hatırlatmaları Telegram'dan <b>gelmez</b>. Bunlar yalnız programın içinde, Bugün ekranındaki <b>Geri arama vakti</b> kartıyla yapılır.</div>
+<p>Sabah özeti, akşam özeti, yeni devir ve atama ile PIN kilitlendi bildirimleri ileride eklenecek; şimdilik gönderilmez. Bildirime dokununca program <b>Bugün</b> ekranında açılır.</p>
 
-<h2>5.2 Telegram açıldığında nasıl bağlanır</h2>
+<h2>5.2 Telefonda nasıl açılır</h2>
 <ol>
-  <li>Önce yönetici, Ayarlar > Bildirimler'de Telegram bildirimlerini <b>açar</b> (şu an kapalıdır). Kapalıyken bağlanılabilir ama mesajlar açılana kadar gelmez.</li>
-  <li><b>Çalışan:</b> <kbd>Profil</kbd> sayfasında <b>Telegram</b> kartında <kbd>Telegram'ı bağla</kbd> düğmesine basın. <b>Yönetici:</b> Ayarlar > Bildirimler'deki <b>Telegram hesabım</b> kartında aynısını yapın.</li>
-  <li>Program <b>Bağlama kodun</b> alanında 8 karakterlik bir kod üretir. Kod <b>15 dakika</b> geçerlidir. Süre dolarsa <kbd>Yeni kod üret</kbd> ile yenileyin.</li>
-  <li>Aynı kartta çıkan Telegram düğmesine dokunun. Telegram'da bot açılır; <b>Başlat</b> (Start) düğmesine basın.</li>
-  <li>Düğme çalışmazsa botu Telegram'da elle açın ve bota <b>/start KOD</b> yazın (KOD yerine ekrandaki kodu yazın).</li>
-  <li>Bot "Bağlantı kuruldu" mesajıyla yanıt verir. Programda durum <b>Bağlı</b> olur.</li>
-  <li>Kartta <b>Sabah listesi</b> ve (yetkiliyse) <b>Akşam özeti</b> anahtarlarıyla hangi mesajı almak istediğinizi seçin. <kbd>Test mesajı gönder</kbd> ile deneyin.</li>
+  <li><b>Android (Chrome):</b> <kbd>Profil</kbd> sayfasında <b>Bildirimler</b> kartında <kbd>Bu cihazda bildirimleri aç</kbd> düğmesine basın, çıkan izin sorusuna <b>İzin ver</b> deyin. Durum <b>Bu cihazda açık</b> olur.</li>
+  <li><b>iPhone (iOS 16.4 ve üstü):</b> bildirim yalnız <b>ana ekrana eklenmiş</b> programda çalışır. Safari'de programı açın, alttaki <b>Paylaş</b> düğmesine, sonra <b>Ana Ekrana Ekle</b>'ye dokunun. Ana ekrandaki simgeden programı açın ve <kbd>Profil</kbd> > <b>Bildirimler</b> kartında <kbd>Bu cihazda bildirimleri aç</kbd>'a basın. Safari sekmesinde açıksanız kartta bu adımlar yazar ve düğme görünmez.</li>
+  <li><kbd>Test bildirimi gönder</kbd> ile deneyin. Birkaç saniye içinde "Ringo test bildirimi" gelmelidir.</li>
+  <li>Kartta <b>Geri arama vakti</b> ve <b>Randevu hatırlatma</b> anahtarlarıyla hangi bildirimi almak istediğinizi seçin.</li>
 </ol>
-<p>Bağlantıyı kaldırmak için aynı karttaki kaldırma düğmesini kullanın. Yönetici, işten ayrılan veya telefonunu değiştiren birinin bağlantısını Ayarlar > Bildirimler > Telegram bağlantıları listesinden kaldırabilir.</p>
+<p>Birden çok telefonunuz varsa her birinde ayrı ayrı açın; kartta kaç cihazda açık olduğu yazar. Bir telefonda kapatmak için <kbd>Bu cihazda kapat</kbd>. Yönetici, Ayarlar > Bildirimler'de kimin hangi cihazda açtığını ve mağaza için bildirimleri açma/kapatma anahtarını görür.</p>
+<div class="note"><b>İzin verilmediyse.</b> Kartta "Bildirim izni kapalı" yazıyorsa izin daha önce reddedilmiştir. Android'de tarayıcı ayarlarından, iPhone'da Ayarlar > Bildirimler > programın adı altından izni açıp sayfayı yenileyin.</div>
 
 <h2>5.3 Gizlilik notu</h2>
-<div class="note"><b>Gizlilik.</b> Mesajlarda müşteri adı geçebilir (örneğin doğum günü yaklaşanlar) ve akşam özetinde çalışanların adları ile sayıları yer alır. Telefon numaraları mesajlarda yer almaz. Yine de telefonunuzun kilit ekranında bildirim önizlemesi açıksa başkaları mesajı görebilir. Telefonunuza ekran kilidi koyun, bildirim önizlemesini kilit ekranında kapatın ve botu yalnız kendi telefonunuzdaki Telegram hesabına bağlayın.</div>
+<div class="note"><b>Gizlilik.</b> Bildirimde müşterinin adı ve soyadının yalnız baş harfi görünür (örneğin "Esra U."). Telefon numarası bildirimde yer almaz. Yine de telefonunuzun kilit ekranında bildirim önizlemesi açıksa başkaları bildirimi görebilir. Telefonunuza ekran kilidi koyun ve istemiyorsanız bildirim önizlemesini kilit ekranında kapatın.</div>
 
 <h1>6. Meta (Facebook ve Instagram) reklam formları</h1>
 <p>Reklam formunu dolduran kişilerin bilgileri Meta tarafında toplanır. Bu bilgileri programa almanın iki yolu vardır: şu an kullanılan <b>dosya ile içe aktarma</b> ve ileride kurulabilecek <b>otomatik bağlantı</b>.</p>
@@ -455,7 +451,7 @@
     <tr><td><b>Giriş olmuyor</b></td><td>E-posta adresini ve şifreyi tekrar yazın (büyük/küçük harfe ve boşluğa dikkat). Olmuyorsa <kbd>Şifremi unuttum</kbd> ile yeni şifre alın. Hâlâ olmuyorsa yönetici sizin hesabınızın <b>aktif</b> olduğunu Ayarlar > Ekip'ten kontrol etsin; pasif hesap giriş yapamaz.</td></tr>
     <tr><td><b>PIN'imi unuttum</b></td><td>Yöneticinize söyleyin: <kbd>Ayarlar</kbd> > <b>Ekip</b> > <kbd>PIN sıfırla</kbd>. Sonraki girişinizde yeni PIN belirlersiniz. 5 yanlış denemeden sonra da aynı yol geçerlidir.</td></tr>
     <tr><td><b>Ekran kendiliğinden kilitleniyor</b></td><td>Otomatik kilit çalışıyor. Süreyi <kbd>Profil</kbd> > <b>Güvenlik</b> > <b>Otomatik kilit</b>'ten uzatabilirsiniz.</td></tr>
-    <tr><td><b>Telegram mesajı gelmiyor</b></td><td>Telegram şu an kapalıdır; mesaj gelmemesi normaldir. Yönetici Telegram'ı açtıysa sırayla kontrol edin: (1) Profil'de durum <b>Bağlı</b> mı? Değilse yeniden bağlayın. (2) <b>Sabah listesi</b> anahtarı açık mı? (3) <kbd>Test mesajı gönder</kbd> ile deneyin. (4) Yönetici Ayarlar > Bildirimler'de <b>Telegram bildirimleri açık</b> anahtarını ve saatleri kontrol etsin. (5) Listenizde o gün müşteri yoksa sabah mesajı gelmez; bu normaldir. (6) Telegram'da botu engellediyseniz engeli kaldırın.</td></tr>
+    <tr><td><b>Bildirim gelmiyor</b></td><td>Sırayla kontrol edin: (1) <kbd>Profil</kbd> > <b>Bildirimler</b> kartında durum <b>Bu cihazda açık</b> mı? Değilse düğmeyle açın (iPhone'da önce ana ekrana ekleyin). (2) <kbd>Test bildirimi gönder</kbd> ile deneyin. (3) <b>Geri arama vakti</b> ve <b>Randevu hatırlatma</b> anahtarları açık mı? (4) Telefonun bildirim ayarında bu program için izin açık mı, "rahatsız etme" modu kapalı mı? (5) Yönetici Ayarlar > Bildirimler'de <b>Bildirimler açık</b> anahtarını kontrol etsin. (6) Bildirim yalnız müşterinin atandığı çalışana gider; müşteri size atanmamışsa size gelmez.</td></tr>
     <tr><td><b>Müşteri listede yok</b></td><td>Müşteri ya size atanmamıştır ya da bekliyordur. Müşteriler sayfasında arayın. <b>Havuz</b>'da olabilir (vakti gelince döner veya <kbd>Kendime al</kbd>). Ertelenmiş olabilir: Bugün'de <b>Ertelendi</b> grubuna bakın. Bugün içe aktarıldıysa yönetici <kbd>Dağıt</kbd>'a basmamış olabilir. Hiç görünmüyorsa size görme yetkisi verilmemiştir; yöneticiye sorun.</td></tr>
     <tr><td><b>Müşteri yanlış kişiye düştü</b></td><td>Yöneticiye ya da "Devredebilsin" yetkisi olana söyleyin: Müşteriler sayfasında müşteriyi açıp <kbd>Devret</kbd> ile veya birden çoğu için işaretleyip <kbd>Aktar</kbd> ile doğru kişiye verilir. Bir çalışan o gün yoksa Yönetim'de <kbd>Bugün yok</kbd> veya <kbd>İşlerini aktar</kbd> kullanılır.</td></tr>
     <tr><td><b>Yanlış sonuç girdim</b></td><td>Kayıtlar silinmez. Müşteri açıksa doğru sonucu yeniden girin; müşteri kapandıysa yöneticiye bildirin. Randevu zamanı veya Huni aşaması yanlışsa Huni veya müşteri detayından düzeltilir.</td></tr>

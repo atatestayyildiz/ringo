@@ -32,7 +32,7 @@
 .accSolo {
   grid-column: span 12;
 }
-/* Tam genişlik kartta (yönetici, Telegram kartı yok) 6 sütunluk ızgara seyrek kalır: sola yaslı tek dizi */
+/* Tam genişlik kartta (eski düzen) 6 sütunluk ızgara seyrek kalır: sola yaslı tek dizi */
 .accSolo .swatches {
   display: flex;
   flex-wrap: wrap;
@@ -380,4 +380,38 @@
 .swatch:has(.accentInput:focus-visible) {
   outline: 2px solid var(--brand);
   outline-offset: 3px;
+}
+
+/* ayarlar: bildirim türleri listesi */
+.kinds {
+  display: flex;
+  flex-direction: column;
+}
+.kind {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.kind:first-child {
+  border-top: 0;
+}
+.kind > div {
+  min-width: 0;
+}
+.kind b {
+  display: block;
+  font-size: 14.5px;
+}
+.kind small {
+  display: block;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  line-height: 1.45;
+  margin-top: 2px;
+}
+.kind > :global(.chip) {
+  flex: none;
 }

@@ -72,17 +72,26 @@ test.describe("profil: arayüz rengi", () => {
     }
   });
 
-  test("Telegram kartı: yöneticide Profil'de yok, Ayarlar > Bildirimler'de var; satışçıda Profil'de var", async ({ page }) => {
+  test("Bildirimler kartı (Push): yönetici ve satışçının Profil'inde, yöneticinin Ayarlar > Bildirimler'inde görünür", async ({ page }) => {
+    // Gerçek push çalıştırılmaz: yalnız kart başlığı ve düğme/rehber görünürlüğü.
     await loginOk(page, "yonetici");
     await page.goto("/profil");
-    await expect(page.getByRole("heading", { name: "Arayüz rengi" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Telegram", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Bildirimler", exact: true })).toBeVisible();
+    await expect(page.getByRole("switch", { name: "Geri arama vakti" })).toBeVisible();
+    await expect(page.getByRole("switch", { name: "Randevu hatırlatma" })).toBeVisible();
     await page.goto("/ayarlar");
     await page.getByRole("button", { name: "Bildirimler", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Telegram hesabım" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Hangi bildirimler gönderilir" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Bu cihazdaki bildirimlerim" })).toBeVisible();
     await page.context().clearCookies();
     await loginOk(page, "ayse");
     await page.goto("/profil");
-    await expect(page.getByRole("heading", { name: "Telegram", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Bildirimler", exact: true })).toBeVisible();
+    // Masaüstü tarayıcıda durum: aç düğmesi, desteklenmiyor ya da izin uyarısı (hangisi olursa).
+    await expect(
+      page
+        .getByRole("button", { name: "Bu cihazda bildirimleri aç" })
+        .or(page.getByText(/desteklemiyor|bildirim izni kapalı|Bu cihazda açık/i)),
+    ).toBeVisible();
   });
 });
