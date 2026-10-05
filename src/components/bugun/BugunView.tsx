@@ -562,39 +562,6 @@ export function BugunView(props: Props) {
             </Card>
           ) : null}
 
-          {isManager && team ? (
-            <Card className={styles.teamCard}>
-              <h2>
-                Ekibin bugünkü ilerlemesi
-                <span className={styles.headNote}>
-                  {team.reduce((s, t) => s + t.done, 0)} /{" "}
-                  {team.reduce((s, t) => s + t.assigned, 0)} bitti
-                </span>
-              </h2>
-              {team.length ? (
-                team.map((t) => (
-                  <div className={styles.row} key={t.memberId}>
-                    <Avatar name={t.name} size={40} radius={14} />
-                    <div className={styles.rowT}>
-                      <b>{t.name}</b>
-                      <div className={styles.mini}>
-                        <i
-                          style={{
-                            width: `${t.assigned ? (t.done / t.assigned) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <span className={styles.teamCount}>
-                      {t.done}/{t.assigned}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className={styles.empty}>Henüz atama yok.</p>
-              )}
-            </Card>
-          ) : null}
         </div>
         <div className={styles.colSide}>
           {items.length > 0 ? (
@@ -698,10 +665,46 @@ export function BugunView(props: Props) {
             </Card>
           </div>
 
-          {isManager && team ? (
-            <div className={`${styles.stack} ${styles.distStack}`}>
-              <Card>
-                <h2>Dağıtım</h2>
+        </div>
+      </div>
+
+      {isManager && team ? (
+        <div className={styles.mgrRow}>
+          <Card className={styles.teamCard}>
+            <h2>
+              Ekibin bugünkü ilerlemesi
+              <span className={styles.headNote}>
+                {team.reduce((s, t) => s + t.done, 0)} /{" "}
+                {team.reduce((s, t) => s + t.assigned, 0)} bitti
+              </span>
+            </h2>
+            {team.length ? (
+              <div className={styles.teamGrid} data-testid="team-grid">
+                {team.map((t) => (
+                  <div className={styles.teamCell} key={t.memberId}>
+                    <Avatar name={t.name} size={40} radius={14} />
+                    <div className={styles.rowT}>
+                      <b>{t.name}</b>
+                      <div className={styles.mini}>
+                        <i
+                          style={{
+                            width: `${t.assigned ? (t.done / t.assigned) * 100 : 0}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <span className={styles.teamCount}>
+                      {t.done}/{t.assigned}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className={styles.empty}>Henüz atama yok.</p>
+            )}
+          </Card>
+          <Card className={styles.distCard}>
+            <h2>Dağıtım</h2>
                 <div className={styles.distribute}>
                   {mode === "auto_even" ? (
                     <>
@@ -737,11 +740,9 @@ export function BugunView(props: Props) {
                     </p>
                   )}
                 </div>
-              </Card>
-            </div>
-          ) : null}
+          </Card>
         </div>
-      </div>
+      ) : null}
 
       <CallbackDialog
         open={dialog?.kind === "callback"}
