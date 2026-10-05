@@ -28,8 +28,20 @@ export default async function Page() {
         <h1>Profil</h1>
         <p>Telegram bildirimleri, arayüz rengi ve hesap güvenliği.</p>
       </div>
-      <div className={s.cols}>
-        <div className={s.stack}>
+      <div className={s.bento}>
+        <div className={`${s.cell} ${s.who12}`}>
+          <Card>
+            <div className={s.who}>
+              <Avatar name={ctx.member.full_name} size={48} />
+              <div>
+                <b>{ctx.member.full_name}</b>
+                <small>{ctx.user.email}</small>
+              </div>
+              <Chip>{isManager ? "Yönetici" : "Çalışan"}</Chip>
+            </div>
+          </Card>
+        </div>
+        <div className={`${s.cell} ${s.tg}`}>
           <TelegramCard
             linked={me?.telegram_linked_at != null}
             linkedAt={me?.telegram_linked_at ?? null}
@@ -43,18 +55,10 @@ export default async function Page() {
             showSummary={showSummary}
           />
         </div>
-        <div className={s.stack}>
-          <Card>
-            <div className={s.who}>
-              <Avatar name={ctx.member.full_name} size={48} />
-              <div>
-                <b>{ctx.member.full_name}</b>
-                <small>{ctx.user.email}</small>
-              </div>
-              <Chip>{isManager ? "Yönetici" : "Çalışan"}</Chip>
-            </div>
-          </Card>
+        <div className={`${s.cell} ${s.acc}`}>
           <AccentCard current={me?.accent_color ?? null} brandColor={ctx.settings.brand_color} isManager={isManager} />
+        </div>
+        <div className={`${s.cell} ${s.pw}`}>
           <PasswordCard />
         </div>
       </div>
