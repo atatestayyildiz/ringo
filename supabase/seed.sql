@@ -10,8 +10,7 @@ insert into public.tenants (id, name)
 values ('11111111-1111-1111-1111-111111111111', 'Demo Mağaza');
 
 update public.tenant_settings
-set brand_name = 'Demo Mağaza',
-    telegram_bot_username = 'demo_magaza_bot'
+set brand_name = 'Demo Mağaza'
 where tenant_id = '11111111-1111-1111-1111-111111111111';
 
 -- ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
--- day_summary ve Telegram özeti: yarına ertelenmiş retry müşteri sayıya girmez (20261005000300)
+-- day_summary: yarına ertelenmiş retry müşteri sayıya girmez (20261005000300). Telegram özeti kalktı (20261006000100).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(4);
 
 insert into auth.users (instance_id, id, aud, role, email) values
   ('00000000-0000-0000-0000-000000000000', '20000000-0000-4000-8000-0000000000e1', 'authenticated', 'authenticated', 'dd-mgr@test.test');
@@ -20,13 +20,6 @@ select '10000000-0000-4000-8000-0000000000e1', public.tr_today(), id, '30000000-
        row_number() over (order by id)
 from public.customers where tenant_id = '10000000-0000-4000-8000-0000000000e1';
 
--- Telegram özeti kiracıda yalnız yönetici için; hedefleri service_role değil, doğrudan tanım ile sınarız
-update public.tenant_settings set telegram_enabled = true, summary_hour = 0
- where tenant_id = '10000000-0000-4000-8000-0000000000e1';
-update public.members set telegram_chat_id = 99001, notify_summary = true
- where id = '30000000-0000-4000-8000-0000000000e1';
-create temp table _targets on commit drop as
-  select * from public._notification_targets(now()) where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'summary';
 
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000e1","role":"authenticated"}', true);
 set local role authenticated;
@@ -41,10 +34,6 @@ select is((select count(*)::int from public.day_summary(public.tr_today() + 1) w
           0, 'başka güne atama yoksa üye satırı çıkmaz');
 
 reset role;
-select is((select (payload -> 'totals' ->> 'assigned')::int from _targets), 4, 'Telegram toplam assigned day_summary ile aynı');
-select is((select (payload -> 'totals' ->> 'done')::int from _targets), 1, 'Telegram toplam done day_summary ile aynı');
-select is((select (payload -> 'totals' ->> 'retries')::int from _targets), 2, 'Telegram toplam retries day_summary ile aynı');
-select is((select (payload -> 'members' -> 0 ->> 'assigned')::int from _targets), 4, 'Telegram üye satırı assigned');
 
 select * from finish();
 rollback;

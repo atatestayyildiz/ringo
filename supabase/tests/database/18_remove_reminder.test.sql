@@ -1,4 +1,6 @@
--- Tekrar arama hatırlatması kaldırıldı (migration 20261005000400_remove_reminder.sql)
+-- Tekrar arama hatırlatması kaldırıldı (migration 20261005000400_remove_reminder.sql);
+-- push geçişiyle (20261006000100_push_notifications.sql) reminder_hour ve notify_reminder düşürüldü,
+-- sabah/akşam Telegram hedefleri de üretilmez (Yakında).
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(4);
@@ -12,25 +14,26 @@ insert into public.customers (id, tenant_id, full_name, phone, call_status, next
   ('40000000-0000-4000-8000-0000000000a1', '10000000-0000-4000-8000-0000000000a1', 'Kurgu Müşteri', '05321180001', 'retry', now(), '30000000-0000-4000-8000-0000000000a1');
 insert into public.daily_assignments (tenant_id, day, customer_id, member_id, position) values
   ('10000000-0000-4000-8000-0000000000a1', public.tr_today(), '40000000-0000-4000-8000-0000000000a1', '30000000-0000-4000-8000-0000000000a1', 1);
-update public.members set telegram_chat_id = 7001, telegram_linked_at = now(), notify_reminder = true
-where id = '30000000-0000-4000-8000-0000000000a1';
+insert into public.push_subscriptions (tenant_id, member_id, endpoint, p256dh, auth) values
+  ('10000000-0000-4000-8000-0000000000a1', '30000000-0000-4000-8000-0000000000a1', 'https://push.example.test/rm-1', repeat('a', 87), repeat('b', 22));
 update public.tenant_settings
-set telegram_enabled = true, distribution_mode = 'manual', distribution_hour = 8, reminder_hour = 10, summary_hour = 19
+set push_enabled = true, distribution_mode = 'manual', distribution_hour = 8, summary_hour = 19
 where tenant_id = '10000000-0000-4000-8000-0000000000a1';
 
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '12 hours') at time zone 'Europe/Istanbul')
            where tenant_id = '10000000-0000-4000-8000-0000000000a1' and kind = 'reminder'),
-          0, 'reminder hedefi artık dönmez (saat geçmiş, retry var, tercih açık)');
+          0, 'reminder hedefi dönmez (retry var, abonelik var)');
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '23 hours') at time zone 'Europe/Istanbul')
-           where kind = 'reminder'),
-          0, 'hiçbir saatte reminder hedefi yok');
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '12 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000a1' and kind = 'morning'),
-          1, 'morning hedefi korunur');
+           where kind in ('reminder', 'morning', 'summary')),
+          0, 'hiçbir saatte reminder, morning ya da summary hedefi yok');
 select is((select count(*)::int from information_schema.columns
            where table_schema = 'public' and table_name in ('tenant_settings', 'members')
              and column_name in ('reminder_hour', 'notify_reminder')),
-          2, 'reminder_hour ve notify_reminder kolonları düşürülmedi');
+          0, 'reminder_hour ve notify_reminder kolonları düşürüldü');
+select is((select count(*)::int from information_schema.columns
+           where table_schema = 'public' and table_name = 'members'
+             and column_name in ('notify_morning', 'notify_summary')),
+          2, 'notify_morning ve notify_summary kalır (gelecek)');
 
 select * from finish();
 rollback;

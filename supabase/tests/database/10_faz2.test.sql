@@ -1,7 +1,7 @@
--- Faz 2: Telegram bağlama, bildirim hedefleri, rapor, dışa aktarma (migration 20261004000800_faz2.sql)
+-- Faz 2: bildirim hedefleri (push, 20261006000100), rapor, dışa aktarma (migration 20261004000800_faz2.sql)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(119);
+select plan(85);
 
 -- ---------------------------------------------------------------------------
 -- Fixture (hepsi kurgusal)
@@ -81,311 +81,208 @@ insert into public.audit_log (tenant_id, member_id, action, entity, entity_id, d
   ('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', 'log_call', 'customer', '40000000-0000-4000-8000-0000000000d1', '{"call_status":"pool"}', now() - interval '3 days');
 
 -- ---------------------------------------------------------------------------
--- Yeni kolon varsayılanları
+-- Push geçişi (20261006000100): Telegram bağlama, sabah/hatırlatma/özet hedefleri kalktı.
+-- Bu bölüm push varsayılanlarını, yetkileri, geri arama ve randevu hedeflerini sınar.
 -- ---------------------------------------------------------------------------
-select is((select telegram_enabled::text || '/' || reminder_hour || '/' || coalesce(telegram_bot_username, '-')
+select is((select push_enabled::text || '/' || appointment_lead_minutes
            from public.tenant_settings where tenant_id = '10000000-0000-4000-8000-0000000000d1'),
-          'false/15/-', 'varsayılanlar: telegram kapalı, hatırlatma 15, kullanıcı adı yok');
-select is((select notify_morning::text || notify_reminder || notify_summary || coalesce(telegram_chat_id::text, '-')
+          'true/60', 'varsayılanlar: push açık, randevu hatırlatma 60 dk');
+select is((select notify_callback::text || notify_appointment || notify_morning || notify_summary
            from public.members where id = '30000000-0000-4000-8000-0000000000d2'),
-          'truetruetrue-', 'varsayılanlar: bildirim tercihleri açık, bağlı değil');
+          'truetruetruetrue', 'varsayılanlar: bildirim tercihleri açık');
 
 -- ---------------------------------------------------------------------------
--- İç fonksiyonlar istemci rollerine kapalı
+-- İç fonksiyonlar istemci rollerine kapalı, push RPC'leri authenticated'a açık
 -- ---------------------------------------------------------------------------
-select ok(not has_function_privilege('authenticated', 'public._telegram_consume_link_code(text, bigint)', 'EXECUTE'),
-          'yetki: _telegram_consume_link_code authenticated''a kapalı');
-select ok(not has_function_privilege('anon', 'public._telegram_consume_link_code(text, bigint)', 'EXECUTE'),
-          'yetki: _telegram_consume_link_code anon''a kapalı');
 select ok(not has_function_privilege('authenticated', 'public._notification_targets(timestamptz)', 'EXECUTE'),
           'yetki: _notification_targets authenticated''a kapalı');
 select ok(not has_function_privilege('anon', 'public._notification_targets(timestamptz)', 'EXECUTE'),
           'yetki: _notification_targets anon''a kapalı');
-select ok(not has_function_privilege('authenticated', 'public._notification_record(uuid, uuid, text, date, text, text)', 'EXECUTE'),
-          'yetki: _notification_record authenticated''a kapalı');
-select ok(not has_function_privilege('anon', 'public._notification_record(uuid, uuid, text, date, text, text)', 'EXECUTE'),
-          'yetki: _notification_record anon''a kapalı');
-select ok(has_function_privilege('service_role', 'public._telegram_consume_link_code(text, bigint)', 'EXECUTE')
-          and has_function_privilege('service_role', 'public._notification_targets(timestamptz)', 'EXECUTE')
-          and has_function_privilege('service_role', 'public._notification_record(uuid, uuid, text, date, text, text)', 'EXECUTE'),
+select ok(not has_function_privilege('authenticated', 'public._notification_claim(uuid, uuid, text, date, uuid)', 'EXECUTE')
+          and not has_function_privilege('anon', 'public._notification_claim(uuid, uuid, text, date, uuid)', 'EXECUTE')
+          and not has_function_privilege('authenticated', 'public._notification_since(text, uuid)', 'EXECUTE')
+          and not has_function_privilege('authenticated', 'public._push_name(text)', 'EXECUTE'),
+          'yetki: iç bildirim yardımcıları istemciye kapalı');
+select ok(has_function_privilege('service_role', 'public._notification_targets(timestamptz)', 'EXECUTE')
+          and has_function_privilege('service_role', 'public._notification_claim(uuid, uuid, text, date, uuid)', 'EXECUTE')
+          and has_function_privilege('service_role', 'public._notification_finish(bigint, text, text)', 'EXECUTE'),
           'yetki: iç fonksiyonlar service_role''a açık');
 select ok(not has_function_privilege('anon', 'public.report_range(date, date)', 'EXECUTE')
           and not has_function_privilege('anon', 'public.log_export(text, int, jsonb)', 'EXECUTE')
-          and not has_function_privilege('anon', 'public.telegram_create_link_code()', 'EXECUTE')
-          and not has_function_privilege('anon', 'public.telegram_unlink(uuid)', 'EXECUTE')
-          and not has_function_privilege('anon', 'public.set_notify_prefs(boolean, boolean, boolean)', 'EXECUTE'),
+          and not has_function_privilege('anon', 'public.push_subscribe(text, text, text, text)', 'EXECUTE')
+          and not has_function_privilege('anon', 'public.push_unsubscribe(text)', 'EXECUTE')
+          and not has_function_privilege('anon', 'public.push_status()', 'EXECUTE')
+          and not has_function_privilege('anon', 'public.set_push_prefs(boolean, boolean)', 'EXECUTE')
+          and not has_function_privilege('anon', 'public.push_team_status()', 'EXECUTE')
+          and not has_function_privilege('anon', 'public.set_push_settings(boolean, integer)', 'EXECUTE'),
           'yetki: kullanıcı fonksiyonları anon''a kapalı');
 select ok(has_function_privilege('authenticated', 'public.report_range(date, date)', 'EXECUTE')
           and has_function_privilege('authenticated', 'public.log_export(text, int, jsonb)', 'EXECUTE')
-          and has_function_privilege('authenticated', 'public.telegram_create_link_code()', 'EXECUTE')
-          and has_function_privilege('authenticated', 'public.telegram_unlink(uuid)', 'EXECUTE')
-          and has_function_privilege('authenticated', 'public.set_notify_prefs(boolean, boolean, boolean)', 'EXECUTE'),
+          and has_function_privilege('authenticated', 'public.push_subscribe(text, text, text, text)', 'EXECUTE')
+          and has_function_privilege('authenticated', 'public.push_unsubscribe(text)', 'EXECUTE')
+          and has_function_privilege('authenticated', 'public.push_status()', 'EXECUTE')
+          and has_function_privilege('authenticated', 'public.set_push_prefs(boolean, boolean)', 'EXECUTE')
+          and has_function_privilege('authenticated', 'public.push_team_status()', 'EXECUTE')
+          and has_function_privilege('authenticated', 'public.set_push_settings(boolean, integer)', 'EXECUTE'),
           'yetki: kullanıcı fonksiyonları authenticated''a açık');
+select ok(to_regprocedure('public.telegram_create_link_code()') is null
+          and to_regprocedure('public.set_notify_prefs(boolean, boolean, boolean)') is null
+          and to_regprocedure('public._notification_record(uuid, uuid, text, date, text, text)') is null,
+          'Telegram bağlama, eski tercih ve kayıt fonksiyonları yok');
 
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d2","role":"authenticated"}', true);
 set local role authenticated;
-select throws_ok($$select public._telegram_consume_link_code('AAAAAAAA', 1)$$, '42501', null,
-                 'yetki: authenticated _telegram_consume_link_code çağıramaz');
 select throws_ok($$select * from public._notification_targets(now())$$, '42501', null,
                  'yetki: authenticated _notification_targets çağıramaz');
-select throws_ok($$select public._notification_record('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', 'test', current_date, 'sent', null)$$,
-                 '42501', null, 'yetki: authenticated _notification_record çağıramaz');
-select throws_ok($$select * from public.telegram_link_codes$$, '42501', null,
-                 'RLS: telegram_link_codes doğrudan okunamaz');
-select throws_ok($$update public.members set telegram_chat_id = 5 where id = '30000000-0000-4000-8000-0000000000d2'$$,
-                 '42501', null, 'yetki: üye telegram_chat_id alanını doğrudan yazamaz');
-
--- ---------------------------------------------------------------------------
--- Bağlama kodu üretimi (Zeynep)
--- ---------------------------------------------------------------------------
-reset role;
-create temp table _codes (n int, code text);
-grant all on _codes to authenticated;
-select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d2","role":"authenticated"}', true);
-set local role authenticated;
-insert into _codes select 1, public.telegram_create_link_code();
+select throws_ok($$select public._notification_claim('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', 'test', current_date)$$,
+                 '42501', null, 'yetki: authenticated _notification_claim çağıramaz');
+select throws_ok($$insert into public.push_subscriptions (tenant_id, member_id, endpoint, p256dh, auth)
+                   values ('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', 'https://push.example.test/x', 'a', 'b')$$,
+                 '42501', null, 'yetki: üye push_subscriptions''a doğrudan yazamaz');
+select throws_ok($$update public.members set notify_callback = false where id = '30000000-0000-4000-8000-0000000000d2'$$,
+                 '42501', null, 'yetki: üye bildirim tercihini doğrudan yazamaz');
 reset role;
 
-select matches((select code from _codes where n = 1), '^[2-9A-HJ-NP-Z]{8}$', 'kod: 8 karakter, karışmayan alfabe');
-select is((select expires_at from public.telegram_link_codes where code = (select code from _codes where n = 1)),
-          now() + interval '15 minutes', 'kod: 15 dakika geçerli');
-select is((select member_id from public.telegram_link_codes where code = (select code from _codes where n = 1)),
-          '30000000-0000-4000-8000-0000000000d2'::uuid, 'kod: çağıran üye için üretilir');
+-- ---------------------------------------------------------------------------
+-- Bildirim fixture: Zeynep ve Deniz birer cihaz, Burak cihazsız.
+-- Geri arama: Can İki (Zeynep), Hale Beş (Deniz), Kaan Yedi (Burak) 5 dakika önce.
+-- Randevu: Ali Bir (Zeynep) bugün 12:00.
+-- ---------------------------------------------------------------------------
+insert into public.push_subscriptions (tenant_id, member_id, endpoint, p256dh, auth) values
+  ('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', 'https://push.example.test/f2-zey', repeat('a', 87), repeat('b', 22)),
+  ('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d3', 'https://push.example.test/f2-den', repeat('a', 87), repeat('b', 22));
+update public.customers set last_outcome = 'callback', next_call_at = now() - interval '5 minutes'
+where id in ('40000000-0000-4000-8000-0000000000d2', '40000000-0000-4000-8000-0000000000d5', '40000000-0000-4000-8000-0000000000d7');
+update public.customers set pipeline_stage = 'appointment', appointment_day = public.tr_today(), appointment_time = '12:00'
+where id = '40000000-0000-4000-8000-0000000000d1';
 
-select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d2","role":"authenticated"}', true);
-set local role authenticated;
-insert into _codes select 2, public.telegram_create_link_code();
-reset role;
-select is((select count(*)::int from public.telegram_link_codes where member_id = '30000000-0000-4000-8000-0000000000d2' and used_at is null),
-          1, 'kod: yeni kod eski kullanılmamış kodu siler');
-select isnt((select code from _codes where n = 2), (select code from _codes where n = 1), 'kod: yeni kod farklı');
-select is((select count(*)::int from public.telegram_link_codes where code = (select code from _codes where n = 1)),
-          0, 'kod: eski kod artık yok');
+create temp table at_time (label text primary key, ts timestamptz);
+insert into at_time values
+  ('1059', (public.tr_today()::timestamp + interval '10 hours 59 minutes') at time zone 'Europe/Istanbul'),
+  ('1100', (public.tr_today()::timestamp + interval '11 hours') at time zone 'Europe/Istanbul'),
+  ('1130', (public.tr_today()::timestamp + interval '11 hours 30 minutes') at time zone 'Europe/Istanbul'),
+  ('1209', (public.tr_today()::timestamp + interval '12 hours 9 minutes') at time zone 'Europe/Istanbul'),
+  ('1211', (public.tr_today()::timestamp + interval '12 hours 11 minutes') at time zone 'Europe/Istanbul');
+create temp view cb as
+  select * from public._notification_targets(now())
+  where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'callback';
 
 -- ---------------------------------------------------------------------------
--- Kodun tüketilmesi
+-- callback
 -- ---------------------------------------------------------------------------
-select is((select public._telegram_consume_link_code((select code from _codes where n = 2), 1001) ->> 'ok'),
-          'true', 'tüketim: geçerli kod kabul edilir');
-select is((select public._telegram_consume_link_code((select code from _codes where n = 2), 1001) ->> 'reason'),
-          'used', 'tüketim: kod tek kullanımlık');
-select is((select telegram_chat_id from public.members where id = '30000000-0000-4000-8000-0000000000d2'),
-          1001::bigint, 'tüketim: chat_id üyeye yazıldı');
-select ok((select telegram_linked_at from public.members where id = '30000000-0000-4000-8000-0000000000d2') is not null,
-          'tüketim: telegram_linked_at dolu');
-select is((select public._telegram_consume_link_code('ZZZZZZZZ', 9) ->> 'reason'),
-          'invalid', 'tüketim: bilinmeyen kod invalid');
-select is((select public._telegram_consume_link_code(null, 9) ->> 'reason'),
-          'invalid', 'tüketim: boş kod invalid');
-
-insert into public.telegram_link_codes (code, tenant_id, member_id, expires_at) values
-  ('EXPRED22', '10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d3', now() - interval '1 minute');
-select is((select public._telegram_consume_link_code('EXPRED22', 1002) ->> 'reason'),
-          'expired', 'tüketim: süresi geçmiş kod expired');
-select is((select telegram_chat_id from public.members where id = '30000000-0000-4000-8000-0000000000d3'),
-          null::bigint, 'tüketim: süresi geçmiş kodla bağlanılmaz');
-
--- Başka chat bağlıyken yeniden bağlama: chat güncellenir
-insert into public.telegram_link_codes (code, tenant_id, member_id, expires_at) values
-  ('REBND222', '10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', now() + interval '10 minutes');
-select is((select public._telegram_consume_link_code('rebnd222', 2001) ->> 'full_name'),
-          'Zeynep Ajan', 'yeniden bağlama: küçük harf kod kabul edilir, ad döner');
-select is((select telegram_chat_id from public.members where id = '30000000-0000-4000-8000-0000000000d2'),
-          2001::bigint, 'yeniden bağlama: üye yeni chat''e taşındı');
-
--- Aynı chat başka üyeye bağlanırsa önceki üyenin bağlantısı kalkar
-insert into public.telegram_link_codes (code, tenant_id, member_id, expires_at) values
-  ('STEAL222', '10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d3', now() + interval '10 minutes');
-select is((select public._telegram_consume_link_code('STEAL222', 2001) ->> 'tenant_name'),
-          'Faz Iki Kiracı', 'chat devri: kiracı adı döner');
-select is((select telegram_chat_id from public.members where id = '30000000-0000-4000-8000-0000000000d2'),
-          null::bigint, 'chat devri: önceki üyenin bağlantısı kalktı');
-select is((select telegram_chat_id from public.members where id = '30000000-0000-4000-8000-0000000000d3'),
-          2001::bigint, 'chat devri: yeni üye bağlandı');
-select is((select count(*)::int from public.audit_log where action = 'telegram_link' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
-          3, 'tüketim: her başarılı bağlama audit satırı yazar');
-
--- Pasif üyenin kodu tüketilemez
-insert into public.telegram_link_codes (code, tenant_id, member_id, expires_at) values
-  ('PASF2222', '10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d4', now() + interval '10 minutes');
-update public.members set is_active = false where id = '30000000-0000-4000-8000-0000000000d4';
-select is((select public._telegram_consume_link_code('PASF2222', 3001) ->> 'reason'),
-          'invalid', 'tüketim: pasif üye için kod invalid');
-update public.members set is_active = true where id = '30000000-0000-4000-8000-0000000000d4';
-
--- ---------------------------------------------------------------------------
--- Bildirim fixture: bağlantılar ve ayar
--- Zeynep 1001, Deniz 1002, Yönetici 1003; Burak bağlı değil
--- ---------------------------------------------------------------------------
-update public.members set telegram_chat_id = 1001, telegram_linked_at = now() where id = '30000000-0000-4000-8000-0000000000d2';
-update public.members set telegram_chat_id = 1002, telegram_linked_at = now() where id = '30000000-0000-4000-8000-0000000000d3';
-update public.members set telegram_chat_id = 1003, telegram_linked_at = now() where id = '30000000-0000-4000-8000-0000000000d1';
-update public.tenant_settings set telegram_enabled = true where tenant_id = '10000000-0000-4000-8000-0000000000d1';
-
--- ---------------------------------------------------------------------------
--- _notification_targets: morning (saat 08)
--- ---------------------------------------------------------------------------
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'morning'),
-          2, 'morning: bağlı ve atamalı iki üye hedef (yönetici atamasız, Burak bağlı değil)');
-select is((select payload::text from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d2' and kind = 'morning'),
-          jsonb_build_object('first_name', 'Zeynep', 'total', 4, 'retries', 1, 'new', 2,
-                             'birthdays', jsonb_build_array(jsonb_build_object('full_name', 'Gül Dört', 'days_left', 2)),
-                             'appointments_today', 0)::text,
-          'morning: payload alanları (ad, toplam, tekrar, yeni, doğum günü, bugünkü randevu)');
-select is((select chat_id from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d3' and kind = 'morning'),
-          1002::bigint, 'morning: chat_id döner');
-select is((select payload -> 'birthdays' from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d3' and kind = 'morning'),
-          '[]'::jsonb, 'morning: doğum günü yoksa boş liste');
--- 0900 (O1) sonrası: saat koşulu ">= ayar saati"; ayar saatlerinden önce hedef yok
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '7 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1'),
-          0, 'saat: tüm ayar saatlerinden önce hedef yok');
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours 59 minutes') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'morning'),
-          2, 'saat: 08:59 hâlâ 08 saati sayılır (Europe/Istanbul)');
-
--- distribution_hour değişince morning saati de değişir
-update public.tenant_settings set distribution_hour = 10 where tenant_id = '10000000-0000-4000-8000-0000000000d1';
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'morning'),
-          0, 'saat: morning distribution_hour''a bağlı (08 artık eşleşmez)');
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '10 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'morning'),
-          2, 'saat: morning yeni distribution_hour''da hedef verir');
-update public.tenant_settings set distribution_hour = 8 where tenant_id = '10000000-0000-4000-8000-0000000000d1';
-
--- tercih kapalı
-update public.members set notify_morning = false where id = '30000000-0000-4000-8000-0000000000d3';
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'morning'),
-          1, 'tercih: notify_morning kapalı üye hedef dışı');
-update public.members set notify_morning = true where id = '30000000-0000-4000-8000-0000000000d3';
-
--- bağlı olmayan: Burak atamalı ama chat yok; bağlanırsa hedef olur
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d4'),
-          0, 'bağlı olmayan: chat_id boş üye hedef dışı');
-update public.members set telegram_chat_id = 1004 where id = '30000000-0000-4000-8000-0000000000d4';
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d4' and kind = 'morning'),
-          1, 'bağlı olmayan: bağlanınca hedef olur');
-update public.members set telegram_chat_id = null where id = '30000000-0000-4000-8000-0000000000d4';
-
--- pasif üye
+select is((select string_agg(member_id::text || '>' || ref_id::text, ',' order by member_id) from cb),
+          '30000000-0000-4000-8000-0000000000d2>40000000-0000-4000-8000-0000000000d2,30000000-0000-4000-8000-0000000000d3>40000000-0000-4000-8000-0000000000d5',
+          'callback: cihazı olan atanmış üyeler, müşteri başına bir satır (Burak cihazsız)');
+select is((select payload from cb where member_id = '30000000-0000-4000-8000-0000000000d2'),
+          jsonb_build_object('first_name', 'Can', 'last_initial', 'İ',
+                             'at', to_char((now() - interval '5 minutes') at time zone 'Europe/Istanbul', 'HH24:MI')),
+          'callback: payload ad, soyadın baş harfi ve saat (telefon yok)');
+insert into public.push_subscriptions (tenant_id, member_id, endpoint, p256dh, auth) values
+  ('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d4', 'https://push.example.test/f2-bur', repeat('a', 87), repeat('b', 22));
+select is((select count(*)::int from cb where member_id = '30000000-0000-4000-8000-0000000000d4'), 1,
+          'callback: cihaz eklenince hedef olur');
+delete from public.push_subscriptions where member_id = '30000000-0000-4000-8000-0000000000d4';
+update public.members set notify_callback = false where id = '30000000-0000-4000-8000-0000000000d3';
+select is((select count(*)::int from cb where member_id = '30000000-0000-4000-8000-0000000000d3'), 0,
+          'callback: notify_callback kapalı üye hedef dışı');
+update public.members set notify_callback = true where id = '30000000-0000-4000-8000-0000000000d3';
 update public.members set is_active = false where id = '30000000-0000-4000-8000-0000000000d3';
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d3'),
-          0, 'pasif üye hedef dışı');
+select is((select count(*)::int from cb where member_id = '30000000-0000-4000-8000-0000000000d3'), 0,
+          'callback: pasif üye hedef dışı');
 update public.members set is_active = true where id = '30000000-0000-4000-8000-0000000000d3';
-
--- telegram_enabled kapalı
-update public.tenant_settings set telegram_enabled = false where tenant_id = '10000000-0000-4000-8000-0000000000d1';
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1'),
-          0, 'telegram_enabled kapalı: hiç hedef yok');
-update public.tenant_settings set telegram_enabled = true where tenant_id = '10000000-0000-4000-8000-0000000000d1';
-
--- total 0: Zeynep'in atamaları kalkarsa hedef yok
-update public.daily_assignments set member_id = '30000000-0000-4000-8000-0000000000d3'
-where member_id = '30000000-0000-4000-8000-0000000000d2' and day = public.tr_today();
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d2'),
-          0, 'total 0: atamasız üyeye morning hedefi yok');
-update public.daily_assignments set member_id = '30000000-0000-4000-8000-0000000000d2'
-where customer_id in ('40000000-0000-4000-8000-0000000000d1', '40000000-0000-4000-8000-0000000000d2',
-                      '40000000-0000-4000-8000-0000000000d3', '40000000-0000-4000-8000-0000000000d4')
-  and day = public.tr_today();
-
--- ---------------------------------------------------------------------------
--- reminder (saat 15) ve summary (saat 19)
--- ---------------------------------------------------------------------------
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'reminder'),
-          0, 'reminder kaldırıldı (2026-10-05): retry''ı olan üyelere reminder hedefi yok');
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d2' and kind = 'reminder'),
-          0, 'reminder kaldırıldı: Zeynep için reminder hedefi yok');
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
-           where kind = 'summary' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
-          0, 'reminder saatinde summary hedefi yok (summary saati gelmedi)');
 update public.customers set call_status = 'done' where id = '40000000-0000-4000-8000-0000000000d5';
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d3' and kind = 'reminder'),
-          0, 'reminder: retry sayısı 0 ise hedef yok');
-update public.customers set call_status = 'retry' where id = '40000000-0000-4000-8000-0000000000d5';
-update public.tenant_settings set reminder_hour = 16 where tenant_id = '10000000-0000-4000-8000-0000000000d1';
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '16 hours') at time zone 'Europe/Istanbul')
-           where kind = 'reminder' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
-          0, 'reminder kaldırıldı: reminder_hour ayarı hedef üretmez');
-update public.tenant_settings set reminder_hour = 15 where tenant_id = '10000000-0000-4000-8000-0000000000d1';
-
-select is((select string_agg(member_id::text, ',' order by member_id) from public._notification_targets((public.tr_today()::timestamp + interval '19 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'summary'),
-          '30000000-0000-4000-8000-0000000000d1,30000000-0000-4000-8000-0000000000d3',
-          'summary: yalnız yönetici ve view_reports üyesi (Zeynep dışarıda)');
-select is((select payload -> 'totals' from public._notification_targets((public.tr_today()::timestamp + interval '19 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d1' and kind = 'summary'),
-          '{"assigned": 7, "done": 1, "reached": 4, "appointments": 1, "retries": 2}'::jsonb, 'summary: toplamlar');
-select is((select payload ->> 'day' from public._notification_targets((public.tr_today()::timestamp + interval '19 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d1' and kind = 'summary'),
-          public.tr_today()::text, 'summary: gün alanı');
-select is((select payload -> 'members' from public._notification_targets((public.tr_today()::timestamp + interval '19 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000d1' and kind = 'summary'),
-          '[{"full_name":"Burak Ajan","assigned":1,"done":0,"appointments":0},
-            {"full_name":"Deniz Ajan","assigned":2,"done":0,"appointments":0},
-            {"full_name":"Zeynep Ajan","assigned":4,"done":1,"appointments":1}]'::jsonb,
-          'summary: ekip satırları ada göre');
-update public.members set notify_summary = false where id = '30000000-0000-4000-8000-0000000000d3';
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '19 hours') at time zone 'Europe/Istanbul')
-           where kind = 'summary' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
-          1, 'summary: notify_summary kapalı üye hedef dışı');
-update public.members set notify_summary = true where id = '30000000-0000-4000-8000-0000000000d3';
+select is((select count(*)::int from cb where ref_id = '40000000-0000-4000-8000-0000000000d5'), 0,
+          'callback: kapanmış müşteri hedef dışı');
+update public.customers set call_status = 'retry', last_outcome = 'no_answer' where id = '40000000-0000-4000-8000-0000000000d5';
+select is((select count(*)::int from cb where ref_id = '40000000-0000-4000-8000-0000000000d5'), 0,
+          'callback: son sonuç sonra ara değilse hedef dışı');
+update public.customers set last_outcome = 'callback', next_call_at = now() + interval '5 minutes' where id = '40000000-0000-4000-8000-0000000000d5';
+select is((select count(*)::int from cb where ref_id = '40000000-0000-4000-8000-0000000000d5'), 0,
+          'callback: saati gelmemiş geri arama hedef dışı');
+update public.customers set next_call_at = now() - interval '5 minutes' where id = '40000000-0000-4000-8000-0000000000d5';
+update public.tenant_settings set push_enabled = false where tenant_id = '10000000-0000-4000-8000-0000000000d1';
+select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1130'))
+           where tenant_id = '10000000-0000-4000-8000-0000000000d1')
+          + (select count(*)::int from cb),
+          0, 'push_enabled kapalı: hiç hedef yok');
+update public.tenant_settings set push_enabled = true where tenant_id = '10000000-0000-4000-8000-0000000000d1';
 
 -- ---------------------------------------------------------------------------
--- _notification_record ve dedup
+-- appointment (12:00, lead 60)
 -- ---------------------------------------------------------------------------
-select lives_ok($$select public._notification_record('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', 'morning', public.tr_today(), 'sent', null)$$,
-                'kayıt: _notification_record yazar');
-select is((select count(*)::int from public.notification_log where member_id = '30000000-0000-4000-8000-0000000000d2' and kind = 'morning'),
-          1, 'kayıt: satır oluştu');
-select lives_ok($$select public._notification_record('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', 'morning', public.tr_today(), 'failed', 'x')$$,
-                'kayıt: aynı gün aynı tür ikinci kez hata vermez');
-select is((select count(*)::int from public.notification_log where member_id = '30000000-0000-4000-8000-0000000000d2' and kind = 'morning'),
-          1, 'kayıt: aynı gün aynı tür ikinci satır yazılmaz');
-select is((select status from public.notification_log where member_id = '30000000-0000-4000-8000-0000000000d2' and kind = 'morning'),
-          'sent', 'kayıt: ilk kayıt korunur');
-select public._notification_record('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', 'test', public.tr_today(), 'sent', null);
-select public._notification_record('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', 'test', public.tr_today(), 'failed', 'ağ hatası');
-select is((select count(*)::int from public.notification_log where member_id = '30000000-0000-4000-8000-0000000000d2' and kind = 'test'),
-          2, 'kayıt: test türü tekrar edebilir');
-select throws_ok($$select public._notification_record('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', 'summary', public.tr_today(), 'bozuk', null)$$,
-                 '23514', null, 'kayıt: geçersiz durum reddedilir');
-select throws_ok($$select public._notification_record('10000000-0000-4000-8000-0000000000d2', '30000000-0000-4000-8000-0000000000d2', 'summary', public.tr_today(), 'sent', null)$$,
+select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1059'))
+           where kind = 'appointment' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
+          0, 'appointment: randevu - lead öncesi hedef yok');
+select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1100'))
+           where kind = 'appointment' and member_id = '30000000-0000-4000-8000-0000000000d2'),
+          1, 'appointment: randevu - lead anında hedef');
+select is((select payload from public._notification_targets((select ts from at_time where label = '1130'))
+           where kind = 'appointment' and member_id = '30000000-0000-4000-8000-0000000000d2'),
+          '{"first_name": "Ali", "last_initial": "B", "time": "12:00"}'::jsonb,
+          'appointment: payload ad, soyadın baş harfi ve randevu saati');
+select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1209'))
+           where kind = 'appointment' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
+          1, 'appointment: randevudan 9 dakika sonra hâlâ hedef');
+select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1211'))
+           where kind = 'appointment' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
+          0, 'appointment: randevudan 10 dakikadan fazla geçince hedef yok');
+update public.tenant_settings set appointment_lead_minutes = 30 where tenant_id = '10000000-0000-4000-8000-0000000000d1';
+select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1100'))
+           where kind = 'appointment' and tenant_id = '10000000-0000-4000-8000-0000000000d1')::text || '/' ||
+          (select count(*)::int from public._notification_targets((select ts from at_time where label = '1130'))
+           where kind = 'appointment' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
+          '0/1', 'appointment: lead 30 iken 11:00 yok, 11:30 var');
+update public.tenant_settings set appointment_lead_minutes = 60 where tenant_id = '10000000-0000-4000-8000-0000000000d1';
+select throws_ok($$update public.tenant_settings set appointment_lead_minutes = 45 where tenant_id = '10000000-0000-4000-8000-0000000000d1'$$,
+                 '23514', null, 'appointment: lead yalnız 30, 60, 120');
+update public.members set notify_appointment = false where id = '30000000-0000-4000-8000-0000000000d2';
+select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1130'))
+           where kind = 'appointment' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
+          0, 'appointment: notify_appointment kapalı üye hedef dışı');
+update public.members set notify_appointment = true where id = '30000000-0000-4000-8000-0000000000d2';
+update public.customers set pipeline_stage = 'visited' where id = '40000000-0000-4000-8000-0000000000d1';
+select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1130'))
+           where kind = 'appointment' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
+          0, 'appointment: randevu aşamasından çıkan müşteri hedef dışı');
+update public.customers set pipeline_stage = 'appointment', appointment_day = public.tr_today() + 1 where id = '40000000-0000-4000-8000-0000000000d1';
+select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1130'))
+           where kind = 'appointment' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
+          0, 'appointment: yarınki randevu bugün hedef değil');
+update public.customers set appointment_day = public.tr_today() where id = '40000000-0000-4000-8000-0000000000d1';
+
+-- ---------------------------------------------------------------------------
+-- Sahiplenme ve dedup
+-- ---------------------------------------------------------------------------
+create temp table _c (n text primary key, v bigint);
+insert into _c values ('z', public._notification_claim('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2',
+                                                       'callback', public.tr_today(), '40000000-0000-4000-8000-0000000000d2'));
+select ok((select v from _c where n = 'z') is not null, 'dedup: ilk sahiplenme id döner');
+select is((select string_agg(member_id::text, ',') from cb), '30000000-0000-4000-8000-0000000000d3',
+          'dedup: sahiplenilen geri arama tekrar dönmez, diğeri kalır');
+select is(public._notification_claim('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2',
+                                     'callback', public.tr_today(), '40000000-0000-4000-8000-0000000000d2'),
+          null::bigint, 'dedup: ikinci sahiplenme null');
+select public._notification_finish((select v from _c where n = 'z'), 'sent', null);
+select is((select status from public.notification_log where id = (select v from _c where n = 'z')), 'sent', 'dedup: sonuç yazıldı');
+insert into public.notification_log (tenant_id, member_id, kind, day, ref_id, status, claimed_at)
+values ('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', 'appointment', public.tr_today(),
+        '40000000-0000-4000-8000-0000000000d1', 'sent', (select ts from at_time where label = '1100'));
+select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1130'))
+           where kind = 'appointment' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
+          0, 'dedup: gönderilmiş randevu hatırlatması tekrar dönmez');
+select ok((select indexdef from pg_indexes where indexname = 'notification_log_once_idx') like '%COALESCE(ref_id%',
+          'dedup: tekillik indeksi ref_id içerir');
+select throws_ok($$insert into public.notification_log (tenant_id, member_id, kind, day, status)
+                   values ('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d2', 'bozuk', current_date, 'sent')$$,
+                 '23514', null, 'kayıt: geçersiz tür reddedilir');
+select throws_ok($$insert into public.notification_log (tenant_id, member_id, kind, day, status)
+                   values ('10000000-0000-4000-8000-0000000000d2', '30000000-0000-4000-8000-0000000000d2', 'test', current_date, 'sent')$$,
                  '23503', null, 'kayıt: üye başka kiracıya ait gösterilemez');
-
--- dedup: Zeynep'in morning kaydı var, Deniz'inki yok
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'morning'),
-          1, 'dedup: kaydı olan üyeye aynı gün tekrar gönderilmez');
-select is((select member_id from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'morning'),
-          '30000000-0000-4000-8000-0000000000d3'::uuid, 'dedup: kalan hedef Deniz');
-select public._notification_record('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d3', 'morning', public.tr_today(), 'failed', 'ağ hatası');
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'morning'),
-          1, 'dedup: failed kaydı (deneme < 3) yeniden denemeye izin verir (0900, D3)');
-select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
-           where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'reminder'),
-          0, 'dedup: reminder kaldırıldı, hedef yok');
 
 -- notification_log RLS: yönetici okur, ajan okumaz, yazma yok
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d1","role":"authenticated"}', true);
 set local role authenticated;
-select ok((select count(*) from public.notification_log) >= 3, 'RLS: yönetici notification_log okur');
+select ok((select count(*) from public.notification_log) >= 2, 'RLS: yönetici notification_log okur');
 select throws_ok($$insert into public.notification_log (tenant_id, member_id, kind, day, status)
                    values ('10000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000d1', 'test', current_date, 'sent')$$,
                  '42501', null, 'RLS: yönetici de notification_log''a yazamaz');
@@ -400,51 +297,39 @@ select is((select count(*)::int from public.notification_log), 0, 'RLS: başka k
 reset role;
 
 -- ---------------------------------------------------------------------------
--- set_notify_prefs (Zeynep)
+-- set_push_prefs, push_status (Zeynep)
 -- ---------------------------------------------------------------------------
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d2","role":"authenticated"}', true);
 set local role authenticated;
-select public.set_notify_prefs(false, null, false);
+select public.set_push_prefs(false, null);
+select is(public.push_status(),
+          '{"devices": 1, "notify_callback": false, "notify_appointment": true, "push_enabled": true}'::jsonb,
+          'push_status: cihaz sayısı, tercihler ve mağaza anahtarı');
+select throws_ok($$select * from public.push_team_status()$$, '42501', null, 'push_team_status: ajan çağıramaz');
+select throws_ok($$select public.set_push_settings(false, 30)$$, '42501', null, 'set_push_settings: ajan çağıramaz');
 reset role;
-select is((select notify_morning::text || '/' || notify_reminder || '/' || notify_summary from public.members where id = '30000000-0000-4000-8000-0000000000d2'),
-          'false/true/false', 'tercih: null alan değişmez, verilenler yazılır');
-select is((select notify_morning::text from public.members where id = '30000000-0000-4000-8000-0000000000d3'),
+select is((select notify_callback::text || '/' || notify_appointment from public.members where id = '30000000-0000-4000-8000-0000000000d2'),
+          'false/true', 'tercih: null alan değişmez, verilen yazılır');
+select is((select notify_callback::text from public.members where id = '30000000-0000-4000-8000-0000000000d3'),
           'true', 'tercih: başkasının tercihi değişmez');
 
--- ---------------------------------------------------------------------------
--- telegram_unlink
--- ---------------------------------------------------------------------------
-select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d2","role":"authenticated"}', true);
-set local role authenticated;
-select throws_ok($$select public.telegram_unlink('30000000-0000-4000-8000-0000000000d3')$$,
-                 '42501', null, 'unlink: ajan başkasının bağlantısını kaldıramaz');
-reset role;
-select is((select telegram_chat_id from public.members where id = '30000000-0000-4000-8000-0000000000d3'),
-          1002::bigint, 'unlink: reddedilen çağrı bağlantıyı korur');
-select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d2","role":"authenticated"}', true);
-set local role authenticated;
-select lives_ok($$select public.telegram_unlink()$$, 'unlink: ajan kendi bağlantısını kaldırır');
-select lives_ok($$select public.telegram_unlink('30000000-0000-4000-8000-0000000000d2')$$, 'unlink: ajan kendi id''siyle de kaldırır');
-reset role;
-select is((select telegram_chat_id::text || coalesce(telegram_linked_at::text, '') from public.members where id = '30000000-0000-4000-8000-0000000000d2'),
-          null, 'unlink: chat_id ve telegram_linked_at temizlendi');
-
-select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d5","role":"authenticated"}', true);
-set local role authenticated;
-select throws_ok($$select public.telegram_unlink('30000000-0000-4000-8000-0000000000d3')$$,
-                 'P0002', null, 'unlink: başka kiracının yöneticisi üyeyi bulamaz');
-reset role;
-select is((select telegram_chat_id from public.members where id = '30000000-0000-4000-8000-0000000000d3'),
-          1002::bigint, 'unlink: kiracılar arası kaldırma yapılmadı');
-
+-- Yönetici
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d1","role":"authenticated"}', true);
 set local role authenticated;
-select lives_ok($$select public.telegram_unlink('30000000-0000-4000-8000-0000000000d3')$$, 'unlink: yönetici başkasınınkini kaldırır');
+select is((select string_agg(full_name || ':' || devices || ':' || notify_callback, ',' order by full_name) from public.push_team_status()),
+          'Burak Ajan:0:true,Deniz Ajan:1:true,Kurgu Yönetici:0:true,Zeynep Ajan:1:false',
+          'push_team_status: kiracının aktif üyeleri, cihaz sayısı ve tercihleri');
+select throws_ok($$select public.set_push_settings(null, 45)$$, '22023', null, 'set_push_settings: geçersiz süre reddedilir');
+select lives_ok($$select public.set_push_settings(null, 120)$$, 'set_push_settings: yönetici süreyi değiştirir');
 reset role;
-select is((select telegram_chat_id from public.members where id = '30000000-0000-4000-8000-0000000000d3'),
-          null::bigint, 'unlink: yönetici kaldırması etkili');
-select ok((select count(*) from public.audit_log where action = 'telegram_unlink' and tenant_id = '10000000-0000-4000-8000-0000000000d1') >= 3,
-          'unlink: audit satırı yazılır');
+select is((select push_enabled::text || '/' || appointment_lead_minutes from public.tenant_settings where tenant_id = '10000000-0000-4000-8000-0000000000d1'),
+          'true/120', 'set_push_settings: null alan değişmez');
+select ok(exists (select 1 from public.audit_log where action = 'push_settings' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
+          'set_push_settings: audit satırı yazılır');
+select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d5","role":"authenticated"}', true);
+set local role authenticated;
+select is((select count(*)::int from public.push_team_status()), 1, 'push_team_status: başka kiracı karışmaz');
+reset role;
 
 -- ---------------------------------------------------------------------------
 -- report_range

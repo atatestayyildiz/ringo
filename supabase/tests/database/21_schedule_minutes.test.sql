@@ -1,11 +1,11 @@
--- Gönderim saatleri dakika bazlı (migration 20261005000700_schedule_minutes.sql)
+-- Gönderim saatleri dakika bazlı (migration 20261005000700_schedule_minutes.sql); push hedefleri dakika bazlı (20261006000100)
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(20);
 
 -- ---------------------------------------------------------------------------
--- Fixture. Kiracı A (manual, telegram açık): yönetici + ajan, ajana bugün 1 atama.
--- Kiracı B (auto_even, telegram kapalı): ajan + 2 bekleyen müşteri.
+-- Fixture. Kiracı A (manual, push açık): yönetici + ajan, ajana bugün 1 atama, 09:30 randevu, 19:30 geri arama.
+-- Kiracı B (auto_even, push kapalı): ajan + 2 bekleyen müşteri.
 -- ---------------------------------------------------------------------------
 insert into auth.users (instance_id, id, aud, role, email) values
   ('00000000-0000-0000-0000-000000000000', '20000000-0000-4000-8000-0000000000e1', 'authenticated', 'authenticated', 'sm-mgr@test.test'),
@@ -25,16 +25,20 @@ insert into public.customers (id, tenant_id, full_name, phone) values
   ('40000000-0000-4000-8000-0000000000e3', '10000000-0000-4000-8000-0000000000e2', 'Kurgu Dakika 3', '05321210003');
 insert into public.daily_assignments (tenant_id, day, customer_id, member_id, position) values
   ('10000000-0000-4000-8000-0000000000e1', public.tr_today(), '40000000-0000-4000-8000-0000000000e1', '30000000-0000-4000-8000-0000000000e2', 1);
-update public.members set telegram_chat_id = 7201, telegram_linked_at = now()
-where id = '30000000-0000-4000-8000-0000000000e2';
-update public.members set telegram_chat_id = 7202, telegram_linked_at = now()
-where id = '30000000-0000-4000-8000-0000000000e1';
+insert into public.customers (id, tenant_id, full_name, phone, assigned_to, call_status, pipeline_stage, appointment_day, appointment_time) values
+  ('40000000-0000-4000-8000-0000000000e5', '10000000-0000-4000-8000-0000000000e1', 'Kurgu Randevu', '05321210005', '30000000-0000-4000-8000-0000000000e2', 'done', 'appointment', public.tr_today(), '09:30');
+insert into public.customers (id, tenant_id, full_name, phone, assigned_to, call_status, last_outcome, next_call_at) values
+  ('40000000-0000-4000-8000-0000000000e6', '10000000-0000-4000-8000-0000000000e1', 'Kurgu Geriarama', '05321210006', '30000000-0000-4000-8000-0000000000e2', 'retry', 'callback',
+   (public.tr_today()::timestamp + interval '19 hours 30 minutes') at time zone 'Europe/Istanbul');
+insert into public.push_subscriptions (tenant_id, member_id, endpoint, p256dh, auth) values
+  ('10000000-0000-4000-8000-0000000000e1', '30000000-0000-4000-8000-0000000000e2', 'https://push.example.test/sm-1', repeat('a', 87), repeat('b', 22)),
+  ('10000000-0000-4000-8000-0000000000e2', '30000000-0000-4000-8000-0000000000e3', 'https://push.example.test/sm-2', repeat('a', 87), repeat('b', 22));
 update public.tenant_settings
-set telegram_enabled = true, distribution_mode = 'manual',
+set push_enabled = true, distribution_mode = 'manual', appointment_lead_minutes = 60,
     distribution_hour = 8, distribution_minute = 30, summary_hour = 19, summary_minute = 30
 where tenant_id = '10000000-0000-4000-8000-0000000000e1';
 update public.tenant_settings
-set telegram_enabled = false, distribution_mode = 'auto_even', distribution_hour = 8, distribution_minute = 30
+set push_enabled = false, distribution_mode = 'auto_even', distribution_hour = 8, distribution_minute = 30
 where tenant_id = '10000000-0000-4000-8000-0000000000e2';
 
 create temp table at_time (label text primary key, ts timestamptz);
@@ -63,40 +67,40 @@ select is((select schedule from cron.job where jobname = 'telefoncu-distribution
           'pg_cron dağıtım işi 5 dakikada bir');
 
 -- ---------------------------------------------------------------------------
--- Sabah listesi 08:30
+-- Randevu hatırlatma 09:30 - 60 dk = 08:30
 -- ---------------------------------------------------------------------------
 select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '0829'))
-           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'morning'),
-          0, 'sabah: 08:29 hedef yok');
+           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'appointment'),
+          0, 'randevu: 08:29 hedef yok');
 select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '0830'))
-           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'morning'),
-          1, 'sabah: 08:30 hedef var');
+           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'appointment'),
+          1, 'randevu: 08:30 hedef var');
 select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '0845'))
-           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'morning'),
-          1, 'sabah: 08:45 hedef var');
-insert into public.notification_log (tenant_id, member_id, kind, day, status)
-values ('10000000-0000-4000-8000-0000000000e1', '30000000-0000-4000-8000-0000000000e2', 'morning', public.tr_today(), 'sent');
+           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'appointment'),
+          1, 'randevu: 08:45 hedef var');
+insert into public.notification_log (tenant_id, member_id, kind, day, ref_id, status, claimed_at)
+values ('10000000-0000-4000-8000-0000000000e1', '30000000-0000-4000-8000-0000000000e2', 'appointment', public.tr_today(), '40000000-0000-4000-8000-0000000000e5', 'sent', (select ts from at_time where label = '0845'));
 select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '0845'))
-           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'morning'),
-          0, 'sabah: gönderildikten sonra gün içinde ikinci kez yok');
+           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'appointment'),
+          0, 'randevu: gönderildikten sonra gün içinde ikinci kez yok');
 
 -- ---------------------------------------------------------------------------
--- Akşam özeti 19:30
+-- Geri arama 19:30
 -- ---------------------------------------------------------------------------
 select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1929'))
-           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'summary'),
-          0, 'özet: 19:29 hedef yok');
+           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'callback'),
+          0, 'geri arama: 19:29 hedef yok');
 select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1930'))
-           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'summary'),
-          1, 'özet: 19:30 hedef var');
+           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'callback'),
+          1, 'geri arama: 19:30 hedef var');
 select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1945'))
-           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'summary'),
-          1, 'özet: 19:45 hedef var');
-insert into public.notification_log (tenant_id, member_id, kind, day, status)
-values ('10000000-0000-4000-8000-0000000000e1', '30000000-0000-4000-8000-0000000000e1', 'summary', public.tr_today(), 'sent');
+           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'callback'),
+          1, 'geri arama: 19:45 hedef var');
+insert into public.notification_log (tenant_id, member_id, kind, day, ref_id, status, claimed_at)
+values ('10000000-0000-4000-8000-0000000000e1', '30000000-0000-4000-8000-0000000000e2', 'callback', public.tr_today(), '40000000-0000-4000-8000-0000000000e6', 'sent', (select ts from at_time where label = '1945'));
 select is((select count(*)::int from public._notification_targets((select ts from at_time where label = '1945'))
-           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'summary'),
-          0, 'özet: gönderildikten sonra gün içinde ikinci kez yok');
+           where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'callback'),
+          0, 'geri arama: gönderildikten sonra gün içinde ikinci kez yok');
 
 -- ---------------------------------------------------------------------------
 -- Zamanlanmış dağıtım 08:30

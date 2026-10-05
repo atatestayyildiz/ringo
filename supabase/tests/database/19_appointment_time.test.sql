@@ -41,10 +41,10 @@ select '10000000-0000-4000-8000-0000000000b1', public.tr_today(),
        ('40000000-0000-4000-8000-0000000000b' || i)::uuid, '30000000-0000-4000-8000-0000000000b2', i
 from generate_series(5, 9) i;
 
-update public.members set telegram_chat_id = 7101, telegram_linked_at = now()
-where id = '30000000-0000-4000-8000-0000000000b2';
+insert into public.push_subscriptions (tenant_id, member_id, endpoint, p256dh, auth) values
+  ('10000000-0000-4000-8000-0000000000b1', '30000000-0000-4000-8000-0000000000b2', 'https://push.example.test/ap-1', repeat('a', 87), repeat('b', 22));
 update public.tenant_settings
-set telegram_enabled = true, distribution_mode = 'manual', distribution_hour = 8, summary_hour = 19
+set push_enabled = true, distribution_mode = 'manual', distribution_hour = 8, summary_hour = 19
 where tenant_id = '10000000-0000-4000-8000-0000000000b1';
 
 -- ---------------------------------------------------------------------------
@@ -82,16 +82,16 @@ select is((select prosecdef from pg_proc where oid = 'public.set_appointment(uui
           true, 'set_appointment security definer');
 
 -- ---------------------------------------------------------------------------
--- Sabah mesajı: appointments_today (ajan1: c5, c6 bugün; c7 yarın; c8 aşama dışı)
+-- Push: saati belli olmayan randevu (c5, c6) için hatırlatma yok; sabah hedefi kalktı
 -- ---------------------------------------------------------------------------
-select is((select (payload ->> 'appointments_today')::int
+select is((select count(*)::int
+           from public._notification_targets((public.tr_today()::timestamp + interval '9 hours') at time zone 'Europe/Istanbul')
+           where member_id = '30000000-0000-4000-8000-0000000000b2' and kind = 'appointment'),
+          0, 'saati belli olmayan randevu için appointment hedefi yok');
+select is((select count(*)::int
            from public._notification_targets((public.tr_today()::timestamp + interval '9 hours') at time zone 'Europe/Istanbul')
            where member_id = '30000000-0000-4000-8000-0000000000b2' and kind = 'morning'),
-          2, 'morning appointments_today = bugün randevusu olan atanmış müşteri');
-select is((select (payload ->> 'total')::int
-           from public._notification_targets((public.tr_today()::timestamp + interval '9 hours') at time zone 'Europe/Istanbul')
-           where member_id = '30000000-0000-4000-8000-0000000000b2' and kind = 'morning'),
-          5, 'morning total değişmedi');
+          0, 'morning hedefi üretilmez');
 
 -- ---------------------------------------------------------------------------
 -- Yönetici: log_call
