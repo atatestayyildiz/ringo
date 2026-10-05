@@ -29,17 +29,17 @@ test.describe("profil: arayüz rengi", () => {
       expect(neutral).not.toBe(storeBrand);
 
       const group = page.getByRole("radiogroup", { name: "Arayüz rengi" });
-      await expect(group.getByRole("radio")).toHaveCount(12);
+      await expect(group.getByRole("radio")).toHaveCount(14);
 
       await page.getByRole("radio", { name: "Mor" }).check();
       await expect(page.getByText("Arayüz rengi kaydedildi.")).toBeVisible();
-      expect(await brandVar(page)).toBe("#7c3aed");
+      expect(await brandVar(page)).toBe("#9333ea");
 
       await page.reload();
       await expect(page.getByRole("radio", { name: "Mor" })).toBeChecked();
-      expect(await brandVar(page)).toBe("#7c3aed");
+      expect(await brandVar(page)).toBe("#9333ea");
       await page.goto("/bugun");
-      expect(await brandVar(page)).toBe("#7c3aed");
+      expect(await brandVar(page)).toBe("#9333ea");
 
       // Mağaza rengi açıkça seçilebilir
       await page.goto("/profil");
@@ -70,5 +70,19 @@ test.describe("profil: arayüz rengi", () => {
     } finally {
       await resetAccent(page);
     }
+  });
+
+  test("Telegram kartı: yöneticide Profil'de yok, Ayarlar > Bildirimler'de var; satışçıda Profil'de var", async ({ page }) => {
+    await loginOk(page, "yonetici");
+    await page.goto("/profil");
+    await expect(page.getByRole("heading", { name: "Arayüz rengi" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Telegram", exact: true })).toHaveCount(0);
+    await page.goto("/ayarlar");
+    await page.getByRole("button", { name: "Bildirimler", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Telegram hesabım" })).toBeVisible();
+    await page.context().clearCookies();
+    await loginOk(page, "ayse");
+    await page.goto("/profil");
+    await expect(page.getByRole("heading", { name: "Telegram", exact: true })).toBeVisible();
   });
 });

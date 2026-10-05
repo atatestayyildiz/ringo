@@ -26,7 +26,7 @@ export default async function Page() {
     <>
       <div className="page-head">
         <h1>Profil</h1>
-        <p>Telegram bildirimleri, arayüz rengi ve hesap güvenliği.</p>
+        <p>{isManager ? "Arayüz rengi ve hesap güvenliği." : "Telegram bildirimleri, arayüz rengi ve hesap güvenliği."}</p>
       </div>
       <div className={s.bento}>
         <div className={`${s.cell} ${s.who12}`}>
@@ -41,21 +41,23 @@ export default async function Page() {
             </div>
           </Card>
         </div>
-        <div className={`${s.cell} ${s.tg}`}>
-          <TelegramCard
-            linked={me?.telegram_linked_at != null}
-            linkedAt={me?.telegram_linked_at ?? null}
-            botUsername={ctx.settings.telegram_bot_username}
-            tenantEnabled={ctx.settings.telegram_enabled}
-            botConfigured={botTokenConfigured()}
-            prefs={{
-              morning: me?.notify_morning ?? true,
-              summary: me?.notify_summary ?? true,
-            }}
-            showSummary={showSummary}
-          />
-        </div>
-        <div className={`${s.cell} ${s.acc}`}>
+        {isManager ? null : (
+          <div className={`${s.cell} ${s.tg}`}>
+            <TelegramCard
+              linked={me?.telegram_linked_at != null}
+              linkedAt={me?.telegram_linked_at ?? null}
+              botUsername={ctx.settings.telegram_bot_username}
+              tenantEnabled={ctx.settings.telegram_enabled}
+              botConfigured={botTokenConfigured()}
+              prefs={{
+                morning: me?.notify_morning ?? true,
+                summary: me?.notify_summary ?? true,
+              }}
+              showSummary={showSummary}
+            />
+          </div>
+        )}
+        <div className={`${s.cell} ${isManager ? s.accSolo : s.acc}`}>
           <AccentCard current={me?.accent_color ?? null} brandColor={ctx.settings.brand_color} isManager={isManager} />
         </div>
         <div className={`${s.cell} ${s.pw}`}>

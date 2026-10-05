@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Segmented } from "@/components/ui";
 import type { TenantSettings } from "@/lib/session";
 import { BrandPanel } from "./BrandPanel";
-import { NotificationsPanel } from "./NotificationsPanel";
+import { NotificationsPanel, type SelfTelegram } from "./NotificationsPanel";
 import { RulesForm } from "./RulesForm";
 import type { MemberRow } from "./shared";
 import { TeamPanel } from "./TeamPanel";
@@ -17,11 +17,13 @@ export function SettingsTabs({
   summary,
   members,
   emailWarning,
+  selfTelegram,
 }: {
   settings: TenantSettings;
   summary: string;
   members: MemberRow[];
   emailWarning: string | null;
+  selfTelegram: SelfTelegram;
 }) {
   const [tab, setTab] = useState<Tab>("kurallar");
   return (
@@ -41,7 +43,7 @@ export function SettingsTabs({
       </div>
       {tab === "kurallar" ? <RulesForm settings={settings} summary={summary} /> : null}
       {tab === "ekip" ? <TeamPanel members={members} emailWarning={emailWarning} /> : null}
-      {tab === "bildirimler" ? <NotificationsPanel settings={settings} /> : null}
+      {tab === "bildirimler" ? <NotificationsPanel settings={settings} selfTelegram={selfTelegram} /> : null}
       {tab === "marka" ? <BrandPanel settings={settings} /> : null}
     </>
   );

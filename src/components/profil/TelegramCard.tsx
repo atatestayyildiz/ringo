@@ -25,6 +25,7 @@ export function TelegramCard({
   botConfigured,
   prefs: prefsInit,
   showSummary,
+  title = "Telegram",
 }: {
   linked: boolean;
   linkedAt: string | null;
@@ -33,6 +34,7 @@ export function TelegramCard({
   botConfigured: boolean;
   prefs: Prefs;
   showSummary: boolean;
+  title?: string;
 }) {
   const toast = useToast();
   const [pending, start] = useTransition();
@@ -127,7 +129,7 @@ export function TelegramCard({
 
   return (
     <Card>
-      <h2>Telegram</h2>
+      <h2>{title}</h2>
       <p className={s.sub}>
         Günlük arama listesi ve özet Telegram sohbetine gelir.
       </p>
@@ -149,20 +151,20 @@ export function TelegramCard({
 
       {linked ? (
         <div className={s.row}>
-          <Button variant="soft" onClick={sendTest} disabled={testing}>
+          <Button size="sm" variant="soft" onClick={sendTest} disabled={testing}>
             {testing ? "Gönderiliyor" : "Test mesajı gönder"}
           </Button>
-          <Button variant="soft" onClick={unlink} disabled={pending}>
+          <Button size="sm" variant="soft" onClick={unlink} disabled={pending}>
             Bağlantıyı kaldır
           </Button>
         </div>
       ) : (
         <>
           <div className={s.row}>
-            <Button variant="brand" onClick={makeCode} disabled={pending}>
+            <Button size="sm" variant="brand" onClick={makeCode} disabled={pending}>
               {code ? "Yeni kod üret" : "Telegram'ı bağla"}
             </Button>
-            <Button variant="soft" onClick={sendTest} disabled={testing}>
+            <Button size="sm" variant="soft" onClick={sendTest} disabled={testing}>
               Test mesajı gönder
             </Button>
           </div>
@@ -181,10 +183,10 @@ export function TelegramCard({
               )}
               {active && tme ? (
                 <div className={s.row} style={{ marginTop: 0 }}>
-                  <a href={tme} className={buttonClass("ink")} target="_blank" rel="noopener noreferrer">
+                  <a href={tme} className={buttonClass("ink", "sm")} target="_blank" rel="noopener noreferrer">
                     Telegram&apos;da aç
                   </a>
-                  <Button variant="soft" onClick={() => void refresh(false)}>
+                  <Button size="sm" variant="soft" onClick={() => void refresh(false)}>
                     Durumu yenile
                   </Button>
                 </div>
@@ -195,7 +197,7 @@ export function TelegramCard({
                     Bota <b>/start {code}</b> yaz. Bot kullanıcı adı henüz ayarlanmadığı için hazır bağlantı yok.
                   </span>
                   <div>
-                    <Button variant="soft" onClick={() => void refresh(false)}>
+                    <Button size="sm" variant="soft" onClick={() => void refresh(false)}>
                       Durumu yenile
                     </Button>
                   </div>

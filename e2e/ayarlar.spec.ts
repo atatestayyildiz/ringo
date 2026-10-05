@@ -88,7 +88,7 @@ test("bildirim sekmesinden gönderim saatleri değişir, Kurallar'da saat alanı
   await expect(page.getByLabel("Sabah dağıtım saati")).toHaveCount(0);
   await page.getByRole("button", { name: "Bildirimler", exact: true }).click();
 
-  const morning = page.getByLabel("Sabah listesi");
+  const morning = page.getByRole("textbox", { name: "Sabah listesi" });
   const original = await morning.inputValue();
   expect(original).toMatch(/^\d{2}:\d{2}$/);
   const changed = original === "08:30" ? "08:45" : "08:30";
@@ -106,9 +106,9 @@ test("bildirim sekmesinden gönderim saatleri değişir, Kurallar'da saat alanı
     await save(changed);
     await page.reload();
     await page.getByRole("button", { name: "Bildirimler", exact: true }).click();
-    await expect(page.getByLabel("Sabah listesi")).toHaveValue(changed);
+    await expect(page.getByRole("textbox", { name: "Sabah listesi" })).toHaveValue(changed);
   } finally {
-    await page.getByLabel("Sabah listesi").fill(original);
+    await page.getByRole("textbox", { name: "Sabah listesi" }).fill(original);
     await page.getByRole("button", { name: "Saatleri kaydet" }).click();
     await expect(page.getByText("Gönderim saatleri kaydedildi.").first()).toBeVisible();
   }

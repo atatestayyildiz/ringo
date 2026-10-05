@@ -5,18 +5,20 @@ import { setAccentAction } from "@/app/(app)/profil/actions";
 import { Card, useToast } from "@/components/ui";
 import s from "./profil.module.css";
 
-/** Hazır vurgu renkleri: beyaz metinle en az 4.5:1, koyu zeminde en az 3:1. */
+/** Hazır vurgu renkleri: ton çemberine yayılmış; beyaz metinle en az 4.5:1 (hepsi AA). */
 export const ACCENT_SWATCHES = [
-  { name: "Mavi", hex: "#2563eb" },
-  { name: "Okyanus", hex: "#0369a1" },
-  { name: "Turkuaz", hex: "#0e7490" },
-  { name: "Zümrüt", hex: "#0f766e" },
-  { name: "Yeşil", hex: "#15803d" },
-  { name: "Kehribar", hex: "#b45309" },
-  { name: "Turuncu", hex: "#c2410c" },
   { name: "Kırmızı", hex: "#dc2626" },
+  { name: "Turuncu", hex: "#c2410c" },
+  { name: "Altın sarısı", hex: "#a16207" },
+  { name: "Zeytin yeşili", hex: "#4d7c0f" },
+  { name: "Yeşil", hex: "#15803d" },
+  { name: "Turkuaz", hex: "#0f766e" },
+  { name: "Mavi", hex: "#2563eb" },
+  { name: "Lacivert", hex: "#1e3a8a" },
+  { name: "İndigo", hex: "#4f46e5" },
+  { name: "Mor", hex: "#9333ea" },
   { name: "Pembe", hex: "#db2777" },
-  { name: "Mor", hex: "#7c3aed" },
+  { name: "Kahverengi", hex: "#78350f" },
 ] as const;
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -70,35 +72,34 @@ export function AccentCard({
       <h2 id="accent-title">Arayüz rengi</h2>
       <p className={s.sub}>Butonlar ve vurgular bu renkte görünür. Seçimin tüm cihazlarında geçerli.</p>
       <div role="radiogroup" aria-labelledby="accent-title" className={s.accent} aria-busy={pending}>
-        <label className={s.accentWide}>
-          <input
-            type="radio"
-            name="accent"
-            className={s.accentInput}
-            aria-label="Varsayılan"
-            checked={color === null}
-            onChange={() => choose(null)}
-          />
-          <span className={s.dot} style={{ background: defaultCss ?? "var(--ink-3)" }} aria-hidden="true" />
-          <span>
-            Varsayılan
-            <small>{isManager ? "Mağaza rengi" : "Nötr arduvaz"}</small>
-          </span>
-        </label>
-        {brand ? (
+        <div className={s.accentPills}>
           <label className={s.accentWide}>
             <input
               type="radio"
               name="accent"
               className={s.accentInput}
-              aria-label="Mağaza rengi"
-              checked={storeChecked}
-              onChange={() => choose(brand)}
+              aria-label="Varsayılan"
+              checked={color === null}
+              onChange={() => choose(null)}
             />
-            <span className={s.dot} style={{ background: brand }} aria-hidden="true" />
-            <span>Mağaza rengi</span>
+            <span className={s.dotSm} style={{ background: defaultCss ?? "var(--ink-3)" }} aria-hidden="true" />
+            <span>Varsayılan</span>
           </label>
-        ) : null}
+          {brand ? (
+            <label className={s.accentWide}>
+              <input
+                type="radio"
+                name="accent"
+                className={s.accentInput}
+                aria-label="Mağaza rengi"
+                checked={storeChecked}
+                onChange={() => choose(brand)}
+              />
+              <span className={s.dotSm} style={{ background: brand }} aria-hidden="true" />
+              <span>Mağaza rengi</span>
+            </label>
+          ) : null}
+        </div>
         <div className={s.swatches}>
           {ACCENT_SWATCHES.map((sw) => (
             <label key={sw.hex} className={s.swatch} title={sw.name}>

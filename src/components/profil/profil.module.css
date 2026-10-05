@@ -29,6 +29,9 @@
 .pw {
   grid-column: span 12;
 }
+.accSolo {
+  grid-column: span 12;
+}
 @media (min-width: 1101px) {
   .pw .formStack {
     display: grid;
@@ -58,6 +61,9 @@
   .pw {
     grid-column: span 3;
   }
+  .accSolo {
+    grid-column: span 3;
+  }
 }
 @media (max-width: 760px) {
   .bento {
@@ -66,6 +72,7 @@
   .who12,
   .tg,
   .acc,
+  .accSolo,
   .pw {
     grid-column: auto;
   }
@@ -96,6 +103,16 @@
   font-size: 14px;
   line-height: 1.5;
   margin: 6px 0 16px;
+}
+.tgHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tgHead + .sub {
+  margin-top: 4px;
 }
 .row {
   display: flex;
@@ -273,24 +290,32 @@
   height: 1px;
   margin: 0;
 }
+.accentPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
 .accentWide {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 14px 8px 8px;
+  gap: 8px;
+  padding: 4px 12px 4px 5px;
   border-radius: 999px;
   background: var(--surface-2);
   box-shadow: inset 0 0 0 1px var(--line);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
+  line-height: 1;
   cursor: pointer;
 }
-.accentWide small {
+.dotSm {
   display: block;
-  color: var(--ink-3);
-  font-size: 12px;
-  font-weight: 500;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 .accentWide:has(.accentInput:checked) {
   box-shadow: inset 0 0 0 2px var(--ink);

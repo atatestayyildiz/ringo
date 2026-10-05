@@ -7,6 +7,8 @@ import {
   unlinkMemberTelegramAction,
   type NotificationsData,
 } from "@/app/(app)/ayarlar/notification-actions";
+import a from "@/components/ayarlar/ayarlar.module.css";
+import { TelegramCard } from "@/components/profil/TelegramCard";
 import s from "@/components/profil/profil.module.css";
 import { formatHm, maskHm, parseHm } from "@/components/ayarlar/shared";
 import { Avatar, Button, Card, Chip, EmptyState, Input, Switch, useToast } from "@/components/ui";
@@ -14,7 +16,14 @@ import type { TenantSettings } from "@/lib/session";
 
 const timeError = (raw: string) => (parseHm(raw) ? undefined : "Saati SS:DD biçiminde girin, örneğin 08:30.");
 
-export function NotificationsPanel({ settings }: { settings: TenantSettings }) {
+export type SelfTelegram = {
+  linked: boolean;
+  linkedAt: string | null;
+  botConfigured: boolean;
+  prefs: { morning: boolean; summary: boolean };
+};
+
+export function NotificationsPanel({ settings, selfTelegram }: { settings: TenantSettings; selfTelegram: SelfTelegram }) {
   const toast = useToast();
   const [pending, start] = useTransition();
   const [enabled, setEnabled] = useState(settings.telegram_enabled);
@@ -91,8 +100,18 @@ export function NotificationsPanel({ settings }: { settings: TenantSettings }) {
   const linkedCount = data?.team.filter((m) => m.linked).length ?? 0;
 
   return (
-    <div className={s.cols}>
-      <div className={s.stack}>
+    <div className={a.cols}>
+      <div className={a.stack}>
+        <TelegramCard
+          title="Telegram hesabım"
+          linked={selfTelegram.linked}
+          linkedAt={selfTelegram.linkedAt}
+          botUsername={settings.telegram_bot_username}
+          tenantEnabled={settings.telegram_enabled}
+          botConfigured={selfTelegram.botConfigured}
+          prefs={selfTelegram.prefs}
+          showSummary
+        />
         <Card>
           <h2>Telegram bildirimleri</h2>
           <p className={s.sub}>Çalışanlar bağlantıyı kendi Profil sayfasından kurar.</p>
@@ -155,7 +174,7 @@ export function NotificationsPanel({ settings }: { settings: TenantSettings }) {
         ) : null}
       </div>
 
-      <div className={s.stack}>
+      <div className={a.stack}>
         <Card>
           <h2>Gönderim saatleri</h2>
           <p className={s.sub}>Saatler yerel saattir, 24 saat biçiminde (örneğin 08:30).</p>
