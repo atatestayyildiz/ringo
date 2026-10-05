@@ -14,6 +14,7 @@ const HELP = `Kullanım:
 Gerekli ortam değişkenleri:
   SUPABASE_URL                 (ya da NEXT_PUBLIC_SUPABASE_URL)
   SUPABASE_SERVICE_ROLE_KEY
+  BOOTSTRAP_PASSWORD           (isteğe bağlı, en az 8 karakter; yoksa rastgele geçici şifre üretilir)
 
 Seçenekler:
   --magaza            Mağaza (marka) adı, en çok 80 karakter
@@ -136,7 +137,9 @@ try {
     .select("tenant_id");
   if (sErr || !s || s.length !== 1) throw new Error(`Marka ayarları yazılamadı (${sErr?.code ?? "satır yok"}).`);
 
-  const password = tempPassword();
+  const given = process.env.BOOTSTRAP_PASSWORD ?? "";
+  if (given && given.length < 8) throw new Error("BOOTSTRAP_PASSWORD en az 8 karakter olmalı.");
+  const password = given || tempPassword();
   const { data: u, error: uErr } = await admin.auth.admin.createUser({
     email: eposta,
     password,
@@ -161,9 +164,13 @@ try {
   console.log(`  Mağaza     : ${magaza} (${renk.toUpperCase()})`);
   console.log(`  Kiracı no  : ${tenantId}`);
   console.log(`  Yönetici   : ${ad} <${eposta}>`);
-  console.log(`  Geçici şifre (yalnız şimdi gösterilir): ${password}`);
-  console.log("");
-  console.log("Şifreyi şimdi not edin. İlk girişte PIN belirleyin, ardından Profil > Şifre bölümünden şifreyi değiştirin.");
+  if (given) {
+    console.log("  Şifre      : BOOTSTRAP_PASSWORD ile verildi.");
+  } else {
+    console.log(`  Geçici şifre (yalnız şimdi gösterilir): ${password}`);
+    console.log("");
+    console.log("Şifreyi şimdi not edin. İlk girişte PIN belirleyin, ardından Profil > Şifre bölümünden şifreyi değiştirin.");
+  }
 } catch (e) {
   await rollback();
   fail(e instanceof Error ? e.message : String(e));
