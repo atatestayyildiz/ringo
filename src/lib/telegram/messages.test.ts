@@ -6,7 +6,6 @@ import {
   linkFailedText,
   morningText,
   notificationText,
-  reminderText,
   summaryText,
   trDate,
 } from "./messages";
@@ -55,14 +54,6 @@ describe("morningText", () => {
   });
 });
 
-describe("reminderText", () => {
-  it("spec örneği", () => {
-    expect(reminderText({ first_name: "Elif", retry_count: 4 }, URL_)).toBe(
-      "Elif, 4 tekrar araman bekliyor. https://app.example.com/bugun",
-    );
-  });
-});
-
 describe("summaryText", () => {
   it("spec örneği", () => {
     const t = summaryText(
@@ -104,13 +95,11 @@ describe("diğer metinler", () => {
     expect(helpText(URL_)).toContain("https://app.example.com/profil");
   });
   it("notificationText türe göre", () => {
-    expect(notificationText("reminder", { first_name: "A", retry_count: 2 })).toBe("A, 2 tekrar araman bekliyor.");
     expect(notificationText("morning", null)).toContain("Günaydın");
   });
   it("kullanıcıya görünen metinde em dash yok", () => {
     const all = [
       morningText({ first_name: "A", total: 1, retries: 0, new: 1, birthdays: [{ full_name: "B", days_left: 1 }] }, URL_),
-      reminderText({ first_name: "A", retry_count: 1 }, URL_),
       summaryText({ day: "2026-10-04", totals: {}, members: [] }, URL_),
       linkedText("A", "T"),
       helpText(URL_),

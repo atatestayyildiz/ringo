@@ -44,14 +44,6 @@ export function morningText(p: MorningPayload, appUrl?: string): string {
   return url ? `${t} Listeyi aç: ${e(url)}` : t;
 }
 
-export type ReminderPayload = { first_name?: string; retry_count?: number };
-
-export function reminderText(p: ReminderPayload, appUrl?: string): string {
-  const t = `${e(str(p.first_name))}, ${num(p.retry_count)} tekrar araman bekliyor.`;
-  const url = link(appUrl, "/bugun");
-  return url ? `${t} ${e(url)}` : t;
-}
-
 export type SummaryPayload = {
   day?: string;
   totals?: { assigned?: number; done?: number; reached?: number; appointments?: number; retries?: number };
@@ -97,12 +89,11 @@ export function testText(firstName: string): string {
   return `${e(firstName)}, test mesajı ulaştı. Bildirimler bu sohbete gelecek.`;
 }
 
-export type TargetKind = "morning" | "reminder" | "summary";
+export type TargetKind = "morning" | "summary";
 
 /** `_notification_targets` satırı -> metin. */
 export function notificationText(kind: TargetKind, payload: unknown, appUrl?: string): string {
   const p = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
   if (kind === "morning") return morningText(p as MorningPayload, appUrl);
-  if (kind === "reminder") return reminderText(p as ReminderPayload, appUrl);
   return summaryText(p as SummaryPayload, appUrl);
 }

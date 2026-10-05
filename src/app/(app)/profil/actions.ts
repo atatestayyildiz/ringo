@@ -43,14 +43,14 @@ export async function unlinkSelfAction(): Promise<Result> {
 
 export async function saveNotifyPrefsAction(prefs: {
   morning: boolean;
-  reminder: boolean;
   summary: boolean;
 }): Promise<Result> {
   await getSessionContext();
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_notify_prefs", {
     p_morning: prefs.morning,
-    p_reminder: prefs.reminder,
+    // Hatırlatma 2026-10-05'te kaldırıldı; RPC imzası için sabit değer.
+    p_reminder: true,
     p_summary: prefs.summary,
   });
   if (error) return { ok: false, error: toUserMessage(error) };

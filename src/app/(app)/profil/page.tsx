@@ -14,7 +14,7 @@ export default async function Page() {
   const supabase = await createClient();
   const { data: me } = await supabase
     .from("members")
-    .select("telegram_linked_at, notify_morning, notify_reminder, notify_summary")
+    .select("telegram_linked_at, notify_morning, notify_summary")
     .eq("id", ctx.member.id)
     .maybeSingle();
 
@@ -37,7 +37,6 @@ export default async function Page() {
             botConfigured={botTokenConfigured()}
             prefs={{
               morning: me?.notify_morning ?? true,
-              reminder: me?.notify_reminder ?? true,
               summary: me?.notify_summary ?? true,
             }}
             showSummary={showSummary}

@@ -11,14 +11,18 @@ import s from "@/components/profil/profil.module.css";
 import { Avatar, Button, Card, Chip, EmptyState, Input, Switch, useToast } from "@/components/ui";
 import type { TenantSettings } from "@/lib/session";
 
-const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
+const hourError = (raw: string) => {
+  const n = raw.trim() === "" ? NaN : Number(raw);
+  return Number.isInteger(n) && n >= 0 && n <= 23 ? undefined : "0 ile 23 arasında bir tam sayı girin.";
+};
 
 export function NotificationsPanel({ settings }: { settings: TenantSettings }) {
   const toast = useToast();
   const [pending, start] = useTransition();
   const [enabled, setEnabled] = useState(settings.telegram_enabled);
   const [bot, setBot] = useState(settings.telegram_bot_username ?? "");
-  const [hour, setHour] = useState(String(settings.reminder_hour));
+  const [morning, setMorning] = useState(String(settings.distribution_hour));
+  const [evening, setEvening] = useState(String(settings.summary_hour));
   const [data, setData] = useState<NotificationsData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -44,21 +48,31 @@ export function NotificationsPanel({ settings }: { settings: TenantSettings }) {
     };
   }, []);
 
-  const hourNum = hour.trim() === "" ? NaN : Number(hour);
-  const hourErr =
-    Number.isInteger(hourNum) && hourNum >= 0 && hourNum <= 23 ? undefined : "0 ile 23 arasında bir tam sayı girin.";
+  const morningErr = hourError(morning);
+  const eveningErr = hourError(evening);
   const botClean = bot.trim().replace(/^@/, "");
   const botErr = botClean !== "" && !/^[A-Za-z0-9_]{3,64}$/.test(botClean) ? "Harf, rakam ve alt çizgi, en az 3 karakter." : undefined;
 
   const save = () => {
-    if (hourErr || botErr) return toast("Kırmızı işaretli alanları düzeltin.", "error");
+    if (botErr) return toast("Kırmızı işaretli alanları düzeltin.", "error");
     start(async () => {
       const res = await saveNotificationSettingsAction({
         telegram_enabled: enabled,
         telegram_bot_username: botClean,
-        reminder_hour: hourNum,
       });
       if (res.ok) toast("Bildirim ayarları kaydedildi.");
+      else toast(res.error, "error");
+    });
+  };
+
+  const saveHours = () => {
+    if (morningErr || eveningErr) return toast("Kırmızı işaretli alanları düzeltin.", "error");
+    start(async () => {
+      const res = await saveNotificationSettingsAction({
+        distribution_hour: Number(morning),
+        summary_hour: Number(evening),
+      });
+      if (res.ok) toast("Gönderim saatleri kaydedildi.");
       else toast(res.error, "error");
     });
   };
@@ -96,17 +110,6 @@ export function NotificationsPanel({ settings }: { settings: TenantSettings }) {
               onChange={(e) => setBot(e.target.value)}
               autoComplete="off"
               spellCheck={false}
-            />
-            <Input
-              label="Tekrar arama hatırlatma saati"
-              hint="0 ile 23 arası, yerel saat."
-              error={hourErr}
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={23}
-              value={hour}
-              onChange={(e) => setHour(e.target.value)}
             />
           </div>
           <div className={s.row}>
@@ -153,27 +156,43 @@ export function NotificationsPanel({ settings }: { settings: TenantSettings }) {
       <div className={s.stack}>
         <Card>
           <h2>Gönderim saatleri</h2>
-          <div className={s.hours} style={{ marginTop: 12 }}>
-            <div>
-              <span>Sabah listesi</span>
-              <b>{hh(settings.distribution_hour)}</b>
-            </div>
-            <div>
-              <span>Tekrar arama hatırlatması</span>
-              <b>{Number.isInteger(hourNum) && !hourErr ? hh(hourNum) : hh(settings.reminder_hour)}</b>
-            </div>
-            <div>
-              <span>Akşam özeti</span>
-              <b>{hh(settings.summary_hour)}</b>
-            </div>
+          <p className={s.sub}>Saatler yerel saattir.</p>
+          <div className={s.formGrid}>
+            <Input
+              label="Sabah listesi"
+              hint="Müşteriler bu saatte dağıtılır ve sabah mesajı gider."
+              error={morningErr}
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={23}
+              value={morning}
+              onChange={(e) => setMorning(e.target.value)}
+            />
+            <Input
+              label="Akşam özeti"
+              hint="Gün sonu özeti bu saatte gider."
+              error={eveningErr}
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={23}
+              value={evening}
+              onChange={(e) => setEvening(e.target.value)}
+            />
           </div>
-          <p className={s.sub} style={{ marginBottom: 0 }}>
-            Sabah ve akşam saatleri Kurallar sekmesinden değişir.
-          </p>
+          <div className={s.row}>
+            <Button variant="brand" onClick={saveHours} disabled={pending}>
+              {pending ? "Kaydediliyor" : "Saatleri kaydet"}
+            </Button>
+          </div>
         </Card>
 
         <Card>
-          <h2>Ekip bağlantıları</h2>
+          <h2>Telegram bağlantıları</h2>
+          <p className={s.sub}>
+            Bu liste çevrimiçi durumu göstermez. Telegram hesabını bağlayıp bildirim alabilen çalışanları gösterir.
+          </p>
           {loadError ? <div className={s.warn}>{loadError}</div> : null}
           {!data && !loadError ? <p className={s.sub}>Yükleniyor</p> : null}
           {data && data.team.length === 0 ? <EmptyState title="Ekip boş">Önce Ekip sekmesinden çalışan ekleyin.</EmptyState> : null}

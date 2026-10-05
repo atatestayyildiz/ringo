@@ -46,8 +46,6 @@ export async function saveRulesAction(v: RulesValues): Promise<ActionResult<{ su
       max_attempts: v.max_attempts,
       pool_wait_days: v.pool_wait_days,
       max_rounds: v.max_rounds,
-      distribution_hour: v.distribution_hour,
-      summary_hour: v.summary_hour,
       birthday_notice_days: v.birthday_notice_days,
       distribution_mode: v.distribution_mode,
     })

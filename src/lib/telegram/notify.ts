@@ -18,7 +18,7 @@ export function istanbulDay(d: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }
 
-const KINDS = new Set<string>(["morning", "reminder", "summary"]);
+const KINDS = new Set<string>(["morning", "summary"]);
 
 export async function processNotifyRequest(req: Request, deps: NotifyDeps): Promise<Response> {
   const token = bearerToken(req.headers.get("authorization"));

@@ -112,7 +112,7 @@ select is((select count(*)::int from public._notification_targets((public.tr_tod
           0, 'O1: reminder saatinden önce reminder yok');
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '17 hours') at time zone 'Europe/Istanbul')
            where member_id = '30000000-0000-4000-8000-0000000000e2' and kind = 'reminder'),
-          1, 'O1: reminder saatinden sonra reminder hedef');
+          0, 'O1: reminder kaldırıldı, saatten sonra da reminder hedefi yok');
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '18 hours 59 minutes') at time zone 'Europe/Istanbul')
            where tenant_id = '10000000-0000-4000-8000-0000000000e1' and kind = 'summary'),
           0, 'O1: summary saatinden önce summary yok');

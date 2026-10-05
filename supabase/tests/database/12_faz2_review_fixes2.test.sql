@@ -45,7 +45,7 @@ where tenant_id = '10000000-0000-4000-8000-0000000000f1';
 -- ---------------------------------------------------------------------------
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '17 hours') at time zone 'Europe/Istanbul')
            where member_id = '30000000-0000-4000-8000-0000000000f2' and kind in ('morning', 'reminder')),
-          2, 'D9: izinsiz ajan morning ve reminder hedefi');
+          1, 'D9: izinsiz ajan morning hedefi (reminder kaldırıldı)');
 
 update public.members set absent_on = public.tr_today() where id = '30000000-0000-4000-8000-0000000000f2';
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '10 hours') at time zone 'Europe/Istanbul')
@@ -61,12 +61,12 @@ select is((select count(*)::int from public._notification_targets((public.tr_tod
 update public.members set absent_on = public.tr_today() - 1 where id = '30000000-0000-4000-8000-0000000000f2';
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '17 hours') at time zone 'Europe/Istanbul')
            where member_id = '30000000-0000-4000-8000-0000000000f2' and kind in ('morning', 'reminder')),
-          2, 'D9: dünkü izin bugünkü bildirimi engellemez');
+          1, 'D9: dünkü izin bugünkü bildirimi engellemez');
 
 update public.members set absent_on = public.tr_today() + 1 where id = '30000000-0000-4000-8000-0000000000f2';
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '17 hours') at time zone 'Europe/Istanbul')
            where member_id = '30000000-0000-4000-8000-0000000000f2' and kind in ('morning', 'reminder')),
-          2, 'D9: yarınki izin bugünkü bildirimi engellemez');
+          1, 'D9: yarınki izin bugünkü bildirimi engellemez');
 update public.members set absent_on = null where id = '30000000-0000-4000-8000-0000000000f2';
 
 -- ---------------------------------------------------------------------------

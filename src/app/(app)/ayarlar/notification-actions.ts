@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { checkHour } from "@/components/ayarlar/shared";
+import type { TablesUpdate } from "@/lib/database.types";
 import { toUserMessage } from "@/lib/errors";
 import { getSessionContext } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -55,30 +57,41 @@ export async function loadNotificationsAction(): Promise<Result<{ data: Notifica
   };
 }
 
+/** Verilen alanlar güncellenir; verilmeyenlere dokunulmaz. */
 export async function saveNotificationSettingsAction(v: {
-  telegram_enabled: boolean;
-  telegram_bot_username: string;
-  reminder_hour: number;
+  telegram_enabled?: boolean;
+  telegram_bot_username?: string;
+  distribution_hour?: number;
+  summary_hour?: number;
 }): Promise<Result> {
   const ctx = await requireManager();
   if (!ctx) return { ok: false, error: NOT_MANAGER };
 
-  const bot = (v.telegram_bot_username ?? "").trim().replace(/^@/, "");
-  if (bot !== "" && !BOT_RE.test(bot)) {
-    return { ok: false, error: "Bot kullanıcı adı 3 ile 64 arası harf, rakam veya alt çizgi olmalı." };
+  const patch: TablesUpdate<"tenant_settings"> = {};
+  if (v.telegram_enabled !== undefined) patch.telegram_enabled = Boolean(v.telegram_enabled);
+  if (v.telegram_bot_username !== undefined) {
+    const bot = v.telegram_bot_username.trim().replace(/^@/, "");
+    if (bot !== "" && !BOT_RE.test(bot)) {
+      return { ok: false, error: "Bot kullanıcı adı 3 ile 64 arası harf, rakam veya alt çizgi olmalı." };
+    }
+    patch.telegram_bot_username = bot === "" ? null : bot;
   }
-  if (!Number.isInteger(v.reminder_hour) || v.reminder_hour < 0 || v.reminder_hour > 23) {
-    return { ok: false, error: "Hatırlatma saati 0 ile 23 arasında bir tam sayı olmalı." };
+  if (v.distribution_hour !== undefined) {
+    const err = checkHour(Number(v.distribution_hour), "Sabah listesi saati");
+    if (err) return { ok: false, error: err };
+    patch.distribution_hour = v.distribution_hour;
   }
+  if (v.summary_hour !== undefined) {
+    const err = checkHour(Number(v.summary_hour), "Akşam özeti saati");
+    if (err) return { ok: false, error: err };
+    patch.summary_hour = v.summary_hour;
+  }
+  if (Object.keys(patch).length === 0) return { ok: true };
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tenant_settings")
-    .update({
-      telegram_enabled: Boolean(v.telegram_enabled),
-      telegram_bot_username: bot === "" ? null : bot,
-      reminder_hour: v.reminder_hour,
-    })
+    .update(patch)
     .eq("tenant_id", ctx.member.tenant_id)
     .select("tenant_id");
   if (error) return { ok: false, error: toUserMessage(error) };

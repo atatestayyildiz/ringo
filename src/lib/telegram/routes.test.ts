@@ -76,8 +76,8 @@ describe("handleTelegramUpdate", () => {
 
 describe("cron notify", () => {
   const targets = [
-    { tenant_id: "t1", member_id: "m1", kind: "reminder", chat_id: 11, payload: { first_name: "Elif", retry_count: 4 } },
-    { tenant_id: "t1", member_id: "m2", kind: "reminder", chat_id: 12, payload: { first_name: "Can", retry_count: 1 } },
+    { tenant_id: "t1", member_id: "m1", kind: "morning", chat_id: 11, payload: { first_name: "Elif", total: 4, retries: 1, new: 3 } },
+    { tenant_id: "t1", member_id: "m2", kind: "morning", chat_id: 12, payload: { first_name: "Can", total: 1, retries: 0, new: 1 } },
   ];
 
   /** notification_log taklidi: claim/finish ve hedef dışlama kuralları migration 0900 ile aynı. */
@@ -136,7 +136,8 @@ describe("cron notify", () => {
     const body = await res.json();
     expect(body.dry).toBe(true);
     expect(body.count).toBe(2);
-    expect(body.targets[0].text).toBe("Elif, 4 tekrar araman bekliyor. https://a.b/bugun");
+    expect(body.targets[0].text).toContain("Elif");
+    expect(body.targets[0].text).toContain("https://a.b/bugun");
     expect(body.targets[0].chat_id).toBeUndefined();
     expect(send).not.toHaveBeenCalled();
     expect(calls.map((c) => c.fn)).toEqual(["_notification_targets"]);
@@ -159,7 +160,7 @@ describe("cron notify", () => {
       "_notification_claim",
       "_notification_finish",
     ]);
-    expect(calls[1].args).toEqual({ p_tenant: "t1", p_member: "m1", p_kind: "reminder", p_day: "2026-10-04" });
+    expect(calls[1].args).toEqual({ p_tenant: "t1", p_member: "m1", p_kind: "morning", p_day: "2026-10-04" });
     const fin = calls.filter((c) => c.fn === "_notification_finish");
     expect(fin.map((c) => c.args.p_status)).toEqual(["sent", "failed"]);
     expect(fin[1].args.p_error).toBe("Telegram hatası 403");

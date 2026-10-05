@@ -304,10 +304,10 @@ where customer_id in ('40000000-0000-4000-8000-0000000000d1', '40000000-0000-400
 -- ---------------------------------------------------------------------------
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
            where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'reminder'),
-          2, 'reminder: retry''ı olan iki üye (Zeynep, Deniz)');
-select is((select payload::text from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
+          0, 'reminder kaldırıldı (2026-10-05): retry''ı olan üyelere reminder hedefi yok');
+select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
            where member_id = '30000000-0000-4000-8000-0000000000d2' and kind = 'reminder'),
-          jsonb_build_object('first_name', 'Zeynep', 'retry_count', 1)::text, 'reminder: payload');
+          0, 'reminder kaldırıldı: Zeynep için reminder hedefi yok');
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
            where kind = 'summary' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
           0, 'reminder saatinde summary hedefi yok (summary saati gelmedi)');
@@ -319,7 +319,7 @@ update public.customers set call_status = 'retry' where id = '40000000-0000-4000
 update public.tenant_settings set reminder_hour = 16 where tenant_id = '10000000-0000-4000-8000-0000000000d1';
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '16 hours') at time zone 'Europe/Istanbul')
            where kind = 'reminder' and tenant_id = '10000000-0000-4000-8000-0000000000d1'),
-          2, 'reminder: reminder_hour ayarına uyar');
+          0, 'reminder kaldırıldı: reminder_hour ayarı hedef üretmez');
 update public.tenant_settings set reminder_hour = 15 where tenant_id = '10000000-0000-4000-8000-0000000000d1';
 
 select is((select string_agg(member_id::text, ',' order by member_id) from public._notification_targets((public.tr_today()::timestamp + interval '19 hours') at time zone 'Europe/Istanbul')
@@ -379,7 +379,7 @@ select is((select count(*)::int from public._notification_targets((public.tr_tod
           1, 'dedup: failed kaydı (deneme < 3) yeniden denemeye izin verir (0900, D3)');
 select is((select count(*)::int from public._notification_targets((public.tr_today()::timestamp + interval '15 hours') at time zone 'Europe/Istanbul')
            where tenant_id = '10000000-0000-4000-8000-0000000000d1' and kind = 'reminder'),
-          2, 'dedup: morning kaydı reminder''ı etkilemez');
+          0, 'dedup: reminder kaldırıldı, hedef yok');
 
 -- notification_log RLS: yönetici okur, ajan okumaz, yazma yok
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d1","role":"authenticated"}', true);

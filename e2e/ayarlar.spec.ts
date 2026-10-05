@@ -81,3 +81,30 @@ test("logo dosyası yüklenir, kabukta ve girişte görünür, kaldırılır; SV
   await page.reload();
   await expect(page.locator(".logo-mark img")).toHaveCount(0);
 });
+
+test("bildirim sekmesinden gönderim saatleri değişir, Kurallar'da saat alanı yok", async ({ page }) => {
+  await loginOk(page, "yonetici");
+  await page.goto("/ayarlar");
+  await expect(page.getByLabel("Sabah dağıtım saati")).toHaveCount(0);
+  await page.getByRole("button", { name: "Bildirimler", exact: true }).click();
+
+  const morning = page.getByLabel("Sabah listesi");
+  const original = await morning.inputValue();
+  const changed = String(Number(original) === 9 ? 8 : 9);
+  const save = async (value: string) => {
+    await morning.fill(value);
+    await page.getByRole("button", { name: "Saatleri kaydet" }).click();
+    await expect(page.getByText("Gönderim saatleri kaydedildi.")).toBeVisible();
+  };
+  try {
+    await morning.fill("24");
+    await expect(page.getByText("0 ile 23 arasında bir tam sayı girin.")).toBeVisible();
+    await save(changed);
+    await page.reload();
+    await page.getByRole("button", { name: "Bildirimler", exact: true }).click();
+    await expect(page.getByLabel("Sabah listesi")).toHaveValue(changed);
+  } finally {
+    await page.getByLabel("Sabah listesi").fill(original);
+    await page.getByRole("button", { name: "Saatleri kaydet" }).click();
+  }
+});

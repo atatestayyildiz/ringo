@@ -4,8 +4,6 @@ export type RulesValues = {
   max_attempts: number;
   pool_wait_days: number;
   max_rounds: number;
-  distribution_hour: number;
-  summary_hour: number;
   birthday_notice_days: number;
   distribution_mode: "auto_even" | "free_pool" | "manual";
 };
@@ -14,8 +12,6 @@ export const RULE_LIMITS: Record<Exclude<keyof RulesValues, "distribution_mode">
   max_attempts: [1, 10, "Deneme sayısı"],
   pool_wait_days: [1, 60, "Havuz bekleme günü"],
   max_rounds: [0, 10, "Havuza düşme sayısı"],
-  distribution_hour: [0, 23, "Dağıtım saati"],
-  summary_hour: [0, 23, "Özet saati"],
   birthday_notice_days: [0, 30, "Doğum günü uyarısı"],
 };
 
@@ -23,6 +19,12 @@ export const RULE_LIMITS: Record<Exclude<keyof RulesValues, "distribution_mode">
 export function checkRule(key: keyof typeof RULE_LIMITS, n: number): string | null {
   const [min, max, name] = RULE_LIMITS[key];
   if (!Number.isInteger(n) || n < min || n > max) return `${name} ${min} ile ${max} arasında bir tam sayı olmalı.`;
+  return null;
+}
+
+/** Gönderim saati (0-23 tam sayı) doğrulaması; hata varsa Türkçe mesaj, yoksa null. */
+export function checkHour(n: number, name: string): string | null {
+  if (!Number.isInteger(n) || n < 0 || n > 23) return `${name} 0 ile 23 arasında bir tam sayı olmalı.`;
   return null;
 }
 

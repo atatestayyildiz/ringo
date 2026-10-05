@@ -8,7 +8,7 @@ Faz 1 (`docs/spec-faz1.md`) üstüne: Telegram bildirimleri, raporlar, dışa ak
 tenant_settings += (
   telegram_enabled boolean not null default false,
   telegram_bot_username text,          -- bağlantı linki için (t.me/<username>)
-  reminder_hour int not null default 15 check (reminder_hour between 0 and 23)  -- tekrar-ara hatırlatması
+  reminder_hour int not null default 15 check (reminder_hour between 0 and 23)  -- tekrar-ara hatırlatması; 2026-10-05 kaldırıldı (kolon duruyor, kullanılmıyor)
 )
 -- summary_hour, distribution_hour Faz 1'de var.
 
@@ -16,7 +16,7 @@ members += (
   telegram_chat_id bigint,             -- bağlıysa dolu
   telegram_linked_at timestamptz,
   notify_morning boolean not null default true,
-  notify_reminder boolean not null default true,
+  notify_reminder boolean not null default true,  -- 2026-10-05 kaldırıldı (kolon duruyor, kullanılmıyor)
   notify_summary boolean not null default true   -- yalnız manager/view_reports için anlamlı
 )
 
@@ -52,9 +52,9 @@ Bot token tek: sunucu ortam değişkeni `TELEGRAM_BOT_TOKEN` (Faz 3'te kiracı b
 
 Sunucu tarafı (service role, yalnız route handler'larda kullanılan) iç fonksiyonlar, authenticated/anon'a EXECUTE yok:
 - `_telegram_consume_link_code(p_code text, p_chat_id bigint) returns jsonb` → `{ok, full_name, tenant_name}` veya `{ok:false, reason:'invalid'|'expired'|'used'}`. Aynı chat başka üyeye bağlıysa önceki bağlantı kaldırılır.
-- `_notification_targets(p_now timestamptz) returns table(tenant_id, member_id, kind, chat_id, payload jsonb)`: Saatleri gelen (yerel saat = distribution_hour+0 için morning, reminder_hour için reminder, summary_hour için summary) ve o gün o tür için notification_log'da kaydı olmayan, telegram_enabled kiracılardaki, aktif, bağlı ve tercihi açık üyeler. Payload:
+- `_notification_targets(p_now timestamptz) returns table(tenant_id, member_id, kind, chat_id, payload jsonb)`: Saatleri gelen (yerel saat = distribution_hour+0 için morning, reminder_hour için reminder (2026-10-05 kaldırıldı), summary_hour için summary) ve o gün o tür için notification_log'da kaydı olmayan, telegram_enabled kiracılardaki, aktif, bağlı ve tercihi açık üyeler. Payload:
   - morning (ajan ve atanmış yönetici): `{first_name, total, retries, new, birthdays:[{full_name, days_left}]}` (bugünkü atamalardan; total 0 ise hedef dönmez).
-  - reminder: `{first_name, retry_count}` (bugün atanmış ve hâlâ retry olanlar; 0 ise dönmez).
+  - reminder: `{first_name, retry_count}` (bugün atanmış ve hâlâ retry olanlar; 0 ise dönmez). 2026-10-05 kaldırıldı: artık hedef üretilmez (20261005000400_remove_reminder.sql).
   - summary (manager ve view_reports): `{day, totals:{assigned, done, reached, appointments, retries}, members:[{full_name, assigned, done, appointments}]}`.
 - `_notification_record(p_tenant uuid, p_member uuid, p_kind text, p_day date, p_status text, p_error text)`.
 
@@ -63,7 +63,7 @@ Sunucu tarafı (service role, yalnız route handler'larda kullanılan) iç fonks
 - `src/lib/telegram/client.ts`: `sendMessage(chatId, text, opts)` Bot API `sendMessage` (parse_mode HTML, metin kaçışlı), 429'da `retry_after` kadar bir kez bekle, hata fırlatır.
 - `src/lib/telegram/messages.ts`: saf fonksiyonlar `morningText`, `reminderText`, `summaryText`, `linkedText`, `helpText` (payload → Türkçe metin, uygulama linki `APP_URL` ortam değişkeninden). Vitest testleri.
   - morning örnek: "Günaydın Elif. Bugün 12 kişi aranacak: 3 tekrar arama, 9 yeni. Doğum günü yaklaşan: Hakan Yıldız (3 gün). Listeyi aç: <link>"
-  - reminder: "Elif, 4 tekrar araman bekliyor. <link>"
+  - reminder: "Elif, 4 tekrar araman bekliyor. <link>" (2026-10-05 kaldırıldı)
   - summary: "Bugünün özeti (4 Ekim): 48 atama, 41 tamamlandı, 31 ulaşıldı, 14 randevu, 7 tekrar. Elif 12/12 (5 randevu), ..." 
 - `POST /api/telegram/webhook`: `X-Telegram-Bot-Api-Secret-Token` başlığı `TELEGRAM_WEBHOOK_SECRET` ile sabit zamanlı karşılaştırılır, uymazsa 401. `/start <KOD>` → `_telegram_consume_link_code` → yanıt mesajı. `/start` kodsuz veya başka metin → `helpText`. Her zaman 200 döner (Telegram tekrar denemesin), hatalar loglanır.
 - `GET|POST /api/cron/notify`: `Authorization: Bearer <CRON_SECRET>` zorunlu. `_notification_targets(now())` → her hedefe mesaj → `_notification_record`. Yanıt: `{sent, failed, skipped}`. `?dry=1` gönderim yapmadan hedefleri ve metinleri döner (test için). Vercel Cron saatlik çağırır (`vercel.json`).
@@ -72,7 +72,7 @@ Sunucu tarafı (service role, yalnız route handler'larda kullanılan) iç fonks
 
 ## 4. Arayüz
 
-- `/ayarlar` yeni sekme **Bildirimler** (manager): telegram_enabled anahtarı, bot kullanıcı adı, reminder_hour, mevcut distribution/summary saatlerinin özeti, ekip listesinde kimin bağlı olduğu, manager başkasının bağlantısını kaldırabilir. Token yoksa uyarı: "Bot anahtarı sunucuya eklenmedi. Kurulum adımları: ..." (BotFather adımları 4 madde).
+- `/ayarlar` yeni sekme **Bildirimler** (manager): telegram_enabled anahtarı, bot kullanıcı adı, reminder_hour (2026-10-05 kaldırıldı), sabah (distribution_hour) ve akşam (summary_hour) saatleri (2026-10-05: Kurallar yerine buradan düzenlenir), ekip listesinde kimin bağlı olduğu, manager başkasının bağlantısını kaldırabilir. Token yoksa uyarı: "Bot anahtarı sunucuya eklenmedi. Kurulum adımları: ..." (BotFather adımları 4 madde).
 - **Profil** sayfası `/profil` (herkes, üst çubuktaki kullanıcı hapından): Telegram'ı bağla (kod üret, `https://t.me/<bot>?start=<KOD>` düğmesi + kod metni + 15 dk geri sayım, bağlanınca durumu yenile), bağlantıyı kaldır, tercih anahtarları, "Test mesajı gönder". Şifre değiştir (Supabase `updateUser`).
 - **Yetki ayrımı** (migration `20261004001100`): `view_reports` = "Ekibin raporlarını görsün" (Raporlar'da ekip geneli kapsam; Yönetim'i açmaz). `view_team` = "Yönetim ekranını görsün" (ekip özet kartları, kim ne yaptı, `day_summary`, başkalarının `daily_assignments` satırları). Menü: Raporlar herkes, Yönetim manager veya `view_team`, Ayarlar manager. Geçişte `view_reports` sahiplerine `view_team` verildi. Gün sonu Telegram özeti `view_reports` ile kalır.
 - **/raporlar** (herkes; kapsam DB'de: manager ve `view_reports` ekip geneli ve "Ekip / Ben" seçimi, diğer çalışanlar yalnız kendi sayıları, çalışan tablosu yok): aralık seçici (Bugün, Bu hafta, Bu ay, Geçen ay, Özel), KPI kartları (oranlarla), günlük trend (SVG hap çubuklar, prototip dili; kütüphane yok), huni (taramalı iz üstünde dolu çubuk), çalışan tablosu, sonuç dağılımı, kaynak (reklam/form) performansı, operatör dağılımı. "Raporu indir (CSV)" (ekip geneli; manager veya `export` ve `view_reports` birlikte, yalnız Ekip görünümünde; kendi kapsamlı CSV yok).

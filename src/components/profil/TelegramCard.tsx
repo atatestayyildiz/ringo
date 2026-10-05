@@ -10,7 +10,7 @@ import {
 import { Button, buttonClass, Card, Switch, useToast } from "@/components/ui";
 import s from "./profil.module.css";
 
-type Prefs = { morning: boolean; reminder: boolean; summary: boolean };
+type Prefs = { morning: boolean; summary: boolean };
 
 function fmtLeft(ms: number): string {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -129,7 +129,7 @@ export function TelegramCard({
     <Card>
       <h2>Telegram</h2>
       <p className={s.sub}>
-        Günlük arama listesi, tekrar arama hatırlatması ve özet Telegram sohbetine gelir.
+        Günlük arama listesi ve özet Telegram sohbetine gelir.
       </p>
 
       {!tenantEnabled ? (
@@ -217,13 +217,6 @@ export function TelegramCard({
             label="Sabah listesi"
             checked={prefs.morning}
             onChange={(e) => savePref("morning", e.target.checked)}
-          />
-        </div>
-        <div className={s.pref}>
-          <Switch
-            label="Tekrar arama hatırlatması"
-            checked={prefs.reminder}
-            onChange={(e) => savePref("reminder", e.target.checked)}
           />
         </div>
         {showSummary ? (

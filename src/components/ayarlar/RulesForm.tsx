@@ -13,8 +13,6 @@ const FIELDS: { key: NumKey; label: string; hint: string }[] = [
   { key: "max_attempts", label: "Tur başına deneme", hint: "Başarısız arama sayısı. Dolunca müşteri havuza düşer." },
   { key: "pool_wait_days", label: "Havuzda bekleme (gün)", hint: "Havuza düşen müşteri bu kadar gün sonra döner." },
   { key: "max_rounds", label: "Havuza düşme sınırı", hint: "Bu sayıdan sonra müşteri ulaşılamadı olarak kapanır." },
-  { key: "distribution_hour", label: "Sabah dağıtım saati", hint: "0 ile 23 arası, yerel saat." },
-  { key: "summary_hour", label: "Akşam özeti saati", hint: "0 ile 23 arası, yerel saat." },
   { key: "birthday_notice_days", label: "Doğum günü uyarısı (gün)", hint: "Doğum gününe kaç gün kala listede görünsün." },
 ];
 
@@ -25,8 +23,6 @@ export function RulesForm({ settings, summary }: { settings: TenantSettings; sum
     max_attempts: String(settings.max_attempts),
     pool_wait_days: String(settings.pool_wait_days),
     max_rounds: String(settings.max_rounds),
-    distribution_hour: String(settings.distribution_hour),
-    summary_hour: String(settings.summary_hour),
     birthday_notice_days: String(settings.birthday_notice_days),
   });
   const [mode, setMode] = useState<RulesValues["distribution_mode"]>("auto_even");
