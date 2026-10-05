@@ -221,7 +221,7 @@
 }
 .qHeadSticky {
   position: sticky;
-  top: 0;
+  top: var(--header-h);
   z-index: 5;
   background: var(--surface);
   margin: -8px -8px 10px;

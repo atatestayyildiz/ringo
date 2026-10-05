@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MainNav, type NavKey } from "@/components/shell/MainNav";
+import { MobileMenu } from "@/components/shell/MobileMenu";
 import { SignOutButton } from "@/components/shell/SignOutButton";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { Avatar, ToastProvider } from "@/components/ui";
@@ -24,8 +25,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <ToastProvider>
       {HEX.test(settings.brand_color) ? <style>{`:root{--brand:${settings.brand_color}}`}</style> : null}
-      <div className="app">
-        <header className="top">
+      <header className="top">
+        <div className="top-in">
+          <MobileMenu visible={visible} signOutAction={signOutAction} />
           <Link href="/bugun" className="logo" style={{ textDecoration: "none" }}>
             <span className="logo-mark" aria-hidden="true">
               {logoUrl ? (
@@ -49,7 +51,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </Link>
             <SignOutButton action={signOutAction} />
           </div>
-        </header>
+        </div>
+      </header>
+      <div className="app">
         <main>{children}</main>
       </div>
     </ToastProvider>

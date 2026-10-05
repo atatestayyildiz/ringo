@@ -126,13 +126,37 @@ svg.i {
 .app {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 18px 24px 120px;
+  padding: 10px 24px 120px;
+}
+:root {
+  --header-h: 72px;
+}
+html {
+  /* kaydırma/odak hedefleri sabit üst menünün altında kalmasın */
+  scroll-padding-top: var(--header-h);
 }
 .top {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: var(--header-h);
+  background: var(--bg);
+  box-shadow: 0 10px 14px -12px color-mix(in srgb, var(--ink) 22%, transparent);
+}
+.top-in {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 28px;
+  max-width: 1280px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.round.menu-btn {
+  display: none;
+}
+.drawer-wrap {
+  display: none;
 }
 .logo {
   display: flex;
@@ -676,8 +700,73 @@ select.input {
   .nav a[aria-current="page"] span {
     display: inline;
   }
-  .top {
-    flex-wrap: wrap;
+  .round.menu-btn {
+    display: grid;
+  }
+  .drawer-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    background: rgba(8, 8, 12, 0.45);
+    animation: fade 0.2s;
+  }
+  .drawer {
+    width: min(320px, 86vw);
+    height: 100%;
+    overflow-y: auto;
+    background: var(--surface);
+    box-shadow: var(--shadow-lift);
+    padding: 16px 14px calc(20px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .drawer:focus {
+    outline: none;
+  }
+  .drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px 6px 10px;
+    font-size: 17px;
+  }
+  .drawer-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .drawer-nav hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 8px 6px;
+  }
+  .drawer-nav a,
+  .drawer-nav button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: 16px;
+    background: transparent;
+    color: var(--ink-2);
+    font-size: 15.5px;
+    font-weight: 550;
+    text-align: left;
+    text-decoration: none;
+    width: 100%;
+  }
+  .drawer-nav a:hover,
+  .drawer-nav button:hover {
+    color: var(--ink);
+    background: var(--surface-2);
+  }
+  .drawer-nav a[aria-current="page"] {
+    background: var(--ink);
+    color: var(--on-ink);
   }
   .me div {
     display: none;
@@ -690,8 +779,15 @@ select.input {
   }
 }
 @media (max-width: 560px) {
+  :root {
+    --header-h: 64px;
+  }
+  .top-in {
+    padding: 0 16px;
+    gap: 10px;
+  }
   .app {
-    padding: 14px 16px calc(112px + env(safe-area-inset-bottom));
+    padding: 8px 16px calc(112px + env(safe-area-inset-bottom));
   }
   .card {
     padding: 20px;
