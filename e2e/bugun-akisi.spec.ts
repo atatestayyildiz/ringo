@@ -187,7 +187,7 @@ test("mobil 375px: Ara butonu görünür, menü örtmez, yatay taşma yok", asyn
   await context.close();
 });
 
-test("durum filtresi hapları ve listeyi süzer, Daralt başlıkta erişilir", async ({ browser }) => {
+test("durum filtresi hapları ve listeyi süzer, Daralt erişilir", async ({ browser }) => {
   const { context, page } = await freshPage(browser, { viewport: { width: 1280, height: 800 } });
   await loginOk(page, "yonetici");
 
@@ -217,6 +217,9 @@ test("durum filtresi hapları ve listeyi süzer, Daralt başlıkta erişilir", a
   await card.getByRole("button", { name: /^Tümünü göster/ }).first().click();
   const daralt = card.getByRole("button", { name: "Daralt", exact: true });
   await expect(daralt).toBeVisible();
+  // Liste kart içinde kayar; sayfa kaymaz, Daralt yerinde kalır
+  const lb = (await page.getByTestId("queue-list").boundingBox())!;
+  await page.mouse.move(lb.x + lb.width / 2, lb.y + lb.height / 2);
   await page.mouse.wheel(0, 600);
   await expect(daralt).toBeInViewport();
   await daralt.click();
@@ -233,8 +236,8 @@ test("Daralt ve Genişlet: basılan düğme ekranda yerinde kalır", async ({ br
   const daralt = card.getByRole("button", { name: "Daralt", exact: true });
   await expect(daralt).toBeVisible();
 
-  // Listenin ortasına in: başlık yapışkan, Daralt üst menünün altında
-  await card.evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY + 250));
+  // Kartın başına in: Daralt üst menünün altında
+  await card.evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 80));
   await expect(daralt).toBeInViewport();
   const top = async () => Math.round((await daralt.boundingBox())!.y);
   const before = await top();
@@ -290,5 +293,58 @@ test("vakti gelmiş geri arama hatırlatma kartı görünür, Kapat ile tek sat�
   await page.reload();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Geri arama vakti")).toHaveCount(0);
+  await context.close();
+});
+
+for (const width of [1440, 1280]) {
+  for (const scheme of ["light", "dark"] as const) {
+    test(`yönetici ${width}px ${scheme}: Tümünü göster kartı uzatmaz, alt kartlar üst sütunlarla hizalı`, async ({ browser }) => {
+      const { context, page } = await freshPage(browser, { viewport: { width, height: 900 }, colorScheme: scheme });
+      await loginOk(page, "yonetici");
+      const card = page.locator("section.card", { has: page.getByRole("heading", { name: /Bugünün sırası/ }) });
+      const list = page.getByTestId("queue-list");
+      const box = (loc: ReturnType<Page["locator"]>) =>
+        loc.evaluate((el) => {
+          const r = el.getBoundingClientRect();
+          return { left: r.left, right: r.right, height: r.height };
+        });
+      const before = await box(card);
+      await card.getByRole("button", { name: /^Tümünü göster/ }).first().click();
+      await expect(card.getByRole("button", { name: "Daralt", exact: true })).toBeVisible();
+      const after = await box(card);
+      expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(1);
+      const m = await list.evaluate((el) => {
+        const before = el.scrollTop;
+        el.scrollTop = 40;
+        const moved = el.scrollTop > before;
+        return { scrollable: el.scrollHeight > el.clientHeight, moved };
+      });
+      expect(m.scrollable).toBe(true);
+      expect(m.moved).toBe(true);
+
+      const team = await box(page.getByTestId("team-grid").locator("xpath=ancestor::*[contains(@class,'card')][1]"));
+      const dist = await box(page.locator("section.card, div.card", { has: page.getByRole("heading", { name: "Dağıtım", exact: true }) }).last());
+      const pool = await box(page.locator("section.card, div.card", { has: page.getByRole("heading", { name: /^Havuz/ }) }).last());
+      expect(Math.abs(team.left - after.left)).toBeLessThanOrEqual(1);
+      expect(Math.abs(team.right - after.right)).toBeLessThanOrEqual(1);
+      expect(Math.abs(dist.left - pool.left)).toBeLessThanOrEqual(1);
+      expect(Math.abs(dist.right - pool.right)).toBeLessThanOrEqual(1);
+      await context.close();
+    });
+  }
+}
+
+test("mobil 375px: sıra listesi kart içinde kayar", async ({ browser }) => {
+  const { context, page } = await freshPage(browser, { viewport: { width: 375, height: 812 }, isMobile: true });
+  await loginOk(page, "yonetici");
+  const card = page.locator("section.card", { has: page.getByRole("heading", { name: /Bugünün sırası/ }) });
+  await card.getByRole("button", { name: /^Tümünü göster/ }).first().click();
+  const m = await page.getByTestId("queue-list").evaluate((el) => {
+    el.scrollTop = 40;
+    return { scrollable: el.scrollHeight > el.clientHeight, moved: el.scrollTop > 0, h: el.clientHeight };
+  });
+  expect(m.scrollable).toBe(true);
+  expect(m.moved).toBe(true);
+  expect(m.h).toBeLessThanOrEqual(812 * 0.6 + 1);
   await context.close();
 });

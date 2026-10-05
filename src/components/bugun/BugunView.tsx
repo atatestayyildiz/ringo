@@ -156,8 +156,12 @@ export function BugunView(props: Props) {
   const focusRef = useRef<HTMLElement>(null);
   // Daralt/Genişlet: basılan düğme ekranda aynı yerde kalır, içerik onun altında değişir
   const anchorRef = useRef<{ el: HTMLElement; top: number } | null>(null);
+  // Genişleyince kart yüksekliği kapalı haldeki değerde kalır, liste kart içinde kayar
+  const [queueH, setQueueH] = useState<number | null>(null);
 
   function toggleQueue(e: React.MouseEvent<HTMLButtonElement>) {
+    const card = e.currentTarget.closest<HTMLElement>("[data-queue-card]");
+    setQueueH(!showAll && card ? Math.round(card.getBoundingClientRect().height) : null);
     anchorRef.current = {
       el: e.currentTarget,
       top: e.currentTarget.getBoundingClientRect().top,
@@ -457,8 +461,16 @@ export function BugunView(props: Props) {
           ) : null}
 
           {items.length > 0 ? (
-            <Card className={styles.queueCard}>
-              <div className={`${styles.qHead}${showAll ? ` ${styles.qHeadSticky}` : ""}`}>
+            <Card
+              className={`${styles.queueCard}${showAll ? ` ${styles.queueOpen}` : ""}`}
+              data-queue-card=""
+              style={
+                showAll && queueH
+                  ? ({ "--qh": `${queueH}px` } as React.CSSProperties)
+                  : undefined
+              }
+            >
+              <div className={styles.qHead}>
                 <h2>
                   Bugünün sırası
                   <span className={styles.headNote}>
@@ -479,7 +491,7 @@ export function BugunView(props: Props) {
               {queue.length === 0 ? (
                 <p className={styles.empty}>Bu durumda müşteri yok.</p>
               ) : null}
-              <div className={styles.listWrap}>
+              <div className={styles.listWrap} data-testid="queue-list">
                 {(showAll ? queue : queue.slice(0, QUEUE_LIMIT)).map((x) => (
                   <button
                     key={x.id}
