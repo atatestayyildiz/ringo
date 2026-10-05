@@ -12,13 +12,14 @@ import {
   StatusBadge,
   useToast,
 } from "@/components/ui";
-import { relativeTime } from "@/lib/format";
+import { formatDayMonth, formatTime, relativeTime } from "@/lib/format";
 import { CallbackDialog, ReasonDialog } from "./Dialogs";
 import { FocusCard } from "./FocusCard";
 import {
   OPERATORS,
   firstName,
   isCallOpen,
+  isDeferred,
   logText,
   toneOf,
   type BirthdayInfo,
@@ -35,6 +36,7 @@ type Props = {
   greeting: string;
   firstName: string;
   dateLabel: string;
+  todayKey: string;
   isManager: boolean;
   teamView: boolean;
   items: Item[];
@@ -94,11 +96,14 @@ export function BugunView(props: Props) {
   const { isManager, teamView, rules, pool, birthday, team } = props;
   const toast = useToast();
 
+  const { todayKey } = props;
+  const activeOf = (l: Item[]) => l.filter((i) => !isDeferred(i, todayKey));
   const [prevItems, setPrevItems] = useState(props.items);
-  const [items, setItems] = useState(props.items);
+  const [allItems, setItems] = useState(props.items);
   const [curId, setCurId] = useState<string | null>(() =>
-    defaultCursor(props.items),
+    defaultCursor(activeOf(props.items)),
   );
+  const [showDeferred, setShowDeferred] = useState(false);
   const [nonce, setNonce] = useState(0);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -112,9 +117,16 @@ export function BugunView(props: Props) {
   if (props.items !== prevItems) {
     setPrevItems(props.items);
     setItems(props.items);
-    if (curId === null || !props.items.some((i) => i.id === curId))
-      setCurId(defaultCursor(props.items));
+    const act = activeOf(props.items);
+    if (curId === null || !act.some((i) => i.id === curId))
+      setCurId(defaultCursor(act));
   }
+
+  // Bugünden sonraya ertelenenler bugünün sayısından, çubuktan ve sıradan düşer
+  const items = activeOf(allItems);
+  const deferredItems = allItems
+    .filter((i) => isDeferred(i, todayKey))
+    .sort((a, b) => a.nextCallAt.localeCompare(b.nextCallAt));
 
   const [showAll, setShowAll] = useState(false);
   const [filter, setFilter] = useState<Tone | null>(null);
@@ -134,7 +146,10 @@ export function BugunView(props: Props) {
     }
   }
 
-  const cur = items.find((i) => i.id === curId) ?? null;
+  const curFallback = items.some((i) => i.id === curId)
+    ? curId
+    : defaultCursor(items);
+  const cur = items.find((i) => i.id === curFallback) ?? null;
   const count = (t: Tone) => items.filter((i) => toneOf(i.status) === t).length;
   const left = count("wait");
   const finished = count("done") + count("bad") + count("pool");
@@ -148,9 +163,9 @@ export function BugunView(props: Props) {
     // Aynı render içindeki çift dokunuşu engelle (state kapanışı henüz güncellenmemiş olabilir)
     if (busyRef.current || !isCallOpen(item.status)) return;
     busyRef.current = true;
-    const snapshot = items;
+    const snapshot = allItems;
     const trimmed = note.trim();
-    const after = items.map((x) =>
+    const after = allItems.map((x) =>
       x.id === item.id
         ? {
             ...x,
@@ -161,7 +176,7 @@ export function BugunView(props: Props) {
     );
     setBusy(true);
     setItems(after);
-    const next = pickNext(after, item.id);
+    const next = pickNext(activeOf(after), item.id);
     setCurId(next ?? item.id);
     setNonce((n) => n + 1);
     const rect = focusRef.current?.getBoundingClientRect();
@@ -341,7 +356,9 @@ export function BugunView(props: Props) {
       {items.length === 0 ? (
         <Card style={{ marginTop: 18 }}>
           <EmptyState title="Bugün listen boş.">
-            Yönetici dağıtım yapınca burada görünecek.
+            {deferredItems.length > 0
+              ? "Ertelenenler vakti gelince listeye döner."
+              : "Yönetici dağıtım yapınca burada görünecek."}
           </EmptyState>
         </Card>
       ) : null}
@@ -430,6 +447,42 @@ export function BugunView(props: Props) {
                     ? "Daha az göster"
                     : `Tümünü göster (${queue.length})`}
                 </button>
+              ) : null}
+            </Card>
+          ) : null}
+
+          {deferredItems.length > 0 ? (
+            <Card className={styles.deferredCard}>
+              <button
+                type="button"
+                className={styles.deferredHead}
+                aria-expanded={showDeferred}
+                aria-controls="ertelendi-liste"
+                onClick={() => setShowDeferred((v) => !v)}
+              >
+                <span>
+                  Ertelendi
+                  <span className={styles.headNote}> {deferredItems.length}</span>
+                </span>
+                <i className={styles.deferredCaret} aria-hidden />
+              </button>
+              {showDeferred ? (
+                <div id="ertelendi-liste" className={styles.deferredList}>
+                  {deferredItems.map((x) => (
+                    <div className={styles.row} key={x.id}>
+                      <Avatar name={x.name} size={40} radius={14} />
+                      <div className={styles.rowT}>
+                        <b>{x.name}</b>
+                        <span>
+                          Geri arama{" "}
+                          {relativeTime(x.nextCallAt).startsWith("yarın")
+                            ? relativeTime(x.nextCallAt)
+                            : `${formatDayMonth(x.nextCallAt)} ${formatTime(x.nextCallAt)}`}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : null}
             </Card>
           ) : null}

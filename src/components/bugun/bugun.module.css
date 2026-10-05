@@ -897,3 +897,47 @@
 .noteInput {
   display: block;
 }
+
+/* ---------- ertelenenler (varsayilan kapali, katlanir) ---------- */
+.deferredHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: left;
+}
+.deferredCaret {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  position: relative;
+}
+.deferredCaret::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--ink-2);
+  border-bottom: 2px solid var(--ink-2);
+  transform: translate(-50%, -70%) rotate(45deg);
+  transition: transform 0.15s;
+}
+.deferredHead[aria-expanded="true"] .deferredCaret::after {
+  transform: translate(-50%, -30%) rotate(-135deg);
+}
+.deferredList {
+  margin-top: 14px;
+}

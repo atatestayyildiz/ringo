@@ -1,4 +1,5 @@
 import type { CallStatus } from "@/components/ui";
+import { dayKey } from "@/lib/format";
 
 export type Outcome =
   | "appointment"
@@ -51,6 +52,18 @@ export function toneOf(status: CallStatus): Tone {
 /** Arama kaydı yalnız bekleyen/tekrar müşteride açıktır (log_call ile aynı kural, DB zorlar). */
 export function isCallOpen(status: CallStatus): boolean {
   return status === "pending" || status === "retry";
+}
+
+/**
+ * Takvim olarak bugünden sonraya ertelenmiş (Sonra ara) tekrar müşterisi.
+ * Yalnız görüntüleme gruplaması: vakti gelen gün DB dağıtımı onu listeye geri verir.
+ * todayKey = Europe/Istanbul gün anahtarı (YYYY-MM-DD); dayKey ile aynı biçim, sözcük sırası = tarih sırası.
+ */
+export function isDeferred(
+  item: Pick<Item, "status" | "nextCallAt">,
+  todayKey: string,
+): boolean {
+  return item.status === "retry" && dayKey(item.nextCallAt) > todayKey;
 }
 
 export type LogEntry ={ outcome: string; note: string | null };

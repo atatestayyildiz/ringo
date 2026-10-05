@@ -1,11 +1,11 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { AGENTS, deleteByTag, freshPage, importCsv, loginOk, uniquePhone, uniqueTag, type UserKey } from "./helpers";
 
-// Üç kurgusal müşteri: A havuza düşer, B huniye girer, C geri arama ve mobil testleri için bekler.
+// Dört kurgusal müşteri: A havuza düşer, B huniye girer, C geri arama doğrulaması ve mobil testleri için bekler, D yarına ertelenir.
 test.describe.configure({ mode: "serial" });
 
 const tag = uniqueTag();
-const names = { a: `Ayla ${tag}a`, b: `Bora ${tag}b`, c: `Ceren ${tag}c` };
+const names = { a: `Ayla ${tag}a`, b: `Bora ${tag}b`, c: `Ceren ${tag}c`, d: `Deniz ${tag}d` };
 const owners: Partial<Record<keyof typeof names, UserKey>> = {};
 
 const slot = (page: Page, name: string) =>
@@ -35,9 +35,10 @@ test.beforeAll(async ({ browser }) => {
       `${names.a};${uniquePhone()}`,
       `${names.b};${uniquePhone()}`,
       `${names.c};${uniquePhone()}`,
+      `${names.d};${uniquePhone()}`,
     ].join("\n");
     const res = await importCsv(page, Buffer.from(csv, "utf-8"));
-    expect(res.inserted).toBe(3);
+    expect(res.inserted).toBe(4);
 
     await page.goto("/bugun");
     await page.getByRole("button", { name: "Dağıt" }).click();
@@ -45,7 +46,7 @@ test.beforeAll(async ({ browser }) => {
   } finally {
     await context.close();
   }
-  for (const k of ["a", "b", "c"] as const) owners[k] = await findOwner(browser, names[k]);
+  for (const k of ["a", "b", "c", "d"] as const) owners[k] = await findOwner(browser, names[k]);
 });
 
 test.afterAll(async ({ browser }) => {
@@ -108,11 +109,48 @@ test("Sonra ara geçmiş tarihi kaydetmez", async ({ browser }) => {
   await expect(page.getByText("Kaydedildi")).toHaveCount(0);
   await expect(slot(page, names.c)).toHaveAccessibleName(/Bekliyor/);
 
-  // Gelecek tarih kabul edilir
+  // Vazgeç: kayıt oluşmaz, müşteri bekleyenlerde kalır (mobil ve filtre testleri ona dayanır)
+  await dialog.getByRole("button", { name: "Vazgeç" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(slot(page, names.c)).toHaveAccessibleName(/Bekliyor/);
+  await context.close();
+});
+
+test("Sonra ara ile yarına ertelenen müşteri bugünün sayısından düşer, Ertelendi grubunda görünür", async ({ browser }) => {
+  const { context, page } = await freshPage(browser, { viewport: { width: 1280, height: 800 } });
+  await loginOk(page, owners.d!);
+
+  const pills = page.getByRole("group", { name: "Bugünün listesi" }).getByRole("button");
+  const before = await pills.count();
+  const title = page.getByRole("heading", { level: 1 });
+  const left = Number(((await title.locator("em").innerText()) || "0").replace(/\D/g, ""));
+  await expect(page.getByRole("button", { name: /^Ertelendi/ })).toHaveCount(0);
+
+  await slot(page, names.d).click();
+  await page.getByRole("button", { name: /Sonra ara/ }).click();
+  const dialog = page.getByRole("dialog", { name: "Ne zaman aransın?" });
   await dialog.getByRole("button", { name: "Yarın 10:00" }).click();
   await dialog.getByRole("button", { name: "Kaydet" }).click();
   await expect(dialog).toBeHidden();
-  await expect(slot(page, names.c)).toHaveAccessibleName(/Tekrar ara/);
+
+  // Sayı ve slot 1 azalır, müşteri bugünün listesinden çıkar
+  await expect(slot(page, names.d)).toHaveCount(0);
+  await expect(pills).toHaveCount(before - 1);
+  if (left > 1) await expect(title.locator("em")).toHaveText(String(left - 1));
+
+  // Ertelendi grubu varsayılan kapalı, sayısıyla görünür; açınca geri arama zamanı yazar
+  const group = page.getByRole("button", { name: /^Ertelendi/ });
+  await expect(group).toHaveAttribute("aria-expanded", "false");
+  await expect(group).toContainText("1");
+  await expect(page.getByText(names.d)).toHaveCount(0);
+  await group.click();
+  const row = page.locator("#ertelendi-liste", { hasText: names.d });
+  await expect(row).toContainText(/Geri arama yarın 10:00/);
+
+  // Yenilemede de aynı: sunucu verisinden gruba düşer
+  await page.reload();
+  await expect(pills).toHaveCount(before - 1);
+  await expect(page.getByRole("button", { name: /^Ertelendi/ })).toBeVisible();
   await context.close();
 });
 

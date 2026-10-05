@@ -149,6 +149,7 @@ export default async function Page() {
       greeting={greeting(now)}
       firstName={firstName(member.full_name)}
       dateLabel={formatWeekday(now)}
+      todayKey={today}
       isManager={isManager}
       teamView={teamView}
       items={items}
