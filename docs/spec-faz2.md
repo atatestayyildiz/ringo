@@ -92,3 +92,12 @@ Migration `20261005000500_appointment_time.sql`. "Dükkana gelecek" (outcome / `
 - Doğrulama (iki RPC): gün bugünden (İstanbul) önce olamaz, saat gün olmadan olamaz (22023, Türkçe mesaj).
 - `set_pipeline_stage`: başka aşamadan 'appointment'a taşınınca kolonlar null (belli değil); randevudan çıkınca kolonlar korunur. "Gecikti" yalnız `pipeline_stage = 'appointment' and appointment_day < bugün` iken anlamlı (arayüz hesaplar).
 - `_notification_targets` morning payload += `appointments_today` (üyeye atanmış, aşama 'appointment', gün = bugün). Hedef koşulu (`total > 0`) değişmedi. Sabah metni sayı > 0 ise "Bugün X müşteri dükkana gelecek." ekler.
+
+## Ortak havuz (2026-10-05)
+
+Migration `20261005000800_shared_pool.sql`. Havuz tüm aktif üyelere açık; çalışan bekleme süresi dolmadan müşteriyi kendi listesine alabilir. customers SELECT RLS'i genişlemez.
+
+- `list_pool()` (security definer, aktif üye): çağıranın kiracısında `call_status = 'pool'` müşteriler; yalnız `id, full_name, operator, pool_count, next_call_at, last_member_name, last_outcome`. Telefon dönmez. Sıra `next_call_at` artan.
+- `take_from_pool(p_customer uuid) returns customers`: aktif herhangi bir üye. İzinli (absent_on bugün) 22023. Dağıtım kilidi + `for update`; müşteri havuzda değilse (veya başka kiracı) 22023 "Bu müşteri havuzda değil, başka biri almış olabilir." Etki: `assigned_to` = çağıran, `pending`, `attempts_in_round = 0` (`pool_count` korunur), `next_call_at = now()`; bugünkü `daily_assignments` satırı çağıranın listesinin sonuna eklenir, aynı gün başka üyede satır varsa taşınır. audit_log `take_from_pool`.
+- auto_even kiracıda bugün henüz atama yoksa: dağıtım saati geçmişse önce `_distribute_day_for` çalışır (aksi halde zamanlı dağıtım atlanırdı), geçmemişse alma 22023 ile reddedilir.
+- Arayüz: `/havuz` listesi `list_pool`'dan; her satırda "Kendime al" (onaysız, işlem sırasında kilitli). Başarıda "X listene eklendi" + Bugün'e git bağlantısı, satır düşer.
