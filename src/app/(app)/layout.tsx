@@ -8,6 +8,7 @@ import { Avatar, ToastProvider } from "@/components/ui";
 import { navKeys } from "@/lib/access";
 import { isAllowedLogoUrl } from "@/lib/brand-logo";
 import { getSessionContext } from "@/lib/session";
+import { createClient } from "@/lib/supabase/server";
 import { signOutAction } from "./actions";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -15,6 +16,12 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { member, settings } = await getSessionContext();
   const isManager = member.role === "manager";
+
+  // Etkin vurgu: kişisel seçim ?? (yönetici: marka rengi, satışçı: nötr token)
+  const supabase = await createClient();
+  const { data: me } = await supabase.from("members").select("accent_color").eq("id", member.id).maybeSingle();
+  const personal = me?.accent_color && HEX.test(me.accent_color) ? me.accent_color : null;
+  const brandCss = personal ?? (isManager ? (HEX.test(settings.brand_color) ? settings.brand_color : null) : "var(--accent-neutral)");
 
   // Raporlar herkese (kapsam DB'de), Yönetim yönetici veya view_team, Ayarlar yönetici
   const visible: NavKey[] = navKeys(member);
@@ -25,7 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <ToastProvider>
-      {HEX.test(settings.brand_color) ? <style>{`:root{--brand:${settings.brand_color}}`}</style> : null}
+      {brandCss ? <style>{`:root{--brand:${brandCss}}`}</style> : null}
       <header className="top">
         <div className="top-in">
           <MobileMenu visible={visible} signOutAction={signOutAction} />

@@ -197,3 +197,83 @@
     font-size: 24px;
   }
 }
+
+/* profil: arayüz rengi */
+.accent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.accentInput {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+}
+.accentWide {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.accentWide small {
+  display: block;
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 500;
+}
+.accentWide:has(.accentInput:checked) {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+}
+.swatch {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.swatch:has(.accentInput:checked) {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink);
+}
+.dot {
+  display: block;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+.swatch .dot {
+  width: 32px;
+  height: 32px;
+}
+.swatch:has(.accentInput:checked) .dot::after {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 10px;
+  margin: 11px;
+  border-radius: 999px;
+  background: #fff;
+}
+.accentWide:has(.accentInput:focus-visible),
+.swatch:has(.accentInput:focus-visible) {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}

@@ -1,3 +1,4 @@
+import { AccentCard } from "@/components/profil/AccentCard";
 import { PasswordCard } from "@/components/profil/PasswordCard";
 import { TelegramCard } from "@/components/profil/TelegramCard";
 import s from "@/components/profil/profil.module.css";
@@ -14,7 +15,7 @@ export default async function Page() {
   const supabase = await createClient();
   const { data: me } = await supabase
     .from("members")
-    .select("telegram_linked_at, notify_morning, notify_summary")
+    .select("telegram_linked_at, notify_morning, notify_summary, accent_color")
     .eq("id", ctx.member.id)
     .maybeSingle();
 
@@ -25,7 +26,7 @@ export default async function Page() {
     <>
       <div className="page-head">
         <h1>Profil</h1>
-        <p>Telegram bildirimleri ve hesap güvenliği.</p>
+        <p>Telegram bildirimleri, arayüz rengi ve hesap güvenliği.</p>
       </div>
       <div className={s.cols}>
         <div className={s.stack}>
@@ -53,6 +54,7 @@ export default async function Page() {
               <Chip>{isManager ? "Yönetici" : "Çalışan"}</Chip>
             </div>
           </Card>
+          <AccentCard current={me?.accent_color ?? null} brandColor={ctx.settings.brand_color} isManager={isManager} />
           <PasswordCard />
         </div>
       </div>

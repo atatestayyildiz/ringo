@@ -3,6 +3,8 @@
 /* Tasarim kaynagi: tasarim/bugun.html. Marka rengi tenant_settings.brand_color'dan gelir. */
 :root {
   --brand: #ff5e2b;
+  /* Satışçı varsayılan vurgusu (marka rengi değil): arduvaz; beyaz metinle 5.4:1, koyu zeminde 3.4:1 */
+  --accent-neutral: #5f6b7d;
   --bg: #f1f1f4;
   --surface: #ffffff;
   --surface-2: #f6f6f9;

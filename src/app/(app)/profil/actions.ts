@@ -58,6 +58,15 @@ export async function saveNotifyPrefsAction(prefs: {
   return { ok: true };
 }
 
+export async function setAccentAction(color: string | null): Promise<Result> {
+  await getSessionContext();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_my_accent", { p_color: color });
+  if (error) return { ok: false, error: toUserMessage(error) };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
 export async function changePasswordAction(current: string, password: string, repeat: string): Promise<Result> {
   const ctx = await getSessionContext();
   const supabase = await createClient();

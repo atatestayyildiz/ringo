@@ -388,6 +388,22 @@ async function main() {
   await check(G2, "transfer_open_work: anon reddedilir", async () =>
     expectError(await anonClient.rpc("transfer_open_work", { p_from: M.elif.id, p_to: M.ayse.id }), FN_DENIED),
   );
+  // Ortak havuz (2026-10-05)
+  await check(G2, "list_pool: anon reddedilir", async () => expectError(await anonClient.rpc("list_pool"), FN_DENIED));
+  await check(G2, "take_from_pool: anon reddedilir", async () =>
+    expectError(await anonClient.rpc("take_from_pool", { p_customer: elifCust.id }), FN_DENIED),
+  );
+  await check(G2, "list_pool: sonuçta telefon alanı yok", async () => {
+    const r = await ayse.rpc("list_pool").limit(1);
+    if (r.error) return `hata: ${r.error.code}`;
+    const row = r.data?.[0];
+    if (!row) return true; // boş havuz: sütun kontrolü aşağıdaki "seçilemez" denetiminde
+    return "phone" in row || "phone_alt" in row ? "telefon alanı döndü" : true;
+  });
+  await check(G2, "list_pool: phone sütunu seçilemez", async () => {
+    const s = await ayse.rpc("list_pool").select("phone").limit(1);
+    return s.error ? true : "phone sütunu seçilebildi";
+  });
   await check(G2, "telegram_unlink: ajan başkasınınkini kaldıramaz", async () =>
     expectError(await ayse.rpc("telegram_unlink", { p_member: M.elif.id }), DENIED),
   );
@@ -399,6 +415,9 @@ async function main() {
   );
   await check(G2, "set_notify_prefs: anon reddedilir", async () =>
     expectError(await anonClient.rpc("set_notify_prefs", { p_morning: false, p_reminder: false, p_summary: false }), FN_DENIED),
+  );
+  await check(G2, "set_my_accent: anon reddedilir", async () =>
+    expectError(await anonClient.rpc("set_my_accent", { p_color: "#1d4ed8" }), FN_DENIED),
   );
   await check(G2, "telegram_link_codes: ajan okuyamaz", async () => expectError(await elif.from("telegram_link_codes").select("code").limit(1), DENIED));
   await check(G2, "telegram_link_codes: ajan yazamaz", async () =>
