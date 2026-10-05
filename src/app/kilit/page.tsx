@@ -3,7 +3,7 @@ import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { Scene } from "@/components/scene/Scene";
 import { ToastProvider } from "@/components/ui";
 import { memberAccent } from "@/lib/accent";
-import { isAllowedLogoUrl } from "@/lib/brand-logo";
+import { DEFAULT_LOGO, isAllowedLogoUrl } from "@/lib/brand-logo";
 import { getSessionContext } from "@/lib/session";
 import { LockScreen } from "./LockScreen";
 
@@ -19,7 +19,7 @@ export default async function LockPage() {
   const { member, settings } = ctx;
   const first = member.full_name.trim().split(/\s+/)[0] ?? "";
   const accent = await memberAccent(ctx);
-  const logo = settings.logo_url && isAllowedLogoUrl(settings.logo_url, process.env.NEXT_PUBLIC_SUPABASE_URL) ? settings.logo_url : null;
+  const logo = settings.logo_url && isAllowedLogoUrl(settings.logo_url, process.env.NEXT_PUBLIC_SUPABASE_URL) ? settings.logo_url : DEFAULT_LOGO;
   return (
     <ToastProvider>
       {accent ? <style>{`:root{--brand:${accent}}`}</style> : null}

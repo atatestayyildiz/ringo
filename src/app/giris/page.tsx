@@ -2,7 +2,7 @@ import { ToastProvider } from "@/components/ui";
 import { MadeBy } from "@/components/shell/MadeBy";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { Scene } from "@/components/scene/Scene";
-import { isAllowedLogoUrl } from "@/lib/brand-logo";
+import { DEFAULT_LOGO, PRODUCT_NAME, isAllowedLogoUrl } from "@/lib/brand-logo";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "./LoginForm";
 import { ResetFlash } from "./ResetFlash";
@@ -49,9 +49,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <ThemeToggle />
       </div>
       <Scene
-        brandName={brand?.name ?? ""}
+        brandName={brand?.name ?? PRODUCT_NAME}
         brandColor={brand?.color ?? null}
-        logoUrl={brand?.logo ?? null}
+        logoUrl={brand?.logo ?? DEFAULT_LOGO}
         brandTestId={brand ? "login-brand" : undefined}
         footer={<MadeBy />}
       >

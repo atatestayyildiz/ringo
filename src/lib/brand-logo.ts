@@ -1,5 +1,9 @@
 /** Marka logosu: dosya doğrulama (gerçek içerik) ve depolama adresi yardımcıları. SVG bilerek yok (XSS). */
 
+/** Ürün varsayılan logosu (Ringo). Mağaza kendi logosunu yüklemediyse bu görünür. */
+export const DEFAULT_LOGO = "/ringo-logo.png";
+export const PRODUCT_NAME = "Ringo";
+
 export const LOGO_BUCKET = "brand-logos";
 export const LOGO_MAX_BYTES = 512 * 1024;
 export const LOGO_TYPES = {

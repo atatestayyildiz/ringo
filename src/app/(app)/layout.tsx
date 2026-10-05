@@ -9,7 +9,7 @@ import { UserMenu } from "@/components/shell/UserMenu";
 import { ToastProvider } from "@/components/ui";
 import { navKeys } from "@/lib/access";
 import { memberAccent } from "@/lib/accent";
-import { isAllowedLogoUrl } from "@/lib/brand-logo";
+import { DEFAULT_LOGO, isAllowedLogoUrl } from "@/lib/brand-logo";
 import { getSessionContext } from "@/lib/session";
 import { signOutAction } from "./actions";
 
@@ -24,7 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const visible: NavKey[] = navKeys(member);
 
   const brandName = settings.brand_name;
-  const logoUrl = settings.logo_url && isAllowedLogoUrl(settings.logo_url, process.env.NEXT_PUBLIC_SUPABASE_URL) ? settings.logo_url : null;
+  const logoUrl = settings.logo_url && isAllowedLogoUrl(settings.logo_url, process.env.NEXT_PUBLIC_SUPABASE_URL) ? settings.logo_url : DEFAULT_LOGO;
   const mark = (brandName.trim()[0] ?? "M").toLocaleUpperCase("tr");
 
   return (
@@ -47,6 +47,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
           <MainNav visible={visible} />
           <div className="tools">
+            <span className="ringo-tag" title="Ringo">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/ringo-logo.png" alt="" aria-hidden="true" width={22} height={22} />
+              <span>Ringo</span>
+            </span>
             <UserMenu name={member.full_name} roleLabel={isManager ? "Yönetici" : "Çalışan"} signOutAction={signOutAction} />
           </div>
         </div>

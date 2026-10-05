@@ -224,6 +224,26 @@ html {
   align-items: center;
   gap: 8px;
 }
+.ringo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2, var(--ink));
+  white-space: nowrap;
+}
+.ringo-tag img {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: block;
+}
+@media (max-width: 760px) {
+  .ringo-tag span {
+    display: none;
+  }
+}
 .me {
   display: flex;
   align-items: center;

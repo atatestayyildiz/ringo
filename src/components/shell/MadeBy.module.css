@@ -1,6 +1,9 @@
 .madeby {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
+  gap: 4px 12px;
   padding: 28px 16px 4px;
 }
 .link {
@@ -39,4 +42,19 @@
   :global(:root:not([data-theme="light"])) .dark {
     display: block !important;
   }
+}
+
+.product {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink-2, var(--ink-3));
+}
+.product img {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
 }

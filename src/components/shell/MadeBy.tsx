@@ -7,6 +7,11 @@ import s from "./MadeBy.module.css";
 export function MadeBy() {
   return (
     <div className={s.madeby}>
+      <span className={s.product}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/ringo-logo.png" alt="" aria-hidden="true" width={16} height={16} />
+        Ringo
+      </span>
       <a
         className={s.link}
         href="https://moonworks.com.tr"
