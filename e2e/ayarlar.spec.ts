@@ -79,7 +79,8 @@ test("logo dosyası yüklenir, kabukta ve girişte görünür, kaldırılır; SV
     }
   }
   await page.reload();
-  await expect(page.locator(".logo-mark img")).toHaveCount(0);
+  // Logo kaldırılınca ürün varsayılanı (Ringo) görünür
+  await expect(page.locator(".logo-mark img").first()).toHaveAttribute("src", "/ringo-logo.png");
 });
 
 test("bildirim sekmesinden gönderim saatleri değişir, Kurallar'da saat alanı yok", async ({ page }) => {
@@ -139,3 +140,36 @@ for (const viewport of [
     await dialog.getByRole("button", { name: "Vazgeç" }).click();
   });
 }
+
+test("çalışan eklenir, pasifleştirilir ve kalıcı silinir (giriş hesabı da gider)", async ({ page }) => {
+  const email = `silinecek-${Date.now()}@demo.test`;
+  page.on("dialog", (d) => void d.accept());
+  await loginOk(page, "yonetici");
+  await page.goto("/ayarlar");
+  await page.getByRole("button", { name: "Ekip", exact: true }).click();
+  await page.getByRole("button", { name: "Çalışan ekle" }).first().click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Ad soyad").fill("Silinecek Deneme");
+  await dialog.getByLabel("E-posta").fill(email);
+  await dialog.getByLabel("Geçici şifre").fill("Deneme-Sifre-1");
+  await dialog.getByRole("button", { name: "Ekle", exact: true }).click();
+  await expect(dialog.getByText("Çalışan eklendi")).toBeVisible();
+  // Kapatma, sunucu yenilemesi bitene kadar yok sayılır: kapanana kadar tekrar dene
+  await expect(async () => {
+    await dialog.getByRole("button", { name: "Tamam" }).click({ timeout: 2000 });
+    await expect(dialog).toBeHidden({ timeout: 1500 });
+  }).toPass({ timeout: 15000 });
+
+  const row = page.locator(`[data-member="${email}"]`);
+  await expect(row).toBeVisible();
+  // Aktifken Sil düğmesi yok
+  await expect(row.getByRole("button", { name: "Sil", exact: true })).toHaveCount(0);
+  await row.getByRole("button", { name: "Pasifleştir" }).click();
+  await expect(row.getByText("Pasif")).toBeVisible();
+  await row.getByRole("button", { name: "Sil", exact: true }).click();
+  await expect(page.locator(`[data-member="${email}"]`)).toHaveCount(0);
+  await expect(page.getByText("Silinecek Deneme silindi.")).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Ekip", exact: true }).click();
+  await expect(page.getByText("Silinecek Deneme", { exact: true })).toHaveCount(0);
+});

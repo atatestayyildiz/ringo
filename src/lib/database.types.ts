@@ -137,7 +137,7 @@ isOneToOne: false
                   ]
                 },"members": {
                   Row: {
-                    "absent_on": string | null,"accent_color": string | null,"created_at": string | null,"full_name": string,"id": string,"is_active": boolean,"auto_lock_minutes": number,"locked_at": string | null,"pin_failed": number,"pin_hash": string | null,"notify_morning": boolean,"notify_reminder": boolean,"notify_summary": boolean,"permissions": NonNullable<Json>,"role": string,"telegram_chat_id": number | null,"telegram_linked_at": string | null,"tenant_id": string,"user_id": string
+                    "absent_on": string | null,"accent_color": string | null,"created_at": string | null,"full_name": string,"id": string,"is_active": boolean,"auto_lock_minutes": number,"locked_at": string | null,"pin_failed": number,"pin_hash": string | null,"notify_morning": boolean,"notify_reminder": boolean,"notify_summary": boolean,"permissions": NonNullable<Json>,"role": string,"telegram_chat_id": number | null,"telegram_linked_at": string | null,"tenant_id": string,"user_id": string | null
                   }
                   Insert: {
                     "absent_on"?: string | null,"accent_color"?: string | null,"created_at"?: string | null,"full_name": string,"id"?: string,"is_active"?: boolean,"auto_lock_minutes"?: number,"locked_at"?: string | null,"pin_failed"?: number,"pin_hash"?: string | null,"notify_morning"?: boolean,"notify_reminder"?: boolean,"notify_summary"?: boolean,"permissions"?: NonNullable<Json>,"role": string,"telegram_chat_id"?: number | null,"telegram_linked_at"?: string | null,"tenant_id": string,"user_id": string
@@ -464,6 +464,9 @@ isOneToOne: true
                            },
 "reset_member_pin":
 { Args: { "p_member": string }; Returns: undefined
+                           },
+"anonymize_member":
+{ Args: { "p_member": string }; Returns: string
                            },
 "auth_unlocked":
 { Args: Record<PropertyKey, never>; Returns: boolean

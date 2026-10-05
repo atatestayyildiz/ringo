@@ -196,6 +196,25 @@ export async function resetMemberPinAction(memberId: string): Promise<ActionResu
   return { ok: true };
 }
 
+/**
+ * Pasif bir çalışanı kalıcı siler: önce DB üyeyi anonimleştirir (kurallar orada), sonra giriş hesabı
+ * (e-posta dahil) admin API ile silinir. Geçmiş kayıtlarda "Silinmiş kullanıcı" olarak kalır.
+ */
+export async function deleteMemberAction(memberId: string): Promise<ActionResult> {
+  const ctx = await requireManager();
+  if (!ctx) return { ok: false, error: NOT_MANAGER };
+  const supabase = await createClient();
+  const { data: userId, error } = await supabase.rpc("anonymize_member", { p_member: memberId });
+  if (error || !userId) return { ok: false, error: error ? toUserMessage(error) : "Çalışan silinemedi." };
+  const admin = createAdminClient();
+  const del = await admin.auth.admin.deleteUser(userId);
+  if (del.error) {
+    return { ok: false, error: "Çalışan kaydı temizlendi ama giriş hesabı silinemedi. Tekrar deneyin." };
+  }
+  revalidatePath("/ayarlar");
+  return { ok: true };
+}
+
 export async function setMemberRoleAction(memberId: string, role: "manager" | "agent"): Promise<ActionResult> {
   const ctx = await requireManager();
   if (!ctx) return { ok: false, error: NOT_MANAGER };

@@ -17,6 +17,7 @@ export default async function Page() {
     supabase
       .from("members")
       .select("id, user_id, full_name, role, is_active, permissions")
+      .not("user_id", "is", null)
       .order("is_active", { ascending: false })
       .order("full_name"),
     supabase.rpc("rules_summary_text"),
@@ -52,9 +53,9 @@ export default async function Page() {
 
   const members: MemberRow[] = (membersRes.data ?? []).map((m) => ({
     id: m.id,
-    user_id: m.user_id,
+    user_id: m.user_id ?? "",
     full_name: m.full_name,
-    email: emails.get(m.user_id) ?? "",
+    email: (m.user_id ? emails.get(m.user_id) : "") ?? "",
     role: m.role === "manager" ? "manager" : "agent",
     is_active: m.is_active,
     permissions: (m.permissions ?? {}) as Partial<Record<PermKey, boolean>>,

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import {
   createMemberAction,
+  deleteMemberAction,
   resetMemberPinAction,
   setMemberActiveAction,
   setMemberRoleAction,
@@ -105,6 +106,24 @@ function MemberCard({ m, expanded, onToggle }: { m: MemberRow; expanded: boolean
           >
             {m.is_active ? "Pasifleştir" : "Aktifleştir"}
           </Button>
+          {!m.isSelf && !m.is_active ? (
+            <Button
+              variant="soft"
+              size="sm"
+              disabled={pending}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `${m.full_name} kalıcı olarak silinsin mi? Giriş hesabı ve e-posta adresi kaldırılır, geçmiş kayıtlarda "Silinmiş kullanıcı" görünür. Bu işlem geri alınamaz.`,
+                  )
+                ) {
+                  run(() => deleteMemberAction(m.id), `${m.full_name} silindi.`);
+                }
+              }}
+            >
+              Sil
+            </Button>
+          ) : null}
           {!m.isSelf ? (
             <Button
               variant="soft"
