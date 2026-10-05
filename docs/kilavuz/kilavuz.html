@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Telefoncu CRM: Kullanım Kılavuzu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  @page { size: A4; margin: 2cm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: economy; print-color-adjust: economy; }
+  body {
+    margin: 0; color: #000; background: #fff;
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    font-size: 10.5pt; line-height: 1.5;
+    orphans: 3; widows: 3;
+  }
+  h1, h2, h3 { font-weight: 700; color: #000; line-height: 1.25; break-after: avoid; page-break-after: avoid; }
+  h1 { font-size: 17pt; margin: 26pt 0 8pt; padding-bottom: 4pt; border-bottom: 1.5pt solid #000; }
+  h2 { font-size: 12.5pt; margin: 16pt 0 5pt; }
+  h3 { font-size: 11pt; margin: 12pt 0 4pt; color: #222; }
+  p { margin: 0 0 7pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  li, tr, pre, .note, .keep { break-inside: avoid; page-break-inside: avoid; }
+  h1 + p, h2 + p, h3 + p, h2 + ul, h2 + ol, h3 + ul, h3 + ol { break-before: avoid; page-break-before: avoid; }
+  a { color: #000; text-decoration: none; }
+
+  /* Kapak */
+  .cover { height: 25.4cm; display: flex; flex-direction: column; justify-content: center; page-break-after: always; break-after: page; }
+  .cover .kicker { font-size: 11pt; letter-spacing: 2pt; text-transform: uppercase; color: #555; margin-bottom: 14pt; }
+  .cover h1 { font-size: 34pt; border: 0; margin: 0 0 14pt; padding: 0; line-height: 1.15; }
+  .cover .line { width: 90pt; border-top: 3pt solid #000; margin: 6pt 0 16pt; }
+  .cover .sub { font-size: 13pt; color: #333; max-width: 12cm; }
+  .cover .date { margin-top: 60pt; font-size: 11pt; color: #333; }
+
+  /* Içindekiler */
+  .toc { page-break-after: always; break-after: page; }
+  .toc h1 { margin-top: 0; }
+  .toc ol { list-style: none; padding: 0; margin: 0; counter-reset: t; }
+  .toc li { counter-increment: t; padding: 6pt 0; border-bottom: .5pt solid #bbb; font-size: 11.5pt; }
+  .toc li::before { content: counter(t) ".  "; font-weight: 700; display: inline-block; width: 24pt; }
+  .toc .hint { margin-top: 18pt; color: #444; font-size: 10pt; }
+
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; font-size: 9.5pt; }
+  th, td { border: .5pt solid #999; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+  th { background: #eee; font-weight: 700; }
+  thead { display: table-header-group; }
+  td.c, th.c { text-align: center; }
+
+  .note { border: .75pt solid #666; border-left: 4pt solid #000; padding: 6pt 9pt; margin: 8pt 0 10pt; background: #f6f6f6; font-size: 10pt; }
+  .note b:first-child { text-transform: uppercase; font-size: 8.5pt; letter-spacing: .6pt; }
+  pre {
+    font-family: Consolas, "Courier New", monospace; font-size: 8.8pt; line-height: 1.35;
+    border: .5pt solid #999; padding: 7pt 9pt; margin: 6pt 0 10pt; background: #fafafa; white-space: pre;
+  }
+  kbd, .btn {
+    font-family: inherit; font-weight: 600; font-size: .92em;
+    border: .75pt solid #555; border-radius: 3pt; padding: 0 4pt; background: #f2f2f2; white-space: nowrap;
+  }
+  .small { font-size: 9.5pt; color: #333; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14pt; }
+  .cols > div { border: .5pt solid #999; padding: 4pt 10pt 2pt; break-inside: avoid; }
+  .cols h3 { margin-top: 6pt; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="kicker">Mağaza için basılı rehber</div>
+  <h1>Telefoncu CRM: Kullanım Kılavuzu</h1>
+  <div class="line"></div>
+  <p class="sub">Müşteri arama, takip ve yönetim programının günlük kullanımı. Mağaza sahibi ve çalışanlar için.</p>
+  <p class="date">6 Ekim 2026</p>
+</section>
+
+<section class="toc">
+  <h1>İçindekiler</h1>
+  <ol>
+    <li>Program nedir</li>
+    <li>Giriş ve güvenlik</li>
+    <li>Ekranlar tek tek</li>
+    <li>Roller ve yetkiler</li>
+    <li>İsteğe bağlı: telefona bildirim (Telegram)</li>
+    <li>Meta (Facebook ve Instagram) reklam formları</li>
+    <li>Sık sorulanlar ve sorun giderme</li>
+    <li>Kısa günlük kullanım akışı</li>
+  </ol>
+  <p class="hint">Bu kılavuzda düğme ve menü adları <kbd>kalın çerçeveli</kbd> yazılmıştır. Ekranda aynen böyle görünürler. Programın adresini (internet linkini) ve ilk giriş bilgilerini mağaza yöneticisi verir.</p>
+</section>
+
+<main>
+
+<h1>1. Program nedir</h1>
+<p>Telefoncu CRM, mağazanın müşteri takip programıdır. Facebook ve Instagram reklam formlarını dolduran kişiler (potansiyel müşteriler) ertesi gün aranır. Program bu aramaları çalışanlar arasında paylaştırır, her görüşmenin sonucunu kaydeder ve yöneticiye ekibin ne yaptığını gösterir.</p>
+<h2>Programın üç işi</h2>
+<ol>
+  <li><b>Arama listesi.</b> Her çalışan sabah kendi listesini görür. Sırayla arar, her görüşmeden sonra sonucu tek dokunuşla işler.</li>
+  <li><b>Müşteri takibi.</b> Ulaşılamayan müşteri aynı gün tekrar aranır. Hâlâ ulaşılamazsa bir süre bekletilir ve sonra yeniden listeye döner. Dükkana gelecek olanlar bir aşama tablosunda (Huni) izlenir.</li>
+  <li><b>Yönetici takibi.</b> Yönetici günün özetini, kimin kaç kişiyi aradığını, kaç randevu alındığını görür. Raporlar da buradan alınır.</li>
+</ol>
+<h2>Sık geçen kelimeler</h2>
+<table>
+  <thead><tr><th style="width:24%">Kelime</th><th>Anlamı</th></tr></thead>
+  <tbody>
+    <tr><td>Deneme</td><td>Müşteriye yapılan, sonuç alınamayan arama (Açmadı, Meşgul). Varsayılan olarak tur başına 3 denemeye izin verilir.</td></tr>
+    <tr><td>Havuz</td><td>Üç denemede ulaşılamayan müşterilerin bir süre bekletildiği yer. Varsayılan bekleme 7 gündür, sonra müşteri listeye geri döner.</td></tr>
+    <tr><td>Huni</td><td>Dükkana gelecek olan müşterilerin aşama aşama izlendiği ekran.</td></tr>
+    <tr><td>Dağıtım</td><td>Müşterilerin çalışanların günlük listelerine paylaştırılması.</td></tr>
+    <tr><td>Kilit ve PIN</td><td>Ekranı başkalarından koruyan 6 haneli kişisel şifre.</td></tr>
+  </tbody>
+</table>
+
+<h1>2. Giriş ve güvenlik</h1>
+
+<h2>2.1 İlk giriş</h2>
+<ol>
+  <li>Yönetici sizi programa ekler ve size bir <b>e-posta adresi</b> ile <b>geçici şifre</b> verir. Program adresini de iletir.</li>
+  <li>Adresi tarayıcıda açın. <b>E-posta</b> ve <b>Şifre</b> alanlarını doldurup <kbd>Giriş yap</kbd> düğmesine basın.</li>
+  <li>İlk girişte program sizi <b>PIN belirleme</b> ekranına götürür. Bu ekran atlanamaz.</li>
+  <li>6 haneli bir PIN seçin ve aynı 6 haneyi bir kez daha girin. İki giriş aynı olmalıdır.</li>
+  <li>Geçici şifreyi değiştirin: sağ üstteki hesap menüsünden <kbd>Profil</kbd>, sonra <b>Şifre değiştir</b> kartı. Yeni şifre en az 8 karakter olmalıdır.</li>
+</ol>
+<div class="note"><b>Not.</b> Kolay PIN kabul edilmez: <b>111111</b> gibi aynı rakamın tekrarı veya <b>123456</b>, <b>654321</b> gibi ardışık rakamlar olmaz. Doğum yılı gibi tahmin edilebilir bir PIN de seçmeyin. PIN'i kimseyle paylaşmayın ve bir yere yazıp ekranın yanına bırakmayın.</div>
+
+<h2>2.2 Paneli kilitle</h2>
+<p>Telefonu veya bilgisayarı başında bırakırken ekranı kilitleyin. Kilitliyken müşteri bilgileri ekranda değil, programın sunucusunda da kapalıdır. Yani sayfayı yenilemek veya başka bir sekme açmak kilidi aşmaz.</p>
+<ol>
+  <li>Sağ üstteki <b>avatar</b>ınıza (adınızın baş harfi) dokunun. Hesap menüsü açılır.</li>
+  <li><kbd>Paneli kilitle</kbd> seçeneğine dokunun.</li>
+  <li>Kapı kapanır ve <b>Panel kilitli</b> ekranı gelir.</li>
+</ol>
+<p>Menüde ayrıca açık/koyu tema seçeneği, <kbd>Profil</kbd> ve çıkış vardır. Telefonda aynı seçenekler üst çubukta ve yazılı menüde de bulunur.</p>
+
+<h2>2.3 Otomatik kilit</h2>
+<p>Bir süre hiçbir şeye dokunmazsanız panel kendiliğinden kilitlenir. Varsayılan süre <b>10 dakikadır</b>.</p>
+<ul>
+  <li>Süreyi değiştirmek için <kbd>Profil</kbd> sayfasında <b>Güvenlik</b> kartındaki <b>Otomatik kilit</b> alanını kullanın. Seçenekler: Kapalı, 5, 10, 15 ve 30 dakika.</li>
+  <li>Programı birden fazla sekmede açtıysanız biri kilitlenince diğerleri de kilitlenir.</li>
+  <li>Mağazada ortak kullanılan bir cihazda <b>Kapalı</b> seçeneğini önermiyoruz.</li>
+</ul>
+
+<h2>2.4 PIN ile açma</h2>
+<ol>
+  <li><b>Panel kilitli</b> ekranında "Devam etmek için PIN'ini gir." yazar. Ekrandaki rakam tuşlarıyla 6 haneyi girin.</li>
+  <li>PIN doğruysa kapı açılır ve kaldığınız yerden devam edersiniz.</li>
+  <li>Yanlış girerseniz noktalar sallanır ve kalan hakkınız gösterilir.</li>
+</ol>
+<p><b>5 kez yanlış PIN</b> girilirse program sizi oturumdan çıkarır. Tekrar girmek için e-posta ve şifrenizi yazmanız gerekir. Bu durumda <kbd>Giriş yap</kbd> ekranına dönülür.</p>
+<p><b>PIN'i unuttum:</b> kilit ekranındaki <kbd>PIN'imi unuttum</kbd> bağlantısına dokunun. Oturum kapanır, e-posta ve şifrenizle girersiniz. Girişten sonra paneliniz kilitsiz açılır. PIN'i değiştirmek için <kbd>Profil</kbd> sayfasında <b>Güvenlik</b> kartında önce <b>Mevcut PIN</b>, sonra <b>Yeni PIN</b> ve tekrarını girin. Mevcut PIN'i hiç hatırlamıyorsanız yöneticinize başvurun.</p>
+
+<h2>2.5 Şifremi unuttum</h2>
+<ol>
+  <li>Giriş ekranında <kbd>Şifremi unuttum</kbd> bağlantısına dokunun.</li>
+  <li>E-posta adresinizi yazıp <kbd>Bağlantı gönder</kbd> düğmesine basın.</li>
+  <li>Gelen e-postadaki bağlantıyı açın ve yeni şifrenizi belirleyin (en az 8 karakter).</li>
+</ol>
+<p class="small">E-posta gelmediyse gereksiz (spam) klasörüne bakın ve adresin yönetici tarafından doğru yazıldığını kontrol ettirin.</p>
+
+<div class="keep">
+<h2>2.6 Telefonda ana ekrana ekleme</h2>
+<p>Programı her seferinde adres yazmadan, bir uygulama gibi tek dokunuşla açmak için ana ekrana ekleyin. Menü adları telefonun sürümüne göre biraz değişebilir.</p>
+<div class="cols">
+  <div>
+    <h3>iPhone (Safari)</h3>
+    <ol>
+      <li>Programın adresini <b>Safari</b> ile açın ve giriş yapın.</li>
+      <li>Alttaki <b>Paylaş</b> simgesine (yukarı okli kare) dokunun.</li>
+      <li>Listeyi kaydırıp <b>Ana Ekrana Ekle</b> seçeneğine dokunun.</li>
+      <li>Adı kontrol edip <b>Ekle</b> düğmesine basın.</li>
+    </ol>
+  </div>
+  <div>
+    <h3>Android (Chrome)</h3>
+    <ol>
+      <li>Programın adresini <b>Chrome</b> ile açın ve giriş yapın.</li>
+      <li>Sağ üstteki <b>üç nokta</b> menüsüne dokunun.</li>
+      <li><b>Ana ekrana ekle</b> (bazı telefonlarda <b>Uygulamayı yükle</b>) seçeneğine dokunun.</li>
+      <li>Onaylayın. Simge ana ekrana gelir.</li>
+    </ol>
+  </div>
+</div>
+</div>
+
+<h1>3. Ekranlar tek tek</h1>
+<p>Üstteki menüde (telefonda altta veya yazılı menüde) şu bölümler bulunur: <b>Bugün, Müşteriler, Havuz, Huni, Raporlar</b>. Yönetici ve yetkili kişiler için ayrıca <b>Yönetim</b>, yalnız yönetici için <b>Ayarlar</b> görünür. Yetkiniz olmayan bir menü size gösterilmez.</p>
+
+<h2>3.1 Bugün</h2>
+<p>Çalışanın ana ekranıdır. Gün boyu burada çalışılır.</p>
+<pre>+------------------------------------------------------+
+| Günaydın Elif.  Kalan: 9                              |
+| [1][2][3][4][5][6][7][8][9]   &lt;- gün şeridi (sıra)    |
++------------------------------------------------------+
+| SIRADAKİ MÜŞTERİ                                     |
+|  Ayşe Örnek      0532 000 00 00   Vodafone           |
+|  Kaynak: Acil nakit formu   Deneme: 1                |
+|  Önceki notlar: ...                                  |
+|  [ Ara ]   [ WhatsApp ]                              |
+|                                                      |
+|  Görüşme nasıl bitti?                                |
+|  [Dükkana gelecek] [Sonra ara] [Açmadı] [Meşgul]     |
+|  [Uygun değil] [İlgilenmiyor]                        |
+|  Not ekle (isteğe bağlı): ______________             |
++------------------------------------------------------+</pre>
+<h3>Sıra ve gün şeridi</h3>
+<p>Üstte bugünkü müşterileriniz sıra numarasıyla görünür. Her kutunun durumu (Bekliyor, Tekrar ara, Tamamlandı, Uygun değil, Havuza düştü) ayrı işaretlenir. Durum alanından listeyi duruma göre süzebilirsiniz. Liste uzunsa <kbd>Tümünü göster</kbd> ile açılır, <kbd>Daralt</kbd> ile küçülür.</p>
+<h3>Odak kartı: arama</h3>
+<ol>
+  <li>Sıradaki müşterinin adı, numarası, operatörü, kaynağı, başvuru zamanı ve kaç kez arandığı kartta yazar. Önceki görüşme notları da burada çıkar.</li>
+  <li><kbd>Ara</kbd> düğmesi telefonunuzun arama ekranını o numarayla açar.</li>
+  <li><kbd>WhatsApp</kbd> düğmesi o kişiyle WhatsApp sohbetini açar.</li>
+  <li>Görüşme bitince sonucu seçin. Not yazmak isterseniz sonuca basmadan önce <b>Not ekle</b> alanına yazın.</li>
+  <li>Sonuç kaydedilince program otomatik olarak sıradaki müşteriye geçer.</li>
+</ol>
+<h3>Sonuç düğmeleri</h3>
+<table>
+  <thead><tr><th style="width:23%">Düğme</th><th style="width:30%">Ne zaman</th><th>Ne olur</th></tr></thead>
+  <tbody>
+    <tr><td><b>Dükkana gelecek</b></td><td>Müşteri mağazaya gelmeyi kabul etti.</td><td>Bir pencere açılır: <b>Bugün</b>, <b>Yarın</b> veya <b>Tarih seç</b>; isteğe bağlı <b>saat</b>. Günü bilmiyorsa <b>Belli değil, uğrayacak</b> seçilir. Müşteri Huni'ya "Dükkana gelecek" aşamasıyla girer. Geçmiş bir gün seçilemez.</td></tr>
+    <tr><td><b>Sonra ara</b></td><td>Müşteri "şu saatte arayın" dedi.</td><td>"Ne zaman aransın?" penceresinde tarih ve saat seçilir (gelecekte olmalı). Müşteri o vakitte listenize geri gelir. Bu bir başarısız deneme sayılmaz.</td></tr>
+    <tr><td><b>Açmadı</b></td><td>Telefon açılmadı.</td><td>Deneme sayılır. Müşteri aynı gün tekrar listesine konur.</td></tr>
+    <tr><td><b>Meşgul</b></td><td>Hat meşgul veya konuşamıyor.</td><td>Açmadı ile aynı: deneme sayılır, aynı gün tekrar aranır.</td></tr>
+    <tr><td><b>Uygun değil</b></td><td>Müşteri koşulları taşımıyor (icra kaydı, düşük kredi puanı vb.) veya numara yanlış.</td><td>Neden sorulur ("Neden uygun değil?"), kısaca yazın. Müşteri kapanır, aranmaz.</td></tr>
+    <tr><td><b>İlgilenmiyor</b></td><td>Müşteri istemiyor.</td><td>Müşteri kapanır, aranmaz.</td></tr>
+  </tbody>
+</table>
+<div class="note"><b>Kural.</b> Müşteri aynı turda 3 kez (Açmadı veya Meşgul) ulaşılamazsa <b>Havuz</b>'a düşer ve 7 gün sonra yeniden listeye çıkar. Havuza en fazla 2 kez düşer; ondan sonra "ulaşılamadı" olarak kapanır. Bu sayılar Ayarlar'dan değiştirilebilir. Güncel kuralın düz yazısı Bugün ekranında ve Ayarlar > Kurallar'da görünür.</div>
+<h3>Ertelendi grubu</h3>
+<p>Başka bir günde aranmak üzere ertelenen müşteriler (Sonra ara ile ileri bir gün seçilenler) "Kalan" sayısına katılmaz. <b>Ertelendi</b> adlı katlanır grupta durur ve vakti gelince listenize kendiliğinden döner.</p>
+<h3>Geri arama hatırlatma kartı</h3>
+<p>"Sonra ara" ile seçtiğiniz saat geldiğinde ekranda <b>Geri arama vakti</b> kartı belirir ve kimi aramanız gerektiğini gösterir. Kartı küçültüp tek satıra indirebilirsiniz. Bu aramalar bitince kart kendiliğinden kaybolur. Tekrar arama hatırlatmaları Telegram'dan gelmez, yalnız bu kart ile yapılır.</p>
+<h3>Serbest havuz modunda</h3>
+<p>Mağazanın dağıtım yöntemi <b>Serbest havuz</b> ise liste sabah hazır gelmez. Bunun yerine üstte <b>Sıradaki müşteriyi al</b> kartı görünür: bekleyen müşteri sayısını, sizde kaç açık müşteri olduğunu ve izin verilen sınırı gösterir. <kbd>Sıradaki müşteriyi al</kbd> ile bir müşteri listenize eklenir ve odak kartında açılır. Sınıra gelince veya bekleyen kalmayınca düğme kapanır ve nedenini yazar.</p>
+<h3>Diğer kartlar</h3>
+<p>Ekranda ayrıca bir <b>Havuz</b> kartı (havuzdaki sayı ve en yakın dönüş), <b>Doğum günü yaklaşıyor</b> kartı (kutlama mesajı için WhatsApp bağlantısıyla) ve yönetici için <b>Dağıtım</b> kartı ile ekip ilerlemesi bulunur.</p>
+
+<h2>3.2 Müşteriler</h2>
+<p>Müşteri kayıtlarının listesi. Çalışan olarak yalnız size atananları görürsünüz; <b>Tüm müşterileri görsün</b> yetkiniz varsa hepsini (yalnız okuma).</p>
+<ul>
+  <li><b>Arama:</b> "Ad veya telefon ara" kutusuna ad ya da numaradan bir parça yazın.</li>
+  <li><b>Filtreler:</b> Durum, Huni aşaması, Operatör ve Atanan çalışan (<b>Tüm durumlar</b>, <b>Tüm aşamalar</b> vb.). <b>Atanmamış</b> seçeneği sahibi olmayan müşterileri gösterir.</li>
+  <li><b>Müşteri detayı:</b> satıra dokununca yan panel açılır. Telefon, ikinci telefon, operatör, kaynak, başvuru zamanı, doğum tarihi, atanan çalışan, <b>Huni aşaması</b> ve randevu zamanı görünür. <b>Geçmiş</b> bölümünde tüm aramalar ve aşama değişiklikleri vardır. Yönetici bilgileri düzenleyip <kbd>Kaydet</kbd> ile günceller. Yetkiliyse <kbd>Devret</kbd> ile başka çalışana verir.</li>
+  <li><b>Müşteri ekle</b> (yönetici veya "Müşteri eklesin" yetkisi): ad soyad, telefon (örnek 0532 123 45 67), isteğe bağlı operatör ve doğum tarihi. Eklenen müşteri bir sonraki dağıtımda listeye girer. Aynı numara varsa program uyarır.</li>
+  <li><b>Excel içe aktar</b> (aynı yetki): bkz. aşağıdaki başlık.</li>
+  <li><b>Dışa aktar</b> (yönetici veya "Dışa aktarabilsin" yetkisi): o anki filtrelerle listeyi Excel'de açılan CSV dosyası olarak indirir (en fazla 10.000 satır). Her dışa aktarma kayda geçer.</li>
+  <li><b>Toplu seçim:</b> yönetici veya "Devredebilsin" yetkisi olanlar listede birden çok müşteri işaretleyebilir. Altta çıkan çubukta <kbd>Aktar</kbd> (başka çalışana verir; müşteriler atanmamışsa düğme <kbd>Ata</kbd> olur) ve <kbd>Temizle</kbd> vardır. Seçilen müşterilerin bugünkü liste kayıtları da yeni kişiye geçer.</li>
+  <li><b>Silme:</b> yalnız tek tek yapılır ve yalnız yönetici veya "Müşteri silebilsin" yetkisi olanlar için vardır. Müşteri detay panelinde <kbd>Müşteriyi sil</kbd> sonra <kbd>Kalıcı olarak sil</kbd>. Müşterinin tüm geçmişi geri alınamaz biçimde silinir. Yalnız müşterinin kişisel veri (KVKK) silme talebi için kullanın ve talebi kayıt altına alın. Toplu silme yoktur.</li>
+</ul>
+<h3>Excel içe aktarma adımları</h3>
+<ol>
+  <li><b>Müşteriler</b> sayfasında <kbd>Excel içe aktar</kbd> düğmesine basın.</li>
+  <li>Dosyayı (.xlsx veya .csv, ilk satır başlık, en fazla 10 MB) alana bırakın ya da <kbd>Dosya seç</kbd> ile seçin.</li>
+  <li>Program sütunları tahmin eder (ad, soyad, telefon, operatör, doğum tarihi, tarih, not). Yanlışsa eşlemeyi düzeltin. Ad ve soyad ayrı sütundaysa birleştirilir.</li>
+  <li><b>Önizleme</b> her satırı <b>Geçerli</b>, <b>Geçersiz</b> veya <b>Mükerrer</b> diye işaretler. Mükerrer, o telefonun zaten kayıtlı olduğu demektir ve eklenmez.</li>
+  <li>Kaynak açıklaması olarak form adını yazın (örneğin reklam adı). Raporlarda kaynak bu adla görünür.</li>
+  <li>Onaylayın ve işlem bitene kadar sayfayı kapatmayın. Sonunda kaç kayıt eklendiği, kaçının mükerrer veya geçersiz olduğu gösterilir.</li>
+</ol>
+
+<h2>3.3 Havuz</h2>
+<p>Üç başarısız denemeden sonra (Açmadı veya Meşgul) ulaşılamayan müşteriler burada bekler. Listede müşterinin adı, operatörü, kaç kez havuza düştüğü ve ne zaman listeye döneceği yazar. Telefon numarası bu sayfada görünmez.</p>
+<ul>
+  <li>Varsayılan bekleme <b>7 gündür</b>. Süre dolunca müşteri kendiliğinden sonraki dağıtımda listeye çıkar.</li>
+  <li><kbd>Kendime al</kbd>: beklemeyi beklemeden müşteriyi kendi listenize alırsınız. Müşteri bugünkü listenizin sonuna eklenir ve "listene eklendi" mesajı çıkar. Onay sorulmaz.</li>
+  <li>Mağaza <b>Serbest havuz</b> modundaysa bu sayfada <kbd>Kendime al</kbd> yoktur; havuzdan dönen müşteriler <b>Sıradaki müşteriyi al</b> kuyruğuna girer.</li>
+</ul>
+
+<h2>3.4 Huni</h2>
+<p>Dükkana gelecek diye işaretlenen müşterilerin süreç içinde nerede olduğunu gösterir. Her aşama bir sütundur ve üstünde müşteri sayısı yazar.</p>
+<pre>Dükkana gelecek -> Geldi -> Başvuru -> Onaylandı -> İşlem tamam
+                                  (Reddedildi ve İlgilenmiyor ayrı katlanır)</pre>
+<ul>
+  <li><b>Kart:</b> müşterinin adı, telefonu ve randevu metni (örneğin "Bugün 14:00", "Yarın", "12 Eki 10:30" veya "Belli değil"). Karta dokununca müşteri detayı açılır.</li>
+  <li><b>Aşama değiştirme:</b> kartı bir sütundan diğerine <b>sürükleyip bırakın</b> (fare veya parmak). Alternatif olarak karttaki <b>Aşamayı değiştir</b> menüsünü kullanın.</li>
+  <li><b>Randevu zamanı:</b> kartta <b>Randevu zamanını değiştir</b> ile gün ve saat güncellenir.</li>
+  <li><b>Gecikti:</b> randevu günü geçtiği halde müşteri hâlâ "Dükkana gelecek" aşamasındaysa kartta <b>Gecikti</b> yazar. Müşteri geldiyse aşamasını <b>Geldi</b> yapın; gelmediyse arayın.</li>
+  <li>Sütun başlıklarındaki oranlar, bir önceki aşamaya ulaşanların kaçının bu aşamaya ulaştığını gösterir.</li>
+</ul>
+
+<h2>3.5 Yönetim</h2>
+<p>Yönetici ve "Yönetim ekranını görsün" yetkisi olanlar içindir. Günün resmini tek ekranda verir. Üstten gün seçilebilir.</p>
+<ul>
+  <li><b>Günün özeti:</b> Atanan, Ulaşılan, Randevu, Tamamlanan ve Tekrar sayıları ve ilerleme.</li>
+  <li><b>Ekip:</b> her çalışan için kendi listesindeki ilerleme. Yönetici burada şunları yapar:
+    <ul>
+      <li><kbd>Bugün yok</kbd>: izinli veya gelmeyen çalışanı o gün için işaretler. Çalışanın bitmemiş müşterileri diğer çalışanlara eşit dağıtılır.</li>
+      <li><kbd>İşlerini aktar</kbd>: bir çalışanın açık müşterilerini başka bir çalışana veya ekibe eşit dağıtarak devreder. Çalışan işten ayrıldığında ya da uzun süre yoksa kullanın.</li>
+    </ul>
+  </li>
+  <li><b>Günün hunisi:</b> o gün aşamalara geçen müşteri sayıları.</li>
+  <li><b>Son işlemler:</b> çalışanlar arama sonucu girdikçe burada akar (kim, kimi, ne sonuçla aradı).</li>
+</ul>
+
+<h2>3.6 Raporlar</h2>
+<p>Herkes kullanabilir. Çalışan yalnız kendi sonuçlarını görür; yönetici ve "Ekibin raporlarını görsün" yetkisi olanlar tüm ekibi görür ve <b>Ekip / Ben</b> arasında geçiş yapar.</p>
+<ul>
+  <li><b>Tarih aralığı:</b> Bugün, Bu hafta, Bu ay, Geçen ay veya Özel (başlangıç ve bitiş tarihi).</li>
+  <li><b>Kartlar:</b> arama sayısı, aranan müşteri, ulaşma oranı, randevu, dükkana gelen ve tamamlanan sayıları.</li>
+  <li><b>Günlük trend:</b> gün gün arama, ulaşma ve randevu çubukları.</li>
+  <li><b>Huni, çalışan tablosu, sonuç dağılımı:</b> hangi sonuçtan kaç adet çıktığı.</li>
+  <li><b>Kaynak performansı:</b> hangi reklam formundan kaç müşteri geldi ve kaçı randevu veya satışa döndü.</li>
+  <li><b>Operatör dağılımı:</b> Vodafone, Turkcell ve Türk Telekom müşterilerinin sayısı.</li>
+  <li><kbd>Raporu indir (CSV)</kbd>: ekip raporunu dosya olarak indirir. Yalnız Ekip görünümünde ve hem "Dışa aktarabilsin" hem "Ekibin raporlarını görsün" yetkisi olanlarda (yönetici dahil) görünür.</li>
+</ul>
+<p class="small">"Ulaşılan", telefonda gerçekten konuşulan (randevu, sonra ara, ilgilenmiyor, uygun değil sonuçlu) farklı müşteri demektir. Açmadı ve Meşgul ulaşılan sayılmaz.</p>
+
+<h2>3.7 Profil</h2>
+<p>Sağ üstteki avatar menüsünden <kbd>Profil</kbd>. Herkesin kendi sayfasıdır.</p>
+<ul>
+  <li><b>Arayüz rengi:</b> programın düğme ve vurgu rengini kendiniz için seçin. Seçim tüm cihazlarınızda geçerlidir ve mağazanın ana rengini değiştirmez.</li>
+  <li><b>Şifre değiştir:</b> mevcut şifre ve iki kez yeni şifre (en az 8 karakter). Değişince diğer cihazlardaki oturumlarınız kapanır.</li>
+  <li><b>Telegram:</b> isteğe bağlı bildirim kartı. Yalnız yönetici Telegram bildirimlerini açtıysa anlamlıdır; şu an kapalıdır ve kullanmanız gerekmez. Bkz. bölüm 5.</li>
+  <li><b>Güvenlik:</b> PIN değiştirme ve Otomatik kilit süresi. Bkz. bölüm 2.</li>
+</ul>
+
+<h2>3.8 Ayarlar (yalnız yönetici)</h2>
+<p>Dört sekme vardır: <b>Kurallar, Ekip, Bildirimler, Marka</b>.</p>
+
+<h3>Kurallar</h3>
+<ul>
+  <li><b>Tur başına deneme:</b> kaç başarısız aramadan sonra müşteri havuza düşer (varsayılan 3).</li>
+  <li><b>Havuzda bekleme (gün):</b> havuzdaki müşteri kaç gün sonra döner (varsayılan 7).</li>
+  <li><b>Havuza düşme sınırı:</b> bir müşteri en fazla kaç kez havuza düşer, sonra "ulaşılamadı" olarak kapanır (varsayılan 2).</li>
+  <li><b>Doğum günü uyarısı (gün):</b> doğum gününe kaç gün kala listede görünsün.</li>
+  <li><b>Canlı önizleme:</b> yazdığınız sayılara göre kuralın düz Türkçe özeti anında yazılır. Kaydetmeden kontrol edin.</li>
+  <li><b>Dağıtım yöntemi</b> (müşterilerin çalışanlara nasıl ulaşacağı):
+    <table>
+      <thead><tr><th style="width:26%">Yöntem</th><th>Nasıl çalışır</th></tr></thead>
+      <tbody>
+        <tr><td><b>Otomatik eşit dağıtım</b></td><td>Her sabah dağıtım saatinde yeni müşteriler ve vakti gelen tekrar aramalar çalışanlara eşit paylaştırılır. Gün içinde eklenen müşteriler için yönetici <kbd>Dağıt</kbd> düğmesine basabilir. Tekrar aranacak müşteri aramayı yapan çalışanda kalır.</td></tr>
+        <tr><td><b>Serbest havuz</b></td><td>Sabah liste dağıtılmaz. Çalışanlar <kbd>Sıradaki müşteriyi al</kbd> ile kendileri müşteri alır. <b>Aynı anda en fazla açık müşteri</b> alanı bir çalışanın elinde aynı anda kaç açık müşteri olabileceğini sınırlar.</td></tr>
+        <tr><td><b>Elle dağıtım</b></td><td>Yeni müşteriyi yönetici atar: Bugün ekranındaki <kbd>Müşterileri ata</kbd> bağlantısı Müşteriler sayfasında atanmamış müşterileri gösterir; işaretleyip <kbd>Ata</kbd> ile çalışan seçilir.</td></tr>
+      </tbody>
+    </table>
+  </li>
+</ul>
+<p>Hangi yöntemde olursa olsun, sahibi olan açık müşteri vakti gelince yine sahibinin listesine konur.</p>
+
+<h3>Ekip ve yetkiler</h3>
+<ol>
+  <li><kbd>Çalışan ekle</kbd> düğmesine basın. <b>Ad soyad</b>, <b>E-posta</b>, <b>Rol</b> (Çalışan veya Yönetici) girin ve geçici şifre belirleyin.</li>
+  <li>Giriş bilgileri bir kez gösterilir. <b>Şifre bir daha gösterilmez</b>; hemen çalışana iletin ve ilk girişte değiştirmesini söyleyin. Bilgileri kopyalama düğmesi vardır.</li>
+  <li>Çalışanın kartında yetki anahtarlarını tek tek açıp kapatın (tablo bölüm 4'te). Yönetici rolü her şeyi yapabildiği için ayrı yetki gerekmez.</li>
+  <li><kbd>Pasifleştir</kbd> çalışanı sistemden çıkarmadan girişini ve dağıtım almasını durdurur, <kbd>Aktifleştir</kbd> geri açar. İşten ayrılanı silmek yerine pasifleştirin; sonra Yönetim'de <kbd>İşlerini aktar</kbd> ile açık müşterilerini devredin.</li>
+</ol>
+<p>Açılabilir yetkiler: <b>Tüm müşterileri görsün</b>, <b>Müşteri eklesin</b>, <b>Devredebilsin</b>, <b>Dışa aktarabilsin</b>, <b>Ekibin raporlarını görsün</b>, <b>Yönetim ekranını görsün</b>, <b>Müşteri silebilsin</b>. "Müşteri eklesin" yetkisi hem tek tek eklemeyi hem Excel ile toplu içe aktarmayı kapsar; "Müşteri silebilsin" müşteriyi kalıcı silme yetkisidir, dikkatle verin.</p>
+
+<h3>Bildirimler</h3>
+<ul>
+  <li><b>Telegram bildirimleri açık</b> anahtarı mağaza için Telegram mesajlarını açar. Şu an <b>kapalıdır</b> ve kapalı kalması normaldir; program Telegram olmadan eksiksiz çalışır. Bot ilk kez kurulacaksa sayfada "Kurulum" adımları ve <b>Bot kullanıcı adı</b> alanı vardır; bu bir kerelik teknik adımdır.</li>
+  <li><b>Gönderim saatleri:</b> sabah listesi (varsayılan 08:00; müşteri dağıtımı da bu saatte yapılır ve Telegram açık olmasa da çalışır) ve akşam özeti (varsayılan 19:00). Saatler SS:DD biçiminde yazılır, örneğin 08:30. Kaydetmek için <kbd>Saatleri kaydet</kbd>.</li>
+  <li><b>Telegram bağlantıları:</b> kimin bağlı olduğu listelenir. Yönetici başkasının bağlantısını kaldırabilir.</li>
+  <li><b>Telegram hesabım:</b> yöneticinin kendi Telegram bağlantısı ve test mesajı burada yapılır.</li>
+</ul>
+
+<h3>Marka</h3>
+<p>Programda görünen mağaza kimliği: <b>Marka adı</b>, <b>Mağaza rengi</b> (hazır renklerden veya #RRGGBB kodu) ve <b>Logo</b> (PNG, JPEG veya WebP dosyası, en fazla 512 KB; ya da logo adresi). Sağdaki <b>Önizleme</b> değişikliği kaydetmeden gösterir. Logo giriş ve kilit ekranının ortasında da görünür.</p>
+
+<h1>4. Roller ve yetkiler</h1>
+<p>İki rol vardır. <b>Yönetici</b> her şeyi yapar. <b>Çalışan</b> varsayılan olarak yalnız kendine atanan müşterilerle çalışır; yönetici ek yetkileri tek tek açabilir.</p>
+<table>
+  <thead><tr><th style="width:36%">Yapılan iş</th><th class="c" style="width:12%">Yönetici</th><th class="c" style="width:16%">Çalışan (varsayılan)</th><th>Çalışana açılabilen yetki</th></tr></thead>
+  <tbody>
+    <tr><td>Kendi listesini arama, sonuç girme</td><td class="c">Evet</td><td class="c">Evet</td><td>Gerekmez</td></tr>
+    <tr><td>Havuzdan Kendime al, Profil, PIN</td><td class="c">Evet</td><td class="c">Evet</td><td>Gerekmez</td></tr>
+    <tr><td>Raporlar: kendi sonuçları</td><td class="c">Evet</td><td class="c">Evet</td><td>Gerekmez</td></tr>
+    <tr><td>Raporlar: tüm ekip</td><td class="c">Evet</td><td class="c">Hayır</td><td>Ekibin raporlarını görsün</td></tr>
+    <tr><td>Tüm müşterileri görme (yalnız okuma)</td><td class="c">Evet</td><td class="c">Hayır</td><td>Tüm müşterileri görsün</td></tr>
+    <tr><td>Müşteri ekleme ve Excel içe aktarma</td><td class="c">Evet</td><td class="c">Hayır</td><td>Müşteri eklesin</td></tr>
+    <tr><td>Müşteriyi başkasına devretme, toplu Aktar ve Ata</td><td class="c">Evet</td><td class="c">Hayır</td><td>Devredebilsin</td></tr>
+    <tr><td>Müşteri listesini ve rapor dosyasını dışa aktarma</td><td class="c">Evet</td><td class="c">Hayır</td><td>Dışa aktarabilsin (rapor dosyası için ayrıca Ekibin raporlarını görsün)</td></tr>
+    <tr><td>Yönetim ekranını görme</td><td class="c">Evet</td><td class="c">Hayır</td><td>Yönetim ekranını görsün</td></tr>
+    <tr><td>Müşteriyi kalıcı silme</td><td class="c">Evet</td><td class="c">Hayır</td><td>Müşteri silebilsin</td></tr>
+    <tr><td>Müşteri bilgisi düzenleme, Dağıt, Bugün yok, İşlerini aktar</td><td class="c">Evet</td><td class="c">Hayır</td><td>Açılamaz (yalnız yönetici)</td></tr>
+    <tr><td>Ayarlar (kurallar, ekip, yetkiler, bildirim, marka)</td><td class="c">Evet</td><td class="c">Hayır</td><td>Açılamaz (yalnız yönetici)</td></tr>
+  </tbody>
+</table>
+<div class="note"><b>Tavsiye.</b> Yetkileri en az gerektiği kadar verin. Müşteri listesi kişisel veri içerir; özellikle "Dışa aktarabilsin", "Tüm müşterileri görsün" ve "Müşteri silebilsin" yetkilerini yalnız güvendiğiniz kişilere açın.</div>
+
+<h1>5. İsteğe bağlı: telefona bildirim (Telegram)</h1>
+<div class="note"><b>Şu an kapalı.</b> Bu kurulumda Telegram bildirimleri <b>kullanılmamaktadır</b> (Ayarlar > Bildirimler'de Telegram kapalıdır). Bu bölümü okumanız ve bir şey yapmanız gerekmez. Yönetici isterse sonradan Ayarlar > Bildirimler'den açabilir; o zaman aşağıdaki adımlar geçerli olur.</div>
+<div class="note"><b>Önemli.</b> Sabah müşteri dağıtımı ve program içindeki tüm özellikler Telegram'dan <b>bağımsız</b> çalışır. Telegram kapalıyken de her sabah liste kendiliğinden hazırlanır (otomatik dağıtımda); yalnızca telefona mesaj gelmez.</div>
+<p>Telegram açılırsa program, günlük özet bilgileri telefona mesaj olarak gönderebilir. Mesajları almak için her kişi hesabını bir kez bağlar. Bağlamak tamamen isteğe bağlıdır.</p>
+
+<h2>5.1 Bot ne gönderir</h2>
+<table>
+  <thead><tr><th style="width:20%">Mesaj</th><th style="width:26%">Kime</th><th>İçerik</th></tr></thead>
+  <tbody>
+    <tr><td><b>Sabah listesi</b></td><td>Listesinde müşteri olan herkes</td><td>Kaç kişi aranacak (kaçı tekrar arama, kaçı yeni), bugün kaç müşterinin dükkana geleceği ve doğum günü yaklaşan müşteriler. Listenizde müşteri yoksa mesaj gelmez. Örnek: "Günaydın Elif. Bugün 12 kişi aranacak: 3 tekrar arama, 9 yeni."</td></tr>
+    <tr><td><b>Akşam özeti</b></td><td>Yönetici ve "Ekibin raporlarını görsün" yetkisi olanlar</td><td>Günün toplamı: atama, tamamlanan, ulaşılan, randevu ve tekrar sayıları ile çalışan bazında kısa durum.</td></tr>
+    <tr><td><b>Test mesajı</b></td><td>İsteyen herkes</td><td>Bağlantının çalıştığını denemek için kendinize gönderirsiniz.</td></tr>
+  </tbody>
+</table>
+<p>Saatler yönetici tarafından Ayarlar > Bildirimler'de belirlenir (varsayılan sabah 08:00, akşam 19:00). Her mesaj günde en fazla bir kez gönderilir.</p>
+<div class="note"><b>Önemli.</b> Tekrar arama hatırlatmaları Telegram'dan <b>gelmez</b>. Bunlar yalnız programın içinde, Bugün ekranındaki <b>Geri arama vakti</b> kartıyla yapılır.</div>
+
+<h2>5.2 Telegram açıldığında nasıl bağlanır</h2>
+<ol>
+  <li>Önce yönetici, Ayarlar > Bildirimler'de Telegram bildirimlerini <b>açar</b> (şu an kapalıdır). Kapalıyken bağlanılabilir ama mesajlar açılana kadar gelmez.</li>
+  <li><b>Çalışan:</b> <kbd>Profil</kbd> sayfasında <b>Telegram</b> kartında <kbd>Telegram'ı bağla</kbd> düğmesine basın. <b>Yönetici:</b> Ayarlar > Bildirimler'deki <b>Telegram hesabım</b> kartında aynısını yapın.</li>
+  <li>Program <b>Bağlama kodun</b> alanında 8 karakterlik bir kod üretir. Kod <b>15 dakika</b> geçerlidir. Süre dolarsa <kbd>Yeni kod üret</kbd> ile yenileyin.</li>
+  <li>Aynı kartta çıkan Telegram düğmesine dokunun. Telegram'da bot açılır; <b>Başlat</b> (Start) düğmesine basın.</li>
+  <li>Düğme çalışmazsa botu Telegram'da elle açın ve bota <b>/start KOD</b> yazın (KOD yerine ekrandaki kodu yazın).</li>
+  <li>Bot "Bağlantı kuruldu" mesajıyla yanıt verir. Programda durum <b>Bağlı</b> olur.</li>
+  <li>Kartta <b>Sabah listesi</b> ve (yetkiliyse) <b>Akşam özeti</b> anahtarlarıyla hangi mesajı almak istediğinizi seçin. <kbd>Test mesajı gönder</kbd> ile deneyin.</li>
+</ol>
+<p>Bağlantıyı kaldırmak için aynı karttaki kaldırma düğmesini kullanın. Yönetici, işten ayrılan veya telefonunu değiştiren birinin bağlantısını Ayarlar > Bildirimler > Telegram bağlantıları listesinden kaldırabilir.</p>
+
+<h2>5.3 Gizlilik notu</h2>
+<div class="note"><b>Gizlilik.</b> Mesajlarda müşteri adı geçebilir (örneğin doğum günü yaklaşanlar) ve akşam özetinde çalışanların adları ile sayıları yer alır. Telefon numaraları mesajlarda yer almaz. Yine de telefonunuzun kilit ekranında bildirim önizlemesi açıksa başkaları mesajı görebilir. Telefonunuza ekran kilidi koyun, bildirim önizlemesini kilit ekranında kapatın ve botu yalnız kendi telefonunuzdaki Telegram hesabına bağlayın.</div>
+
+<h1>6. Meta (Facebook ve Instagram) reklam formları</h1>
+<p>Reklam formunu dolduran kişilerin bilgileri Meta tarafında toplanır. Bu bilgileri programa almanın iki yolu vardır: şu an kullanılan <b>dosya ile içe aktarma</b> ve ileride kurulabilecek <b>otomatik bağlantı</b>.</p>
+
+<h2>6.1 Şu an: Excel veya CSV ile içe aktarma</h2>
+<ol>
+  <li>Meta'da reklam formlarının bulunduğu yere girin (Meta Reklam Yöneticisi veya Meta Business Suite içindeki <b>Formlar</b> ya da <b>Potansiyel müşteriler</b> bölümü).</li>
+  <li>İlgili formu seçip potansiyel müşterileri <b>indirin</b> (CSV veya Excel dosyası).</li>
+  <li>Programda <b>Müşteriler</b> > <kbd>Excel içe aktar</kbd> adımlarını izleyin (bölüm 3.2). Kaynak açıklamasına formun veya reklamın adını yazın.</li>
+  <li>Program telefon numaralarını düzenler (örneğin +90 ile gelenleri 05 biçimine çevirir), geçersizleri ve daha önce kayıtlı olanları işaretler.</li>
+  <li>Türkçe karakterler (ş, ğ, ı gibi) dosyada bozuk görünürse program dosyayı otomatik olarak Türkçe kodlamayla yeniden okur.</li>
+  <li>Aynı dosyayı yanlışlıkla iki kez yüklerseniz sorun olmaz: aynı telefon ikinci kez eklenmez, <b>Mükerrer</b> sayılır.</li>
+</ol>
+<div class="note"><b>Alışkanlık.</b> İçe aktarmayı günde bir kez, aramalar başlamadan önce yapın. Sabah dağıtımdan sonra yüklenen müşteriler için yönetici <kbd>Dağıt</kbd> düğmesine basarsa o gün listeye girerler; basılmazsa sonraki dağıtımda girerler.</div>
+
+<h2>6.2 İleride: otomatik bağlantı (Meta Lead Ads)</h2>
+<p>Hedef, formu dolduran kişinin dosya indirmeye gerek kalmadan doğrudan programa düşmesidir. Bu özellik henüz kurulu değildir; kurulması için aşağıdakilerin hazırlanması gerekir.</p>
+<div class="note"><b>Dikkat.</b> Bu bölümdeki Meta adımları genel bilgidir. Meta izin adlarını, inceleme şartlarını ve ekran düzenini zaman zaman değiştirir. Aşağıdakiler <b>Meta'nın güncel şartlarına göre değişebilir</b>; kurulum sırasında Meta'nın kendi yönergesi esas alınmalıdır.</div>
+<h3>Gerekenler</h3>
+<ul>
+  <li><b>Meta Business hesabı</b> (işletme hesabı) ve reklamların yayınlandığı <b>Facebook sayfası</b>.</li>
+  <li>O sayfa üzerinde <b>yönetici yetkisi</b> olan bir kişi (mağaza sahibi veya yetki verdiği biri).</li>
+  <li>Meta'nın geliştirici sitesinde bir <b>Meta geliştirici uygulaması</b> (bir kerelik teknik kurulum).</li>
+  <li>Uygulama için <b>leads_retrieval</b> (potansiyel müşteri bilgisini okuma) ve <b>pages_manage_metadata</b> (sayfa bildirimlerine abone olma) izinleri. Bu izinler, canlı kullanım için Meta'nın <b>uygulama incelemesinden (App Review)</b> geçmesini gerektirir. İnceleme için genellikle işletme doğrulaması ve izinlerin neden istendiğini anlatan açıklama ile kısa bir ekran videosu istenir.</li>
+  <li>Sayfa için <b>erişim anahtarı</b> (sayfa access token). Programa tanımlanan gizli bir anahtardır; kimseyle paylaşılmaz ve e-postayla gönderilmez.</li>
+  <li><b>Webhook adresi:</b> programın canlı internet adresinde Meta'nın yeni başvuruları göndereceği bir adres. Program canlı bir adrese yerleştirilmeden bu adım yapılamaz.</li>
+  <li><b>Gizlilik politikası adresi:</b> mağazanın, form dolduranların verisini nasıl kullandığını anlatan herkese açık bir web sayfası. Meta bunu uygulama için ister.</li>
+</ul>
+<h3>Yaklaşık süreç ve kim ne yapar</h3>
+<table>
+  <thead><tr><th style="width:5%">#</th><th style="width:55%">Adım</th><th>Kim</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Gizlilik politikası sayfasını hazırlayıp yayınlamak; programı canlı adrese yerleştirmek.</td><td>Mağaza sahibi ve programı kuran teknik kişi</td></tr>
+    <tr><td>2</td><td>Meta Business hesabını ve sayfa yöneticiliğini doğrulamak; gerekirse işletme doğrulamasını yapmak.</td><td>Mağaza sahibi</td></tr>
+    <tr><td>3</td><td>Meta geliştirici uygulamasını oluşturmak, izinleri talep etmek, webhook adresini tanımlamak.</td><td>Teknik kişi (sahibin hesabıyla)</td></tr>
+    <tr><td>4</td><td>Uygulama incelemesine (App Review) başvurmak ve Meta'nın sorularını yanıtlamak.</td><td>Teknik kişi ve mağaza sahibi</td></tr>
+    <tr><td>5</td><td>Onay sonrası sayfa erişim anahtarını alıp programa tanımlamak ve sayfayı abone etmek.</td><td>Teknik kişi</td></tr>
+    <tr><td>6</td><td>Deneme: Meta'nın test aracıyla örnek bir başvuru gönderip programda göründüğünü doğrulamak.</td><td>Teknik kişi ve mağaza sahibi</td></tr>
+  </tbody>
+</table>
+<p>İnceleme süresi Meta'ya bağlıdır ve kesin söylenemez; birkaç gün ile birkaç hafta arasında değişebilir. Bu süre boyunca 6.1'deki dosya yöntemi kullanılmaya devam eder, hiçbir şey kesintiye uğramaz.</p>
+
+<h1>7. Sık sorulanlar ve sorun giderme</h1>
+<table>
+  <thead><tr><th style="width:30%">Sorun</th><th>Ne yapmalı</th></tr></thead>
+  <tbody>
+    <tr><td><b>Giriş olmuyor</b></td><td>E-posta adresini ve şifreyi tekrar yazın (büyük/küçük harfe ve boşluğa dikkat). Olmuyorsa <kbd>Şifremi unuttum</kbd> ile yeni şifre alın. Hâlâ olmuyorsa yönetici sizin hesabınızın <b>aktif</b> olduğunu Ayarlar > Ekip'ten kontrol etsin; pasif hesap giriş yapamaz.</td></tr>
+    <tr><td><b>PIN'imi unuttum</b></td><td>Kilit ekranında <kbd>PIN'imi unuttum</kbd>'a dokunun, e-posta ve şifrenizle girin. Sonra <kbd>Profil</kbd> > <b>Güvenlik</b>'ten yeni PIN belirleyin. 5 yanlış denemeden sonra program zaten sizi çıkarır; aynı yolu izleyin.</td></tr>
+    <tr><td><b>Ekran kendiliğinden kilitleniyor</b></td><td>Otomatik kilit çalışıyor. Süreyi <kbd>Profil</kbd> > <b>Güvenlik</b> > <b>Otomatik kilit</b>'ten uzatabilirsiniz.</td></tr>
+    <tr><td><b>Telegram mesajı gelmiyor</b></td><td>Telegram şu an kapalıdır; mesaj gelmemesi normaldir. Yönetici Telegram'ı açtıysa sırayla kontrol edin: (1) Profil'de durum <b>Bağlı</b> mı? Değilse yeniden bağlayın. (2) <b>Sabah listesi</b> anahtarı açık mı? (3) <kbd>Test mesajı gönder</kbd> ile deneyin. (4) Yönetici Ayarlar > Bildirimler'de <b>Telegram bildirimleri açık</b> anahtarını ve saatleri kontrol etsin. (5) Listenizde o gün müşteri yoksa sabah mesajı gelmez; bu normaldir. (6) Telegram'da botu engellediyseniz engeli kaldırın.</td></tr>
+    <tr><td><b>Müşteri listede yok</b></td><td>Müşteri ya size atanmamıştır ya da bekliyordur. Müşteriler sayfasında arayın. <b>Havuz</b>'da olabilir (vakti gelince döner veya <kbd>Kendime al</kbd>). Ertelenmiş olabilir: Bugün'de <b>Ertelendi</b> grubuna bakın. Bugün içe aktarıldıysa yönetici <kbd>Dağıt</kbd>'a basmamış olabilir. Hiç görünmüyorsa size görme yetkisi verilmemiştir; yöneticiye sorun.</td></tr>
+    <tr><td><b>Müşteri yanlış kişiye düştü</b></td><td>Yöneticiye ya da "Devredebilsin" yetkisi olana söyleyin: Müşteriler sayfasında müşteriyi açıp <kbd>Devret</kbd> ile veya birden çoğu için işaretleyip <kbd>Aktar</kbd> ile doğru kişiye verilir. Bir çalışan o gün yoksa Yönetim'de <kbd>Bugün yok</kbd> veya <kbd>İşlerini aktar</kbd> kullanılır.</td></tr>
+    <tr><td><b>Yanlış sonuç girdim</b></td><td>Kayıtlar silinmez. Müşteri açıksa doğru sonucu yeniden girin; müşteri kapandıysa yöneticiye bildirin. Randevu zamanı veya Huni aşaması yanlışsa Huni veya müşteri detayından düzeltilir.</td></tr>
+    <tr><td><b>Excel dosyası yüklenmiyor</b></td><td>Dosyayı .xlsx veya .csv olarak kaydedin, ilk satırın başlık olduğundan ve dosyanın 10 MB'tan küçük olduğundan emin olun.</td></tr>
+    <tr><td><b>Sayfa yüklenmiyor veya hata gösteriyor</b></td><td>İnternet bağlantınızı kontrol edin, sayfayı yenileyin. Sorun sürerse ekranı fotoğraflayıp yöneticiye iletin.</td></tr>
+  </tbody>
+</table>
+
+<h1>8. Kısa günlük kullanım akışı</h1>
+<div class="cols">
+  <div>
+    <h3>Çalışan için</h3>
+    <ol>
+      <li>Programı açın, giriş yapın veya PIN'inizle kilidi açın.</li>
+      <li><b>Bugün</b> ekranında "Kalan" sayısına bakın.</li>
+      <li>Odak kartında sıradaki müşteriyi <kbd>Ara</kbd> ile arayın. Gerekirse <kbd>WhatsApp</kbd> ile yazın.</li>
+      <li>Görüşme bitince sonucu seçin: Dükkana gelecek, Sonra ara, Açmadı, Meşgul, Uygun değil veya İlgilenmiyor. Kısa bir not ekleyin.</li>
+      <li>Dükkana gelecekse gün ve saati mutlaka girin.</li>
+      <li><b>Geri arama vakti</b> kartı çıkınca o müşteriyi arayın.</li>
+      <li>Müşteri mağazaya gelince <b>Huni</b>'da kartını <b>Geldi</b> aşamasına taşıyın.</li>
+      <li>Masadan kalkarken <kbd>Paneli kilitle</kbd> ile ekranı kilitleyin.</li>
+    </ol>
+  </div>
+  <div>
+    <h3>Yönetici için</h3>
+    <ol>
+      <li>Sabah Meta'dan yeni başvuruları indirip <b>Excel içe aktar</b> ile yükleyin.</li>
+      <li>Dağıtım saati geçince <b>Bugün</b>'de <b>Dağıtım</b> kartını kontrol edin; gerekirse <kbd>Dağıt</kbd> (veya elle dağıtımda <kbd>Müşterileri ata</kbd>).</li>
+      <li>Gelmeyen çalışan varsa <b>Yönetim</b>'de <kbd>Bugün yok</kbd> işaretleyin.</li>
+      <li>Gün içinde <b>Yönetim</b> ekranından ekibin ilerlemesini ve <b>Son işlemler</b>'i izleyin.</li>
+      <li><b>Huni</b>'de <b>Gecikti</b> kartlarına bakın, gelmeyen müşterilerin aranmasını sağlayın.</li>
+      <li>Akşam <b>Raporlar</b>'da günü inceleyin.</li>
+      <li>Haftada bir <b>Raporlar</b>'da Bu hafta ve Kaynak performansı'na bakın.</li>
+      <li>Yeni çalışan, yetki veya kural değişikliklerini <b>Ayarlar</b>'dan yapın.</li>
+    </ol>
+  </div>
+</div>
+
+</main>
+</body>
+</html>
