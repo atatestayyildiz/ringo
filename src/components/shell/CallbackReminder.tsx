@@ -12,11 +12,11 @@ type Due = { id: string; name: string; phone: string; at: string };
 
 const POLL_MS = 60_000;
 const MAX_ROWS = 3;
-const STORE_KEY = "telefoncu.callback-reminder.dismissed";
+const STORE_KEY = "telefoncu.callback-reminder.collapsed";
 
 const keyOf = (d: Due) => `${d.id}|${d.at}`;
 
-function readDismissed(): string[] {
+function readCollapsed(): string[] {
   try {
     const raw = window.localStorage.getItem(STORE_KEY);
     const v: unknown = raw ? JSON.parse(raw) : [];
@@ -26,22 +26,24 @@ function readDismissed(): string[] {
   }
 }
 
-function writeDismissed(keys: string[]) {
+function writeCollapsed(keys: string[]) {
   try {
     window.localStorage.setItem(STORE_KEY, JSON.stringify(keys.slice(-200)));
   } catch {
-    /* depolama yoksa yalnız bu oturumda kapalı kalır */
+    /* depolama yoksa yalnız bu oturumda küçük kalır */
   }
 }
 
 /**
  * Vakti gelmiş geri aramalar için uygulama içi hatırlatma.
  * Kaynak: bugünkü listemdeki, son sonucu "Sonra ara" (callback), durumu "tekrar ara" ve next_call_at <= şimdi olan müşteriler (RLS kapsamı).
+ * Kapat: liste doluysa kart tek satıra küçülür ve ekranda kalır; aramalar işlenip liste boşalınca kendiliğinden kaybolur.
+ * Küçültüldükten sonra vakti gelen yeni bir müşteri kartı yeniden açar.
  */
 export function CallbackReminder({ memberId }: { memberId: string }) {
   const pathname = usePathname();
   const [due, setDue] = useState<Due[]>([]);
-  const [dismissed, setDismissed] = useState<string[]>([]);
+  const [collapsedKeys, setCollapsedKeys] = useState<string[]>([]);
   const alive = useRef(true);
 
   const load = useCallback(async () => {
@@ -79,7 +81,7 @@ export function CallbackReminder({ memberId }: { memberId: string }) {
   useEffect(() => {
     alive.current = true;
     const first = window.setTimeout(() => {
-      setDismissed(readDismissed());
+      setCollapsedKeys(readCollapsed());
       void load();
     }, 0);
     const timer = window.setInterval(() => void load(), POLL_MS);
@@ -101,16 +103,52 @@ export function CallbackReminder({ memberId }: { memberId: string }) {
     return () => window.clearTimeout(t);
   }, [pathname, load]);
 
-  const visible = due.filter((d) => !dismissed.includes(keyOf(d)));
-  if (!visible.length) return null;
+  if (!due.length) return null;
 
-  const shown = visible.slice(0, MAX_ROWS);
-  const more = visible.length - shown.length;
+  const collapsed = due.every((d) => collapsedKeys.includes(keyOf(d)));
+  const shown = due.slice(0, MAX_ROWS);
+  const more = due.length - shown.length;
 
-  function close() {
-    const next = [...new Set([...readDismissed(), ...dismissed, ...visible.map(keyOf)])];
-    writeDismissed(next);
-    setDismissed(next);
+  function collapse() {
+    const next = [...new Set([...readCollapsed(), ...collapsedKeys, ...due.map(keyOf)])];
+    writeCollapsed(next);
+    setCollapsedKeys(next);
+  }
+
+  function expand() {
+    const open = new Set(due.map(keyOf));
+    const next = [...new Set([...readCollapsed(), ...collapsedKeys])].filter((k) => !open.has(k));
+    writeCollapsed(next);
+    setCollapsedKeys(next);
+  }
+
+  if (collapsed) {
+    const first = due[0];
+    const tel = telLink(first.phone);
+    return (
+      <div className={styles.region} role="status" aria-live="polite">
+        <section className={`${styles.card} ${styles.mini}`} aria-label="Geri arama vakti">
+          <button type="button" className={styles.miniOpen} onClick={expand} aria-label="Hatırlatmayı genişlet">
+            <span className={styles.ico} aria-hidden="true">
+              <IconClock />
+            </span>
+            <span className={styles.miniText}>
+              <b>Geri arama vakti:</b> {first.name}
+              {due.length > 1 ? ` ve ${due.length - 1} kişi daha` : ""}
+            </span>
+          </button>
+          <a
+            className={`${styles.call} ${styles.callMini}${tel ? "" : ` ${styles.off}`}`}
+            href={tel ?? undefined}
+            aria-disabled={!tel}
+            aria-label={`${first.name} ara`}
+          >
+            <IconPhone />
+            Ara
+          </a>
+        </section>
+      </div>
+    );
   }
 
   return (
@@ -121,7 +159,7 @@ export function CallbackReminder({ memberId }: { memberId: string }) {
             <IconClock />
           </span>
           <h2>Geri arama vakti</h2>
-          <button type="button" className={styles.close} onClick={close} aria-label="Hatırlatmayı kapat">
+          <button type="button" className={styles.close} onClick={collapse} aria-label="Hatırlatmayı küçült">
             <IconX />
           </button>
         </div>
@@ -148,7 +186,7 @@ export function CallbackReminder({ memberId }: { memberId: string }) {
         </ul>
         {more > 0 ? <p className={styles.more}>ve {more} kişi daha</p> : null}
         <div className={styles.foot}>
-          <button type="button" className={styles.dismiss} onClick={close}>
+          <button type="button" className={styles.dismiss} onClick={collapse}>
             Kapat
           </button>
         </div>

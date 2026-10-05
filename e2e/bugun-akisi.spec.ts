@@ -87,6 +87,12 @@ test("Dükkana gelecek müşteriyi Huni'ye taşır", async ({ browser }) => {
 
   await slot(page, names.b).click();
   await page.getByRole("button", { name: /Dükkana gelecek/ }).click();
+  const dialog = page.getByRole("dialog", { name: "Ne zaman gelecek?" });
+  await expect(dialog).toBeVisible();
+  const saved = page.waitForResponse((r) => r.request().method() === "POST" && new URL(r.url()).pathname === "/bugun");
+  await dialog.getByRole("button", { name: "Belli değil, uğrayacak" }).click();
+  await dialog.getByRole("button", { name: "Kaydet" }).click();
+  await saved;
   await expect(slot(page, names.b)).toHaveAccessibleName(/Tamamlandı/);
   await page.waitForLoadState("networkidle");
 
@@ -240,7 +246,7 @@ test("Daralt ve Genişlet: basılan düğme ekranda yerinde kalır", async ({ br
   await context.close();
 });
 
-test("vakti gelmiş geri arama hatırlatma kartı görünür, Kapat ile kaybolur", async ({ browser }) => {
+test("vakti gelmiş geri arama hatırlatma kartı görünür, Kapat ile tek satıra küçülür", async ({ browser }) => {
   const { context, page } = await freshPage(browser, { viewport: { width: 375, height: 812 }, isMobile: true });
   // Vakti gelmiş tekrar-ara müşterisi: yanıt sahte kurgusal veriyle değiştirilir (diğer sorgular gerçek)
   const fake = (n: number) =>
@@ -261,9 +267,26 @@ test("vakti gelmiş geri arama hatırlatma kartı görünür, Kapat ile kaybolur
   await expect(status.getByRole("link", { name: "Ara" })).toHaveCount(3);
   await expect(status).toContainText("ve 2 kişi daha");
   await status.getByRole("button", { name: "Kapat", exact: true }).click();
-  await expect(status).toHaveCount(0);
+  // Liste dolu: kart kapanmaz, tek satıra küçülür (ilk kişi + kalan sayı, tek Ara)
+  await expect(status).toBeVisible();
+  await expect(status).toContainText("Kurgu Kisi 1 ve 4 kişi daha");
+  await expect(status.getByRole("link", { name: "Kurgu Kisi 1 ara" })).toHaveCount(1);
 
-  // Kapatılan hatırlatma yenilemede geri gelmez
+  // Küçük hal yenilemede korunur
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await expect(status).toContainText("ve 4 kişi daha");
+  await expect(status.getByRole("button", { name: "Kapat", exact: true })).toHaveCount(0);
+
+  // Genişlet: tam kart geri gelir
+  await status.getByRole("button", { name: "Hatırlatmayı genişlet" }).click();
+  await expect(status.getByRole("link", { name: "Ara" })).toHaveCount(3);
+
+  // Aramalar bitince (liste boş) kart tamamen kaybolur
+  await page.unroute(/\/rest\/v1\/customers\?.*call_status=eq\.retry/);
+  await page.route(/\/rest\/v1\/customers\?.*call_status=eq\.retry/, (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
+  );
   await page.reload();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Geri arama vakti")).toHaveCount(0);
