@@ -28,6 +28,7 @@ export type MorningPayload = {
   retries?: number;
   new?: number;
   birthdays?: { full_name?: string; days_left?: number }[];
+  appointments_today?: number;
 };
 
 export function morningText(p: MorningPayload, appUrl?: string): string {
@@ -40,6 +41,8 @@ export function morningText(p: MorningPayload, appUrl?: string): string {
     });
     t += ` Doğum günü yaklaşan: ${parts.join(", ")}.`;
   }
+  const appts = num(p.appointments_today);
+  if (appts > 0) t += ` Bugün ${appts} müşteri dükkana gelecek.`;
   const url = link(appUrl, "/bugun");
   return url ? `${t} Listeyi aç: ${e(url)}` : t;
 }

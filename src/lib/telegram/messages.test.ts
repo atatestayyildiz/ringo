@@ -52,6 +52,15 @@ describe("morningText", () => {
   it("APP_URL yoksa link yok", () => {
     expect(morningText({ first_name: "E", total: 1, retries: 0, new: 1 })).not.toContain("Listeyi aç");
   });
+  it("bugünkü randevu sayısı > 0 ise dükkana gelecek cümlesi", () => {
+    expect(morningText({ first_name: "Elif", total: 2, retries: 1, new: 1, appointments_today: 3 }, URL_)).toBe(
+      "Günaydın Elif. Bugün 2 kişi aranacak: 1 tekrar arama, 1 yeni. Bugün 3 müşteri dükkana gelecek. Listeyi aç: https://app.example.com/bugun",
+    );
+  });
+  it("randevu 0 veya yoksa dükkan cümlesi yok", () => {
+    expect(morningText({ first_name: "E", total: 1, retries: 0, new: 1, appointments_today: 0 })).not.toContain("dükkana");
+    expect(morningText({ first_name: "E", total: 1, retries: 0, new: 1 })).not.toContain("dükkana");
+  });
 });
 
 describe("summaryText", () => {

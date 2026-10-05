@@ -81,3 +81,14 @@ Sunucu tarafı (service role, yalnız route handler'larda kullanılan) iç fonks
 ## 5. Test
 
 pgTAP: link kodu (süre, tek kullanım, başkası için üretilemez), iç fonksiyonların authenticated'a kapalı olması, `_notification_targets` saat/tercih/dedup mantığı, `report_range` sayıları seed üzerinde ve yetki, `log_export` yetkisi. Vitest: mesaj metinleri, CSV üretimi (BOM, kaçış, `;`). Route testleri: webhook yanlış sır 401, cron yetkisiz 401, `?dry=1` çıktısı.
+
+## Randevu zamanı (2026-10-05)
+
+Migration `20261005000500_appointment_time.sql`. "Dükkana gelecek" (outcome / `pipeline_stage = 'appointment'`) için gün ve isteğe bağlı saat.
+
+- `customers += (appointment_day date, appointment_time time)`, Europe/Istanbul yerel. İkisi null = "Belli değil, uğrayacak". Check: saat doluysa gün dolu. İstemci bu kolonları doğrudan yazamaz (customers UPDATE kolon bazlı; randevu kolonları hariç), yalnız RPC yazar. Okuma RLS ile aynı.
+- `log_call(p_customer, p_outcome, p_note, p_callback_at, p_appointment_day date default null, p_appointment_time time default null)`: eski 4 parametreli imza kaldırıldı, eski çağrılar aynen çalışır. outcome = 'appointment' iken kolonlar parametrelerle set edilir; başka sonuçta parametre verilirse 22023.
+- `set_appointment(p_customer uuid, p_day date default null, p_time time default null) returns customers`: randevu aşamasındaki müşterinin zamanını değiştirir/temizler. Yetki `_can_work` (log_call ile aynı; kiracı dışı/yetkisiz 42501). Aşama 'appointment' değilse 22023. audit_log `set_appointment`.
+- Doğrulama (iki RPC): gün bugünden (İstanbul) önce olamaz, saat gün olmadan olamaz (22023, Türkçe mesaj).
+- `set_pipeline_stage`: başka aşamadan 'appointment'a taşınınca kolonlar null (belli değil); randevudan çıkınca kolonlar korunur. "Gecikti" yalnız `pipeline_stage = 'appointment' and appointment_day < bugün` iken anlamlı (arayüz hesaplar).
+- `_notification_targets` morning payload += `appointments_today` (üyeye atanmış, aşama 'appointment', gün = bugün). Hedef koşulu (`total > 0`) değişmedi. Sabah metni sayı > 0 ise "Bugün X müşteri dükkana gelecek." ekler.

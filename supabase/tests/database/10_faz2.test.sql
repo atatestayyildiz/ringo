@@ -231,8 +231,9 @@ select is((select count(*)::int from public._notification_targets((public.tr_tod
 select is((select payload::text from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
            where member_id = '30000000-0000-4000-8000-0000000000d2' and kind = 'morning'),
           jsonb_build_object('first_name', 'Zeynep', 'total', 4, 'retries', 1, 'new', 2,
-                             'birthdays', jsonb_build_array(jsonb_build_object('full_name', 'Gül Dört', 'days_left', 2)))::text,
-          'morning: payload alanları (ad, toplam, tekrar, yeni, doğum günü)');
+                             'birthdays', jsonb_build_array(jsonb_build_object('full_name', 'Gül Dört', 'days_left', 2)),
+                             'appointments_today', 0)::text,
+          'morning: payload alanları (ad, toplam, tekrar, yeni, doğum günü, bugünkü randevu)');
 select is((select chat_id from public._notification_targets((public.tr_today()::timestamp + interval '8 hours') at time zone 'Europe/Istanbul')
            where member_id = '30000000-0000-4000-8000-0000000000d3' and kind = 'morning'),
           1002::bigint, 'morning: chat_id döner');

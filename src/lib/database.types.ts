@@ -81,13 +81,13 @@ isOneToOne: false
                   ]
                 },"customers": {
                   Row: {
-                    "applied_at": string | null,"assigned_to": string | null,"attempts_in_round": number,"birth_date": string | null,"call_status": string,"consent": boolean,"created_at": string | null,"full_name": string,"id": string,"last_note": string | null,"last_outcome": string | null,"next_call_at": string,"operator": string | null,"phone": string,"phone_alt": string | null,"pipeline_stage": string | null,"pool_count": number,"source": string,"source_detail": string | null,"tenant_id": string,"updated_at": string | null
+                    "applied_at": string | null,"appointment_day": string | null,"appointment_time": string | null,"assigned_to": string | null,"attempts_in_round": number,"birth_date": string | null,"call_status": string,"consent": boolean,"created_at": string | null,"full_name": string,"id": string,"last_note": string | null,"last_outcome": string | null,"next_call_at": string,"operator": string | null,"phone": string,"phone_alt": string | null,"pipeline_stage": string | null,"pool_count": number,"source": string,"source_detail": string | null,"tenant_id": string,"updated_at": string | null
                   }
                   Insert: {
-                    "applied_at"?: string | null,"assigned_to"?: string | null,"attempts_in_round"?: number,"birth_date"?: string | null,"call_status"?: string,"consent"?: boolean,"created_at"?: string | null,"full_name": string,"id"?: string,"last_note"?: string | null,"last_outcome"?: string | null,"next_call_at"?: string,"operator"?: string | null,"phone": string,"phone_alt"?: string | null,"pipeline_stage"?: string | null,"pool_count"?: number,"source"?: string,"source_detail"?: string | null,"tenant_id": string,"updated_at"?: string | null
+                    "applied_at"?: string | null,"appointment_day"?: string | null,"appointment_time"?: string | null,"assigned_to"?: string | null,"attempts_in_round"?: number,"birth_date"?: string | null,"call_status"?: string,"consent"?: boolean,"created_at"?: string | null,"full_name": string,"id"?: string,"last_note"?: string | null,"last_outcome"?: string | null,"next_call_at"?: string,"operator"?: string | null,"phone": string,"phone_alt"?: string | null,"pipeline_stage"?: string | null,"pool_count"?: number,"source"?: string,"source_detail"?: string | null,"tenant_id": string,"updated_at"?: string | null
                   }
                   Update: {
-                    "applied_at"?: string | null,"assigned_to"?: string | null,"attempts_in_round"?: number,"birth_date"?: string | null,"call_status"?: string,"consent"?: boolean,"created_at"?: string | null,"full_name"?: string,"id"?: string,"last_note"?: string | null,"last_outcome"?: string | null,"next_call_at"?: string,"operator"?: string | null,"phone"?: string,"phone_alt"?: string | null,"pipeline_stage"?: string | null,"pool_count"?: number,"source"?: string,"source_detail"?: string | null,"tenant_id"?: string,"updated_at"?: string | null
+                    "applied_at"?: string | null,"appointment_day"?: string | null,"appointment_time"?: string | null,"assigned_to"?: string | null,"attempts_in_round"?: number,"birth_date"?: string | null,"call_status"?: string,"consent"?: boolean,"created_at"?: string | null,"full_name"?: string,"id"?: string,"last_note"?: string | null,"last_outcome"?: string | null,"next_call_at"?: string,"operator"?: string | null,"phone"?: string,"phone_alt"?: string | null,"pipeline_stage"?: string | null,"pool_count"?: number,"source"?: string,"source_detail"?: string | null,"tenant_id"?: string,"updated_at"?: string | null
                   }
                   Relationships: [
                     {
@@ -397,8 +397,10 @@ isOneToOne: true
 { Args: { "p_rows": Json,"p_source_detail": string }; Returns: Json
                            },
 "log_call":
-{ Args: { "p_callback_at"?: string,"p_customer": string,"p_note"?: string,"p_outcome": string }; Returns: {
+{ Args: { "p_appointment_day"?: string,"p_appointment_time"?: string,"p_callback_at"?: string,"p_customer": string,"p_note"?: string,"p_outcome": string }; Returns: {
               "applied_at": string | null,
+"appointment_day": string | null,
+"appointment_time": string | null,
 "assigned_to": string | null,
 "attempts_in_round": number,
 "birth_date": string | null,
@@ -443,6 +445,8 @@ isOneToOne: true
 "reassign_customer":
 { Args: { "p_customer": string,"p_member": string }; Returns: {
               "applied_at": string | null,
+"appointment_day": string | null,
+"appointment_time": string | null,
 "assigned_to": string | null,
 "attempts_in_round": number,
 "birth_date": string | null,
@@ -482,12 +486,46 @@ isOneToOne: true
 "run_scheduled_distribution":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"set_appointment":
+{ Args: { "p_customer": string,"p_day"?: string,"p_time"?: string }; Returns: {
+              "applied_at": string | null,
+"appointment_day": string | null,
+"appointment_time": string | null,
+"assigned_to": string | null,
+"attempts_in_round": number,
+"birth_date": string | null,
+"call_status": string,
+"consent": boolean,
+"created_at": string | null,
+"full_name": string,
+"id": string,
+"last_note": string | null,
+"last_outcome": string | null,
+"next_call_at": string,
+"operator": string | null,
+"phone": string,
+"phone_alt": string | null,
+"pipeline_stage": string | null,
+"pool_count": number,
+"source": string,
+"source_detail": string | null,
+"tenant_id": string,
+"updated_at": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "customers"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "set_notify_prefs":
 { Args: { "p_morning": boolean,"p_reminder": boolean,"p_summary": boolean }; Returns: undefined
                            },
 "set_pipeline_stage":
 { Args: { "p_customer": string,"p_note"?: string,"p_stage": string }; Returns: {
               "applied_at": string | null,
+"appointment_day": string | null,
+"appointment_time": string | null,
 "assigned_to": string | null,
 "attempts_in_round": number,
 "birth_date": string | null,

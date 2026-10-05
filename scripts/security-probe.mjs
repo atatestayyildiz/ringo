@@ -442,6 +442,38 @@ async function main() {
     expectError(await manager.from("notification_log").update({ attempts: 1, status: "failed" }).eq("tenant_id", tenant).select("id"), DENIED),
   );
 
+  // ===== Randevu zamanı (20261005000500) =====
+  const GR = "Randevu";
+  const restoreAppt = async () => {
+    const { data: now } = await admin.from("customers").select("appointment_day, appointment_time").eq("id", elifCust.id).single();
+    if (now && (now.appointment_day !== elifCust.appointment_day || now.appointment_time !== elifCust.appointment_time)) {
+      await admin
+        .from("customers")
+        .update({ appointment_day: elifCust.appointment_day, appointment_time: elifCust.appointment_time })
+        .eq("id", elifCust.id);
+      return "randevu zamanı değişti (geri alındı)";
+    }
+    return true;
+  };
+  await check(GR, "set_appointment: anon reddedilir", async () =>
+    expectError(await anonClient.rpc("set_appointment", { p_customer: elifCust.id, p_day: null, p_time: null }), FN_DENIED),
+  );
+  await check(GR, "set_appointment: yetkisiz ajan (Ayşe) başkasının müşterisini değiştiremez 42501", async () => {
+    const r = expectError(await ayse.rpc("set_appointment", { p_customer: elifCust.id, p_day: null, p_time: null }), DENIED);
+    const restored = await restoreAppt();
+    return restored === true ? r : restored;
+  });
+  await check(GR, "set_appointment: yetkisiz ajan (Can) başkasının müşterisini değiştiremez 42501", async () => {
+    const r = expectError(await can.rpc("set_appointment", { p_customer: elifCust.id, p_day: null, p_time: null }), DENIED);
+    const restored = await restoreAppt();
+    return restored === true ? r : restored;
+  });
+  await check(GR, "customers.appointment_day: yönetici doğrudan güncelleyemez", async () => {
+    const r = expectError(await manager.from("customers").update({ appointment_day: "2099-01-01" }).eq("id", elifCust.id).select("id"), DENIED);
+    const restored = await restoreAppt();
+    return restored === true ? r : restored;
+  });
+
   // ===== HTTP =====
   const GH = "HTTP";
   const appUp = await rawRequest("GET", "/giris").then((r) => r.status < 500).catch(() => false);
