@@ -31,9 +31,20 @@ export async function updateSession(request: NextRequest) {
   });
 
   const { data } = await supabase.auth.getClaims();
-  const signedIn = Boolean(data?.claims);
+  let signedIn = Boolean(data?.claims);
   const path = request.nextUrl.pathname;
   const onLogin = path === "/giris";
+
+  // getClaims yalnız JWT imzasına bakar; sayfalar getUser ile sunucuya sorar. Oturum sunucuda kapatılmışsa
+  // (başka cihazdan "tüm cihazlardan çık", şifre değişimi) iki karar ayrışır ve /giris <-> /bugun döngüsü olur.
+  // /giris'ten ve kökten yönlendirmeden önce sunucuya sor; geçersizse yerel çerezi temizle ve girişi göster.
+  if (signedIn && (onLogin || path === "/")) {
+    const { data: u, error } = await supabase.auth.getUser();
+    if (error || !u.user) {
+      await supabase.auth.signOut({ scope: "local" });
+      signedIn = false;
+    }
+  }
 
   const redirectTo = (to: string) => {
     const r = NextResponse.redirect(new URL(to, request.url));
@@ -52,7 +63,7 @@ export async function updateSession(request: NextRequest) {
       .eq("is_active", true)
       .maybeSingle();
     if (!member) {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: "local" });
       return onLogin ? response : redirectTo("/giris?hata=uye");
     }
   }

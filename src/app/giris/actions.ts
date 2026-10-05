@@ -21,7 +21,7 @@ export async function signInAction(_prev: LoginState, formData: FormData): Promi
     .eq("is_active", true)
     .maybeSingle();
   if (!member) {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     return { error: "Hesabınız etkin değil. Yöneticinize başvurun." };
   }
 
