@@ -9,8 +9,8 @@ export function MadeBy() {
     <div className={s.madeby}>
       <span className={s.product}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/ringo-logo.png" alt="" aria-hidden="true" width={16} height={16} />
-        Ringo
+        <img src="/ringo-64.png" alt="" aria-hidden="true" width={16} height={16} />
+        Ringo bir
       </span>
       <a
         className={s.link}

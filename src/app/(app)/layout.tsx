@@ -49,7 +49,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="tools">
             <span className="ringo-tag" title="Ringo">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/ringo-logo.png" alt="" aria-hidden="true" width={22} height={22} />
+              <img src="/ringo-64.png" alt="" aria-hidden="true" width={22} height={22} />
               <span>Ringo</span>
             </span>
             <UserMenu name={member.full_name} roleLabel={isManager ? "Yönetici" : "Çalışan"} signOutAction={signOutAction} />

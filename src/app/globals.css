@@ -180,10 +180,14 @@ html {
   flex: none;
   overflow: hidden;
 }
+.logo-mark:has(img) {
+  background: transparent;
+}
 .logo-mark img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: inherit;
 }
 .logo-name {
   white-space: nowrap;
