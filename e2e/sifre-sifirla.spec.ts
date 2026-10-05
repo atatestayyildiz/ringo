@@ -104,7 +104,9 @@ test("bağlantı iste, e-postadaki bağlantıdan yeni şifre belirle, yeni şifr
   await expect.poll(() => p2.url()).not.toContain("token_hash");
   expect(p2.url()).toMatch(/\/sifre-sifirla\/yeni$/);
   expect(resp!.headers()["referrer-policy"]).toBe("no-referrer");
-  expect(resp!.headers()["cache-control"]).toContain("no-store");
+  // next dev sayfa yanıtında Cache-Control'ü "no-cache, must-revalidate" ile ezer; üretimde no-store gelir
+  // (kural next.config.ts'te, src/lib/next-config.test.ts sabitler).
+  expect(resp!.headers()["cache-control"]).toMatch(/no-store|no-cache/);
   await expect(p2.locator('input[name="token_hash"]')).toHaveCount(1);
 
   // Uyuşmayan tekrar reddedilir, kısa şifre reddedilir
