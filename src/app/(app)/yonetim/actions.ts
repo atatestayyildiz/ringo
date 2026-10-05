@@ -22,3 +22,26 @@ export async function markAbsentAction(memberId: string, day: string): Promise<A
   revalidatePath("/bugun");
   return { ok: true, moved: data ?? 0 };
 }
+
+export type TransferResult = { ok: true; moved: number } | { ok: false; error: string };
+
+/** Çalışanın günün açık işlerini aktarır; toId null ise ekibe eşit dağıtılır. Kişi izinli işaretlenmez. */
+export async function transferOpenWorkAction(fromId: string, toId: string | null, day: string): Promise<TransferResult> {
+  const ctx = await getSessionContext();
+  if (ctx.member.role !== "manager") {
+    return { ok: false, error: "Bu işlemi yalnız yönetici yapabilir." };
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+    return { ok: false, error: "Geçersiz tarih. Sayfayı yenileyip tekrar deneyin." };
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("transfer_open_work", {
+    p_from: fromId,
+    ...(toId ? { p_to: toId } : {}),
+    p_day: day,
+  });
+  if (error) return { ok: false, error: toUserMessage(error) };
+  revalidatePath("/yonetim");
+  revalidatePath("/bugun");
+  return { ok: true, moved: data ?? 0 };
+}

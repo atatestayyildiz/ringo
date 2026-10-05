@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Avatar, EmptyState, StatusBadge, type CallStatus } from "@/components/ui";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { reassignCustomersAction } from "@/app/(app)/musteriler/actions";
+import { Avatar, Button, EmptyState, Modal, Select, StatusBadge, useToast, type CallStatus } from "@/components/ui";
 import { IconUsers } from "@/components/icons";
 import { formatPhone } from "@/lib/format";
 import { CustomerSheet } from "./CustomerSheet";
@@ -23,6 +25,48 @@ export function CustomerList({
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = rows.find((r) => r.id === selectedId) ?? null;
+  const toast = useToast();
+  const router = useRouter();
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [to, setTo] = useState("");
+  const [pending, startTransfer] = useTransition();
+  const allRef = useRef<HTMLInputElement>(null);
+
+  const canSelect = viewer.canReassign;
+  // Yalnız görünen sayfadaki satırlar sayılır; sayfa veya filtre değişince eski seçim düşer.
+  const picked = rows.filter((r) => checked.has(r.id));
+  const allPicked = rows.length > 0 && picked.length === rows.length;
+
+  useEffect(() => {
+    if (allRef.current) allRef.current.indeterminate = picked.length > 0 && !allPicked;
+  }, [picked.length, allPicked]);
+
+  const toggle = (id: string) =>
+    setChecked((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const toggleAll = () => setChecked(allPicked ? new Set() : new Set(rows.map((r) => r.id)));
+
+  const confirmTransfer = () => {
+    if (!to || picked.length === 0) return;
+    const ids = picked.map((r) => r.id);
+    startTransfer(async () => {
+      const res = await reassignCustomersAction(ids, to);
+      if (res.ok) {
+        toast(`${res.moved} müşteri aktarıldı`);
+        setChecked(new Set());
+        setTransferOpen(false);
+        setTo("");
+        router.refresh();
+      } else {
+        toast(res.error, "error");
+      }
+    });
+  };
 
   if (rows.length === 0) {
     return (
@@ -38,7 +82,13 @@ export function CustomerList({
 
   return (
     <>
-      <div className="mu-colhead" aria-hidden="true">
+      {canSelect ? (
+        <label className="mu-selall">
+          <input type="checkbox" ref={allRef} checked={allPicked} onChange={toggleAll} />
+          <span>Sayfadakilerin tümünü seç ({rows.length})</span>
+        </label>
+      ) : null}
+      <div className={`mu-colhead${canSelect ? " mu-colhead-sel" : ""}`} aria-hidden="true">
         <span>Müşteri</span>
         <span>Operatör</span>
         <span>Durum</span>
@@ -52,7 +102,17 @@ export function CustomerList({
           const op = c.operator ? OPERATOR_LABEL[c.operator] : "";
           const who = memberName(members, c.assigned_to);
           return (
-            <li key={c.id}>
+            <li key={c.id} className={canSelect ? "mu-sel-li" : undefined}>
+              {canSelect ? (
+                <label className="mu-check">
+                  <input
+                    type="checkbox"
+                    checked={checked.has(c.id)}
+                    onChange={() => toggle(c.id)}
+                    aria-label={`${c.full_name} seç`}
+                  />
+                </label>
+              ) : null}
               <button type="button" className="mu-row" onClick={() => setSelectedId(c.id)} aria-label={`${c.full_name}, detay`}>
                 <span className="mu-who">
                   <Avatar name={c.full_name} />
@@ -78,6 +138,40 @@ export function CustomerList({
           );
         })}
       </ul>
+      {canSelect && picked.length > 0 ? (
+        <div className="mu-bar" role="region" aria-label="Seçim işlemleri">
+          <span className="mu-bar-count">{picked.length} seçili</span>
+          <Button size="sm" variant="soft" onClick={() => setChecked(new Set())}>
+            Temizle
+          </Button>
+          <Button size="sm" onClick={() => setTransferOpen(true)}>
+            Aktar
+          </Button>
+        </div>
+      ) : null}
+      <Modal open={transferOpen} onClose={() => (pending ? undefined : setTransferOpen(false))} title="Müşterileri aktar">
+        <p className="mu-confirm">
+          {picked.length} müşteri seçilen çalışana aktarılacak. Bugünün listesindeki kayıtları da onun listesine geçer.
+        </p>
+        <Select label="Kime aktarılsın" value={to} onChange={(e) => setTo(e.target.value)}>
+          <option value="">Çalışan seçin</option>
+          {members
+            .filter((m) => m.is_active)
+            .map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.full_name}
+              </option>
+            ))}
+        </Select>
+        <div className="modal-foot">
+          <Button variant="soft" onClick={() => setTransferOpen(false)} disabled={pending}>
+            Vazgeç
+          </Button>
+          <Button variant="ink" onClick={confirmTransfer} disabled={pending || !to}>
+            {pending ? "Aktarılıyor" : "Aktar"}
+          </Button>
+        </div>
+      </Modal>
       <CustomerSheet customer={selected} members={members} viewer={viewer} onClose={() => setSelectedId(null)} />
     </>
   );

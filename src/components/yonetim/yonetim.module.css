@@ -182,7 +182,14 @@
   font-weight: 600;
   flex: none;
 }
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
 .confirmText {
+  margin-bottom: 14px;
   color: var(--ink-2);
   line-height: 1.5;
   font-size: 15px;

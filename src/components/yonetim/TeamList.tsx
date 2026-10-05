@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { markAbsentAction } from "@/app/(app)/yonetim/actions";
-import { Avatar, Button, Chip, EmptyState, Modal, useToast } from "@/components/ui";
+import { markAbsentAction, transferOpenWorkAction } from "@/app/(app)/yonetim/actions";
+import { Avatar, Button, Chip, EmptyState, Modal, Select, useToast } from "@/components/ui";
 import s from "./yonetim.module.css";
 
 export type TeamRow = {
@@ -15,12 +15,27 @@ export type TeamRow = {
   appointments: number;
   retries: number;
   absent: boolean;
+  open: number;
 };
 
-export function TeamList({ rows, day, canMarkAbsent }: { rows: TeamRow[]; day: string; canMarkAbsent: boolean }) {
+export type TransferTarget = { id: string; name: string };
+
+export function TeamList({
+  rows,
+  day,
+  canMarkAbsent,
+  targets,
+}: {
+  rows: TeamRow[];
+  day: string;
+  canMarkAbsent: boolean;
+  targets: TransferTarget[];
+}) {
   const toast = useToast();
   const router = useRouter();
   const [target, setTarget] = useState<TeamRow | null>(null);
+  const [transferFrom, setTransferFrom] = useState<TeamRow | null>(null);
+  const [to, setTo] = useState("all");
   const [pending, start] = useTransition();
 
   if (rows.length === 0) {
@@ -39,6 +54,26 @@ export function TeamList({ rows, day, canMarkAbsent }: { rows: TeamRow[]; day: s
       if (res.ok) {
         toast(`${t.full_name} bugün yok. ${res.moved} müşteri yeniden dağıtıldı.`);
         setTarget(null);
+        router.refresh();
+      } else {
+        toast(res.error, "error");
+      }
+    });
+  };
+
+  const openTransfer = (r: TeamRow) => {
+    setTo("all");
+    setTransferFrom(r);
+  };
+
+  const confirmTransfer = () => {
+    if (!transferFrom) return;
+    const f = transferFrom;
+    start(async () => {
+      const res = await transferOpenWorkAction(f.member_id, to === "all" ? null : to, day);
+      if (res.ok) {
+        toast(`${res.moved} müşteri aktarıldı`);
+        setTransferFrom(null);
         router.refresh();
       } else {
         toast(res.error, "error");
@@ -78,10 +113,17 @@ export function TeamList({ rows, day, canMarkAbsent }: { rows: TeamRow[]; day: s
                 <b>
                   {r.done}/{r.assigned}
                 </b>
-                {canMarkAbsent && !r.absent ? (
-                  <Button variant="soft" size="sm" onClick={() => setTarget(r)}>
-                    Bugün yok
-                  </Button>
+                {canMarkAbsent ? (
+                  <div className={s.actions}>
+                    <Button variant="soft" size="sm" onClick={() => openTransfer(r)} aria-label={`${r.full_name} işlerini aktar`}>
+                      İşlerini aktar
+                    </Button>
+                    {!r.absent ? (
+                      <Button variant="soft" size="sm" onClick={() => setTarget(r)}>
+                        Bugün yok
+                      </Button>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -99,6 +141,36 @@ export function TeamList({ rows, day, canMarkAbsent }: { rows: TeamRow[]; day: s
           </Button>
           <Button variant="ink" onClick={confirm} disabled={pending} data-autofocus>
             {pending ? "İşleniyor" : "Onayla"}
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={transferFrom !== null}
+        onClose={() => (pending ? undefined : setTransferFrom(null))}
+        title="İşlerini aktar"
+      >
+        <p className={s.confirmText}>
+          {transferFrom?.full_name} için {transferFrom?.open ?? 0} açık iş var. Açık işler seçilen kişinin Bugün listesine
+          geçer. İşlenmiş kayıtlar ve geçmiş aramalar {transferFrom?.full_name} üzerinde kalır. Kişi bugün yok olarak
+          işaretlenmez.
+        </p>
+        <Select label="Kime aktarılsın" value={to} onChange={(e) => setTo(e.target.value)}>
+          <option value="all">Ekibe eşit dağıt</option>
+          {targets
+            .filter((t) => t.id !== transferFrom?.member_id)
+            .map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+        </Select>
+        <div className="modal-foot">
+          <Button variant="soft" onClick={() => setTransferFrom(null)} disabled={pending}>
+            Vazgeç
+          </Button>
+          <Button variant="ink" onClick={confirmTransfer} disabled={pending || (transferFrom?.open ?? 0) === 0}>
+            {pending ? "Aktarılıyor" : "Aktar"}
           </Button>
         </div>
       </Modal>

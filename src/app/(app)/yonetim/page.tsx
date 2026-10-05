@@ -30,9 +30,15 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ g
   const end = new Date(start.getTime() + 24 * 3600 * 1000);
 
   const supabase = await createClient();
-  const [summaryRes, membersRes, attemptsRes, eventsRes] = await Promise.all([
+  const [summaryRes, membersRes, openRes, attemptsRes, eventsRes] = await Promise.all([
     supabase.rpc("day_summary", { p_day: day }),
-    supabase.from("members").select("id, full_name, absent_on"),
+    supabase.from("members").select("id, full_name, absent_on, is_active"),
+    // Açık iş: günün atamalarından henüz işlenmemiş (bekliyor / tekrar) müşteriler
+    supabase
+      .from("daily_assignments")
+      .select("member_id, customers!inner(call_status)")
+      .eq("day", day)
+      .in("customers.call_status", ["pending", "retry"]),
     supabase
       .from("call_attempts")
       .select("id, created_at, customer_id, member_id, outcome")
@@ -54,10 +60,18 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ g
   const members = new Map((membersRes.data ?? []).map((m) => [m.id, m]));
   const summary = summaryRes.data ?? [];
 
+  const openCount = new Map<string, number>();
+  for (const o of openRes.data ?? []) openCount.set(o.member_id, (openCount.get(o.member_id) ?? 0) + 1);
+
   const rows: TeamRow[] = summary.map((r) => ({
     ...r,
     absent: members.get(r.member_id)?.absent_on === day,
+    open: openCount.get(r.member_id) ?? 0,
   }));
+  const targets = (membersRes.data ?? [])
+    .filter((m) => m.is_active)
+    .map((m) => ({ id: m.id, name: m.full_name }))
+    .sort((a, b) => a.name.localeCompare(b.name, "tr"));
 
   const totals = summary.reduce(
     (a, r) => ({
@@ -177,7 +191,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ g
 
               <Card>
                 <h2>Ekip</h2>
-                <TeamList rows={rows} day={day} canMarkAbsent={isManager && day >= today} />
+                <TeamList rows={rows} day={day} canMarkAbsent={isManager && day >= today} targets={targets} />
               </Card>
             </div>
 

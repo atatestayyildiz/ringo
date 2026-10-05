@@ -474,6 +474,9 @@ isOneToOne: true
         isOneToOne: true
         isSetofReturn: false
       } },
+"reassign_customers":
+{ Args: { "p_customers": string[],"p_member": string }; Returns: number
+                           },
 "report_range":
 { Args: { "p_from": string,"p_to": string }; Returns: Json
                            },
@@ -564,6 +567,9 @@ isOneToOne: true
                            },
 "tr_today":
 { Args: Record<PropertyKey, never>; Returns: string
+                           },
+"transfer_open_work":
+{ Args: { "p_day"?: string,"p_from": string,"p_to"?: string }; Returns: number
                            },
 "upcoming_birthdays":
 { Args: { "p_days"?: number }; Returns: {

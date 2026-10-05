@@ -604,3 +604,78 @@
     flex-basis: 262px;
   }
 }
+
+/* ---------- çoklu seçim ve toplu aktarım ---------- */
+.mu-sel-li {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.mu-sel-li .mu-row {
+  flex: 1;
+  min-width: 0;
+}
+.mu-check {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  min-height: 44px;
+  flex: none;
+  cursor: pointer;
+}
+.mu-check input,
+.mu-selall input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+.mu-selall {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.mu-selall input {
+  margin: 0 13px;
+}
+.mu-colhead-sel {
+  padding-left: 54px;
+}
+.mu-bar {
+  position: fixed;
+  z-index: 40;
+  left: 16px;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  max-width: 460px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 10px 18px;
+  background: var(--surface);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+}
+.mu-bar-count {
+  flex: 1;
+  font-weight: 650;
+  font-size: 14px;
+}
+.mu-confirm {
+  color: var(--ink-2);
+  line-height: 1.5;
+  font-size: 15px;
+  margin-bottom: 14px;
+}
+@media (max-width: 900px) {
+  .mu-sel-li .mu-row {
+    padding-left: 4px;
+  }
+}

@@ -259,6 +259,7 @@ async function main() {
     ["_notification_done", { p_member: randomUUID(), p_kind: "morning", p_day: "2000-01-01" }],
     ["_telegram_link_limited", { p_chat_id: 1 }],
     ["_report_range", { p_tenant: fakeTenant, p_member: null, p_from: "2026-01-01", p_to: "2026-01-31" }],
+    ["_move_open_work", { p_tenant: fakeTenant, p_from: randomUUID(), p_to: [], p_day: "2000-01-01" }],
   ];
   for (const [fn, args] of internalCalls) {
     await check(GI, `${fn}: authenticated reddedilir`, async () => expectError(await elif.rpc(fn, args), DENIED));
@@ -371,6 +372,21 @@ async function main() {
   );
   await check(G2, "log_export: anon reddedilir", async () =>
     expectError(await anonClient.rpc("log_export", { p_kind: "customers", p_rows: 0, p_filters: {} }), FN_DENIED),
+  );
+  await check(G2, "reassign_customers: yetkisiz ajan (Ayşe) 42501", async () =>
+    expectError(await ayse.rpc("reassign_customers", { p_customers: [elifCust.id], p_member: M.ayse.id }), DENIED),
+  );
+  await check(G2, "reassign_customers: reassign yetkisi olmayan (Elif) 42501", async () =>
+    expectError(await elif.rpc("reassign_customers", { p_customers: [elifCust.id], p_member: M.ayse.id }), DENIED),
+  );
+  await check(G2, "reassign_customers: anon reddedilir", async () =>
+    expectError(await anonClient.rpc("reassign_customers", { p_customers: [elifCust.id], p_member: M.ayse.id }), FN_DENIED),
+  );
+  await check(G2, "transfer_open_work: ajan (Ayşe) 42501", async () =>
+    expectError(await ayse.rpc("transfer_open_work", { p_from: M.elif.id, p_to: M.ayse.id }), DENIED),
+  );
+  await check(G2, "transfer_open_work: anon reddedilir", async () =>
+    expectError(await anonClient.rpc("transfer_open_work", { p_from: M.elif.id, p_to: M.ayse.id }), FN_DENIED),
   );
   await check(G2, "telegram_unlink: ajan başkasınınkini kaldıramaz", async () =>
     expectError(await ayse.rpc("telegram_unlink", { p_member: M.elif.id }), DENIED),
