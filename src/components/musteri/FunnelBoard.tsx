@@ -26,7 +26,9 @@ import {
   useToast,
 } from "@/components/ui";
 import { IconFunnel } from "@/components/icons";
+import { appointmentBadge, compareAppointments } from "@/lib/appointment";
 import { formatPhone } from "@/lib/format";
+import { ChangeAppointmentDialog } from "./AppointmentDialog";
 import { createClient } from "@/lib/supabase/client";
 import {
   ALL_STAGES,
@@ -41,6 +43,8 @@ import {
 } from "./shared";
 import "./musteri.css";
 import { toUserMessage } from "@/lib/errors";
+
+const APPT_OPTION = "__appointment";
 
 type V = Pick<Viewer, "id" | "isManager">;
 
@@ -85,6 +89,7 @@ export function FunnelBoard({
   });
   const [pending, setPending] = useState<Record<string, true>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [apptFor, setApptFor] = useState<Customer | null>(null);
 
   const overrides = moved.base === customers ? moved.map : {};
   const effective = (() => {
@@ -93,13 +98,23 @@ export function FunnelBoard({
     const rest: Customer[] = [];
     for (const c of customers) {
       const o = overrides[c.id];
-      if (o) first.push({ ...c, pipeline_stage: o });
+      if (o)
+        first.push({
+          ...c,
+          pipeline_stage: o,
+          // DB, Randevu aşamasına geçişte zamanı "belli değil" yapar
+          ...(o === "appointment" && c.pipeline_stage !== "appointment"
+            ? { appointment_day: null, appointment_time: null }
+            : {}),
+        });
       else rest.push(c);
     }
     return [...first, ...rest];
   })();
-  const by = (stage: string) =>
-    effective.filter((c) => c.pipeline_stage === stage);
+  const by = (stage: string) => {
+    const list = effective.filter((c) => c.pipeline_stage === stage);
+    return stage === "appointment" ? list.sort(compareAppointments) : list;
+  };
   const active = activeId
     ? (effective.find((c) => c.id === activeId) ?? null)
     : null;
@@ -139,6 +154,11 @@ export function FunnelBoard({
     }
     toast(`${c.full_name}: ${STAGE_LABEL[stage]}`);
     router.refresh();
+  };
+
+  const onMenu = (c: Customer, value: string) => {
+    if (value === APPT_OPTION) setApptFor(c);
+    else void move(c, value);
   };
 
   const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
@@ -225,7 +245,7 @@ export function FunnelBoard({
                 viewer={viewer}
                 busy={pending}
                 activeId={activeId}
-                onMove={move}
+                onMove={onMenu}
               />
             </Column>
           );
@@ -263,13 +283,24 @@ export function FunnelBoard({
                   viewer={viewer}
                   busy={pending}
                   activeId={activeId}
-                  onMove={move}
+                  onMove={onMenu}
                 />
               </Column>
             ))}
           </div>
         ) : null}
       </div>
+
+      <ChangeAppointmentDialog
+        open={apptFor !== null}
+        customerId={apptFor?.id ?? ""}
+        initial={{ day: apptFor?.appointment_day ?? null, time: apptFor?.appointment_time ?? null }}
+        onClose={() => setApptFor(null)}
+        onDone={() => {
+          setApptFor(null);
+          router.refresh();
+        }}
+      />
 
       <DragOverlay dropAnimation={reduced ? null : undefined} zIndex={60}>
         {active ? (
@@ -339,6 +370,15 @@ function Cards({
   );
 }
 
+function AppointmentPill({ c }: { c: Customer }) {
+  const b = appointmentBadge(c.pipeline_stage, c.appointment_day, c.appointment_time);
+  return (
+    <span className="mu-ap-badge" data-overdue={b.overdue ? "" : undefined}>
+      {b.text}
+    </span>
+  );
+}
+
 function CardBody({ c, members }: { c: Customer; members: MemberLite[] }) {
   const who = memberName(members, c.assigned_to);
   return (
@@ -359,6 +399,7 @@ function CardBody({ c, members }: { c: Customer; members: MemberLite[] }) {
         {c.operator ? <span>{OPERATOR_LABEL[c.operator]}</span> : null}
         {who ? <span>{who}</span> : null}
       </div>
+      {c.pipeline_stage === "appointment" ? <AppointmentPill c={c} /> : null}
       {c.last_note ? <p className="quote">{c.last_note}</p> : null}
     </>
   );
@@ -411,6 +452,9 @@ function FunnelCard({
           onChange={(e) => onMove(c, e.target.value)}
         >
           <option value="" hidden>Aşamayı değiştir</option>
+          {c.pipeline_stage === "appointment" ? (
+            <option value={APPT_OPTION}>Randevu zamanını değiştir</option>
+          ) : null}
           {ALL_STAGES.filter((s) => s !== c.pipeline_stage).map((s) => (
             <option key={s} value={s}>
               {STAGE_LABEL[s]}

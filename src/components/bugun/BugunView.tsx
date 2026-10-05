@@ -13,6 +13,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { formatDayMonth, formatTime, relativeTime } from "@/lib/format";
+import { AppointmentDialog, type AppointmentValue } from "@/components/musteri/AppointmentDialog";
 import { CallbackDialog, ReasonDialog } from "./Dialogs";
 import { FocusCard } from "./FocusCard";
 import {
@@ -121,7 +122,7 @@ export function BugunView(props: Props) {
   const busyRef = useRef(false);
   const [distributing, setDistributing] = useState(false);
   const [dialog, setDialog] = useState<{
-    kind: "callback" | "reason";
+    kind: "callback" | "reason" | "appointment";
     note: string;
   } | null>(null);
 
@@ -175,6 +176,7 @@ export function BugunView(props: Props) {
     outcome: Outcome,
     note: string,
     callbackAt?: Date,
+    appointment?: AppointmentValue,
   ) {
     // Aynı render içindeki çift dokunuşu engelle (state kapanışı henüz güncellenmemiş olabilir)
     if (busyRef.current || !isCallOpen(item.status)) return;
@@ -205,6 +207,8 @@ export function BugunView(props: Props) {
       outcome,
       trimmed || null,
       callbackAt ? callbackAt.toISOString() : null,
+      appointment?.day ?? null,
+      appointment?.time ?? null,
     );
     busyRef.current = false;
     setBusy(false);
@@ -250,6 +254,7 @@ export function BugunView(props: Props) {
   function pick(outcome: Outcome, note: string) {
     if (!cur || busy || busyRef.current || !isCallOpen(cur.status)) return;
     if (outcome === "callback") return setDialog({ kind: "callback", note });
+    if (outcome === "appointment") return setDialog({ kind: "appointment", note });
     if (outcome === "disqualified" && !note.trim())
       return setDialog({ kind: "reason", note });
     void submit(cur, outcome, note);
@@ -669,6 +674,15 @@ export function BugunView(props: Props) {
           const d = dialog;
           setDialog(null);
           if (cur && d) void submit(cur, "callback", d.note, at);
+        }}
+      />
+      <AppointmentDialog
+        open={dialog?.kind === "appointment"}
+        onClose={() => setDialog(null)}
+        onConfirm={(v) => {
+          const d = dialog;
+          setDialog(null);
+          if (cur && d) void submit(cur, "appointment", d.note, undefined, v);
         }}
       />
       <ReasonDialog

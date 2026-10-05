@@ -10,6 +10,8 @@ export type Customer = Pick<
   | "birth_date"
   | "call_status"
   | "pipeline_stage"
+  | "appointment_day"
+  | "appointment_time"
   | "assigned_to"
   | "last_note"
   | "last_outcome"
@@ -23,7 +25,7 @@ export type Customer = Pick<
 >;
 
 export const CUSTOMER_COLUMNS =
-  "id, full_name, phone, phone_alt, operator, birth_date, call_status, pipeline_stage, assigned_to, last_note, last_outcome, source, source_detail, applied_at, attempts_in_round, pool_count, next_call_at, created_at";
+  "id, full_name, phone, phone_alt, operator, birth_date, call_status, pipeline_stage, appointment_day, appointment_time, assigned_to, last_note, last_outcome, source, source_detail, applied_at, attempts_in_round, pool_count, next_call_at, created_at";
 
 export type MemberLite = { id: string; full_name: string; is_active: boolean };
 

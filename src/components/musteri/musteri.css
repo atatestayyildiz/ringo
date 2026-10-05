@@ -732,3 +732,43 @@
     transform: none;
   }
 }
+
+/* ---------- randevu penceresi ---------- */
+.mu-ap-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.mu-ap-chip {
+  border: 0;
+  padding: 9px 14px;
+  min-height: 44px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.mu-ap-chip:hover {
+  color: var(--ink);
+}
+.mu-ap-chip[aria-pressed="true"] {
+  background: var(--c-done);
+  color: #fff;
+}
+.mu-ap-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.mu-ap-badge[data-overdue] {
+  background: color-mix(in srgb, var(--c-bad) 16%, transparent);
+  color: var(--c-bad);
+}

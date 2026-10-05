@@ -13,6 +13,8 @@ export async function logCallAction(
   outcome: string,
   note: string | null,
   callbackAt: string | null,
+  appointmentDay: string | null = null,
+  appointmentTime: string | null = null,
 ): Promise<LogCallResult> {
   if (!UUID.test(customerId) || !OUTCOME_VALUES.includes(outcome as Outcome)) {
     return { ok: false, error: "Geçersiz istek. Sayfayı yenileyip tekrar deneyin." };
@@ -26,6 +28,18 @@ export async function logCallAction(
     }
     cb = d.toISOString();
   }
+  let apDay: string | undefined;
+  let apTime: string | undefined;
+  if (outcome === "appointment") {
+    if (appointmentDay && !/^\d{4}-\d{2}-\d{2}$/.test(appointmentDay)) {
+      return { ok: false, error: "Randevu günü geçersiz." };
+    }
+    if (appointmentTime && !/^\d{2}:\d{2}$/.test(appointmentTime)) {
+      return { ok: false, error: "Randevu saati geçersiz." };
+    }
+    apDay = appointmentDay ?? undefined;
+    apTime = appointmentDay ? (appointmentTime ?? undefined) : undefined;
+  }
   if (outcome === "disqualified" && !cleanNote) {
     return { ok: false, error: "Uygun değil için nedeni not olarak yazın." };
   }
@@ -36,6 +50,8 @@ export async function logCallAction(
     p_outcome: outcome,
     p_note: cleanNote || undefined,
     p_callback_at: cb,
+    p_appointment_day: apDay,
+    p_appointment_time: apTime,
   });
   if (error || !data) {
     return { ok: false, error: toUserMessage(error) };

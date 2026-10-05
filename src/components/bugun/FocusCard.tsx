@@ -46,7 +46,7 @@ const OUTCOME_BUTTONS: {
     outcome: "appointment",
     Icon: IconStore,
     title: "Dükkana gelecek",
-    sub: "Randevu oluştur",
+    sub: "Gün ve saat seç",
     color: "var(--c-done)",
   },
   {

@@ -1,5 +1,7 @@
 "use client";
 
+import { appointmentBadge } from "@/lib/appointment";
+import { ChangeAppointmentDialog } from "./AppointmentDialog";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -190,6 +192,7 @@ function Body({
             Aşamayı yalnız yönetici veya müşterinin atandığı çalışan değiştirebilir.
           </p>
         )}
+        {c.pipeline_stage === "appointment" ? <AppointmentRow customer={c} canChange={canStage} onDone={refresh} /> : null}
       </section>
 
       {viewer.isManager || viewer.canReassign ? (
@@ -309,6 +312,35 @@ function EditForm({ customer: c, onCancel, onSaved }: { customer: Customer; onCa
         </Button>
       </div>
     </form>
+  );
+}
+
+/* ---------- randevu zamanı (set_appointment) ---------- */
+function AppointmentRow({ customer: c, canChange, onDone }: { customer: Customer; canChange: boolean; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const b = appointmentBadge(c.pipeline_stage, c.appointment_day, c.appointment_time);
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+      <span style={{ fontSize: 14, color: "var(--ink-2)" }}>Randevu zamanı:</span>
+      <span className="mu-ap-badge" data-overdue={b.overdue ? "" : undefined}>
+        {b.text}
+      </span>
+      {canChange ? (
+        <Button size="sm" variant="soft" onClick={() => setOpen(true)}>
+          Değiştir
+        </Button>
+      ) : null}
+      <ChangeAppointmentDialog
+        open={open}
+        customerId={c.id}
+        initial={{ day: c.appointment_day, time: c.appointment_time }}
+        onClose={() => setOpen(false)}
+        onDone={() => {
+          setOpen(false);
+          onDone();
+        }}
+      />
+    </div>
   );
 }
 
