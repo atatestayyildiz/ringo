@@ -650,12 +650,12 @@ async function main() {
           }
         });
       }
-      await ayseCookie.client.auth.signOut().catch(() => {});
-      await elifCookie.client.auth.signOut().catch(() => {});
+      await ayseCookie.client.auth.signOut({ scope: "local" }).catch(() => {});
+      await elifCookie.client.auth.signOut({ scope: "local" }).catch(() => {});
     }
   }
 
-  for (const c of [elif, ayse, can, manager]) await c.auth.signOut().catch(() => {});
+  for (const c of [elif, ayse, can, manager]) await c.auth.signOut({ scope: "local" }).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------
@@ -760,8 +760,8 @@ async function logoAndResetProbe() {
 
   // Beklenmedik başarıyla oluşan dosyaları temizle
   if (created.length) await admin.storage.from("brand-logos").remove(created);
-  await mgr.auth.signOut().catch(() => {});
-  await elifC.auth.signOut().catch(() => {});
+  await mgr.auth.signOut({ scope: "local" }).catch(() => {});
+  await elifC.auth.signOut({ scope: "local" }).catch(() => {});
 }
 
 main()
