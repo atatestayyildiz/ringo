@@ -5,6 +5,7 @@ import {
   HEX_RE,
   PERM_KEYS,
   checkRule,
+  DISTRIBUTION_MODES,
   RULE_LIMITS,
   type ActionResult,
   type PermKey,
@@ -35,8 +36,8 @@ export async function saveRulesAction(v: RulesValues): Promise<ActionResult<{ su
     const err = checkRule(key, Number(v[key]));
     if (err) return { ok: false, error: err };
   }
-  if (v.distribution_mode !== "auto_even") {
-    return { ok: false, error: "Şimdilik yalnız otomatik eşit dağıtım seçilebilir." };
+  if (!DISTRIBUTION_MODES.includes(v.distribution_mode)) {
+    return { ok: false, error: "Geçersiz dağıtım yöntemi. Sayfayı yenileyip tekrar deneyin." };
   }
 
   const supabase = await createClient();
@@ -47,6 +48,7 @@ export async function saveRulesAction(v: RulesValues): Promise<ActionResult<{ su
       pool_wait_days: v.pool_wait_days,
       max_rounds: v.max_rounds,
       birthday_notice_days: v.birthday_notice_days,
+      claim_limit: v.claim_limit,
       distribution_mode: v.distribution_mode,
     })
     .eq("tenant_id", ctx.member.tenant_id)

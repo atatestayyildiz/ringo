@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useLayoutEffect, useRef, useState } from "react";
-import { distributeDayAction, logCallAction } from "@/app/(app)/bugun/actions";
+import { claimNextAction, distributeDayAction, logCallAction } from "@/app/(app)/bugun/actions";
 import { IconArrow, IconChat, IconClock, IconInfo } from "@/components/icons";
 import {
   Avatar,
   Button,
+  ButtonLink,
   Card,
   EmptyState,
   StatusBadge,
@@ -24,6 +26,8 @@ import {
   logText,
   toneOf,
   type BirthdayInfo,
+  type ClaimInfo,
+  type DistributionMode,
   type Item,
   type Outcome,
   type PoolInfo,
@@ -43,6 +47,10 @@ type Props = {
   items: Item[];
   birthday: BirthdayInfo | null;
   pool: PoolInfo;
+  /** Kiracının dağıtım yöntemi */
+  mode: DistributionMode;
+  /** Serbest havuz kartı sayıları; yalnız free_pool modunda dolu */
+  claim: ClaimInfo | null;
   rulesText: string;
   rules: RuleNumbers;
   team: TeamRow[] | null;
@@ -96,8 +104,9 @@ function pickNext(items: Item[], fromId: string): string | null {
 }
 
 export function BugunView(props: Props) {
-  const { isManager, teamView, rules, pool, birthday, team } = props;
+  const { isManager, teamView, rules, pool, birthday, team, mode, claim } = props;
   const toast = useToast();
+  const router = useRouter();
 
   const { todayKey } = props;
   const activeOf = (l: Item[]) => l.filter((i) => !isDeferred(i, todayKey));
@@ -121,6 +130,7 @@ export function BugunView(props: Props) {
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const [distributing, setDistributing] = useState(false);
+  const [claiming, setClaiming] = useState(false);
   const [dialog, setDialog] = useState<{
     kind: "callback" | "reason" | "appointment";
     note: string;
@@ -132,7 +142,7 @@ export function BugunView(props: Props) {
     setItems(props.items);
     const act = activeOf(props.items);
     if (curId === null || !act.some((i) => i.id === curId))
-      setCurId(defaultCursor(act));
+      setCurId(startCursor(act));
   }
 
   // Bugünden sonraya ertelenenler bugünün sayısından, çubuktan ve sıradan düşer
@@ -272,6 +282,20 @@ export function BugunView(props: Props) {
     );
   }
 
+  async function claimNext() {
+    if (claiming) return;
+    setClaiming(true);
+    const res = await claimNextAction();
+    setClaiming(false);
+    if (!res.ok) return toast(res.error, "error");
+    if (res.id === null) return toast("Şu an sırada bekleyen müşteri yok.");
+    toast(`${res.name} listene eklendi.`);
+    router.replace(`/bugun?m=${res.id}`, { scroll: false });
+  }
+
+  const showClaim = mode === "free_pool" && !isManager && !teamView && claim !== null;
+  const atLimit = claim !== null && claim.open >= claim.limit;
+
   const matches = (i: Item) => filter === null || toneOf(i.status) === filter;
   const retryItems = items.filter((i) => i.status === "retry");
   const queue = items.filter(matches).sort((a, b) => {
@@ -379,8 +403,39 @@ export function BugunView(props: Props) {
           <EmptyState title="Bugün listen boş.">
             {deferredItems.length > 0
               ? "Ertelenenler vakti gelince listeye döner."
-              : "Yönetici dağıtım yapınca burada görünecek."}
+              : mode === "free_pool"
+                ? "Sıradaki müşteriyi alarak başla."
+                : mode === "manual"
+                  ? "Yönetici müşteri atayınca burada görünecek."
+                  : "Yönetici dağıtım yapınca burada görünecek."}
           </EmptyState>
+        </Card>
+      ) : null}
+
+      {showClaim && claim ? (
+        <Card className={styles.claimCard} data-testid="claim-card">
+          <div className={styles.claimText}>
+            <h2>Sıradaki müşteriyi al</h2>
+            <p>
+              {claim.waiting > 0 ? (
+                <>
+                  Sırada <b>{claim.waiting}</b> müşteri bekliyor.
+                </>
+              ) : (
+                "Şu an sırada bekleyen müşteri yok."
+              )}{" "}
+              {atLimit
+                ? `Listende ${claim.open} açık müşteri var, sınır ${claim.limit}. Onları arayınca yenisini alabilirsin.`
+                : `Açık müşterin ${claim.open} / ${claim.limit}.`}
+            </p>
+          </div>
+          <Button
+            variant="brand"
+            onClick={claimNext}
+            disabled={claiming || atLimit || claim.waiting === 0}
+          >
+            {claiming ? "Alınıyor" : "Sıradaki müşteriyi al"}
+          </Button>
         </Card>
       ) : null}
 
@@ -619,7 +674,7 @@ export function BugunView(props: Props) {
                 </Link>
               </h2>
               <div className={styles.poolBig}>
-                <b>{pool.count}</b>
+                <b data-testid="pool-count">{pool.count}</b>
                 <span>kişi bekliyor</span>
               </div>
               <p className={styles.empty}>
@@ -648,18 +703,39 @@ export function BugunView(props: Props) {
               <Card>
                 <h2>Dağıtım</h2>
                 <div className={styles.distribute}>
-                  <p>
-                    Bekleyen müşterileri bugünün listesine çalışanlar arasında
-                    eşit dağıtır. Aynı gün tekrar çalıştırırsan yalnız yeni
-                    gelenler eklenir.
-                  </p>
-                  <Button
-                    variant="brand"
-                    onClick={distribute}
-                    disabled={distributing}
-                  >
-                    {distributing ? "Dağıtılıyor" : "Dağıt"}
-                  </Button>
+                  {mode === "auto_even" ? (
+                    <>
+                      <p>
+                        Bekleyen müşterileri bugünün listesine çalışanlar arasında
+                        eşit dağıtır. Aynı gün tekrar çalıştırırsan yalnız yeni
+                        gelenler eklenir.
+                      </p>
+                      <Button
+                        variant="brand"
+                        onClick={distribute}
+                        disabled={distributing}
+                      >
+                        {distributing ? "Dağıtılıyor" : "Dağıt"}
+                      </Button>
+                    </>
+                  ) : mode === "manual" ? (
+                    <>
+                      <p>
+                        Elle dağıtım açık. Yeni müşterileri Müşteriler ekranında
+                        seçip çalışana ata; atanan müşteri onun bugünkü listesine
+                        düşer.
+                      </p>
+                      <ButtonLink variant="brand" href="/musteriler?atanan=yok">
+                        Müşterileri ata
+                      </ButtonLink>
+                    </>
+                  ) : (
+                    <p>
+                      Serbest havuz açık. Çalışanlar sıradaki müşteriyi kendileri
+                      alır
+                      {claim ? `, şu an sırada ${claim.waiting} müşteri var` : ""}.
+                    </p>
+                  )}
                 </div>
               </Card>
             </div>

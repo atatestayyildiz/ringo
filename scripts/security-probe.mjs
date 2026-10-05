@@ -260,6 +260,7 @@ async function main() {
     ["_telegram_link_limited", { p_chat_id: 1 }],
     ["_report_range", { p_tenant: fakeTenant, p_member: null, p_from: "2026-01-01", p_to: "2026-01-31" }],
     ["_move_open_work", { p_tenant: fakeTenant, p_from: randomUUID(), p_to: [], p_day: "2000-01-01" }],
+    ["_open_claim_count", { p_tenant: fakeTenant, p_member: randomUUID() }],
   ];
   for (const [fn, args] of internalCalls) {
     await check(GI, `${fn}: authenticated reddedilir`, async () => expectError(await elif.rpc(fn, args), DENIED));
@@ -392,6 +393,11 @@ async function main() {
   await check(G2, "list_pool: anon reddedilir", async () => expectError(await anonClient.rpc("list_pool"), FN_DENIED));
   await check(G2, "take_from_pool: anon reddedilir", async () =>
     expectError(await anonClient.rpc("take_from_pool", { p_customer: elifCust.id }), FN_DENIED),
+  );
+  // Dağıtım modları (2026-10-05)
+  await check(G2, "claim_next: anon reddedilir", async () => expectError(await anonClient.rpc("claim_next"), FN_DENIED));
+  await check(G2, "claim_queue_status: anon reddedilir", async () =>
+    expectError(await anonClient.rpc("claim_queue_status"), FN_DENIED),
   );
   await check(G2, "list_pool: sonuçta telefon alanı yok", async () => {
     const r = await ayse.rpc("list_pool").limit(1);

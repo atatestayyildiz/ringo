@@ -4,10 +4,18 @@ import { useState, useTransition } from "react";
 import { saveRulesAction } from "@/app/(app)/ayarlar/actions";
 import { Button, Card, Input, Select, useToast } from "@/components/ui";
 import type { TenantSettings } from "@/lib/session";
-import { RULE_LIMITS, checkRule, rulesSummary, type RulesValues } from "./shared";
+import {
+  DISTRIBUTION_MODES,
+  MODE_LABEL,
+  RULE_LIMITS,
+  checkRule,
+  modeSummary,
+  rulesSummary,
+  type DistributionMode,
+} from "./shared";
 import s from "./ayarlar.module.css";
 
-type NumKey = keyof typeof RULE_LIMITS;
+type NumKey = Exclude<keyof typeof RULE_LIMITS, "claim_limit">;
 
 const FIELDS: { key: NumKey; label: string; hint: string }[] = [
   { key: "max_attempts", label: "Tur başına deneme", hint: "Başarısız arama sayısı. Dolunca müşteri havuza düşer." },
@@ -25,7 +33,12 @@ export function RulesForm({ settings, summary }: { settings: TenantSettings; sum
     max_rounds: String(settings.max_rounds),
     birthday_notice_days: String(settings.birthday_notice_days),
   });
-  const [mode, setMode] = useState<RulesValues["distribution_mode"]>("auto_even");
+  const [mode, setMode] = useState<DistributionMode>(
+    DISTRIBUTION_MODES.includes(settings.distribution_mode as DistributionMode)
+      ? (settings.distribution_mode as DistributionMode)
+      : "auto_even",
+  );
+  const [claimRaw, setClaimRaw] = useState(String(settings.claim_limit));
   const [saved, setSaved] = useState(summary);
 
   const errors: Partial<Record<NumKey, string>> = {};
@@ -37,7 +50,11 @@ export function RulesForm({ settings, summary }: { settings: TenantSettings; sum
     const e = checkRule(f.key, n);
     if (e) errors[f.key] = e;
   }
-  const valid = Object.keys(errors).length === 0;
+  const claimNum = claimRaw.trim() === "" ? NaN : Number(claimRaw.trim());
+  // Sınır yalnız serbest havuzda görünür; diğer modda alan gizliyken kayıtlı değer korunur
+  const claimError = mode === "free_pool" ? checkRule("claim_limit", claimNum) : null;
+  const claimValue = mode === "free_pool" ? claimNum : settings.claim_limit;
+  const valid = Object.keys(errors).length === 0 && !claimError;
   const liveOk = !errors.max_attempts && !errors.pool_wait_days && !errors.max_rounds;
 
   const save = () => {
@@ -46,7 +63,7 @@ export function RulesForm({ settings, summary }: { settings: TenantSettings; sum
       return;
     }
     start(async () => {
-      const res = await saveRulesAction({ ...nums, distribution_mode: mode });
+      const res = await saveRulesAction({ ...nums, claim_limit: claimValue, distribution_mode: mode });
       if (res.ok) {
         setSaved(res.summary);
         toast("Kurallar kaydedildi.");
@@ -79,18 +96,29 @@ export function RulesForm({ settings, summary }: { settings: TenantSettings; sum
             <Select
               label="Dağıtım yöntemi"
               value={mode}
-              onChange={(e) => setMode(e.target.value as RulesValues["distribution_mode"])}
+              onChange={(e) => setMode(e.target.value as DistributionMode)}
             >
-              <option value="auto_even">Otomatik eşit dağıtım</option>
-              <option value="free_pool" disabled>
-                Serbest havuz (yakında)
-              </option>
-              <option value="manual" disabled>
-                Elle dağıtım (yakında)
-              </option>
+              {DISTRIBUTION_MODES.map((m) => (
+                <option key={m} value={m}>
+                  {MODE_LABEL[m]}
+                </option>
+              ))}
             </Select>
-            <p className={s.modeNote}>Şimdilik yalnız otomatik eşit dağıtım kullanılabilir.</p>
+            <p className={s.modeNote}>Yeni gelen müşterilerin çalışanlara nasıl ulaşacağını belirler.</p>
           </div>
+          {mode === "free_pool" ? (
+            <Input
+              label="Aynı anda en fazla açık müşteri"
+              hint="Çalışan listesinde bu kadar aranmamış müşteri varken yenisini alamaz."
+              error={claimError ?? undefined}
+              type="number"
+              inputMode="numeric"
+              min={RULE_LIMITS.claim_limit[0]}
+              max={RULE_LIMITS.claim_limit[1]}
+              value={claimRaw}
+              onChange={(e) => setClaimRaw(e.target.value)}
+            />
+          ) : null}
         </div>
         <div className={s.actions}>
           <Button variant="brand" onClick={save} disabled={pending}>
@@ -110,6 +138,10 @@ export function RulesForm({ settings, summary }: { settings: TenantSettings; sum
                   max_rounds: nums.max_rounds,
                 })
               : "Geçerli sayılar girince kural özeti burada görünür."}
+          </div>
+          <h2 style={{ marginTop: 16 }}>{MODE_LABEL[mode]}</h2>
+          <div className={`${s.summary} ${s.summaryLive}`} aria-live="polite" data-testid="mode-summary">
+            {modeSummary(mode, claimError ? settings.claim_limit : claimValue)}
           </div>
         </Card>
         <Card>

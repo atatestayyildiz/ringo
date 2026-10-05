@@ -66,6 +66,21 @@ test.afterAll(async ({ browser }) => {
   }
 });
 
+test("Bugün'deki havuz kartı ortak: Ayşe, Elif'in havuz müşterisi dahil kiracının tüm havuzunu sayar", async ({ browser }) => {
+  const { context, page } = await freshPage(browser);
+  try {
+    await loginOk(page, "ayse");
+    const count = Number(await page.getByTestId("pool-count").innerText());
+    await page.goto("/havuz");
+    const rows = page.getByTestId("pool-row");
+    await expect(rows.filter({ hasText: name })).toBeVisible();
+    expect(count).toBeGreaterThanOrEqual(1);
+    expect(await rows.count()).toBe(count);
+  } finally {
+    await context.close();
+  }
+});
+
 test("Ayşe, Elif'in havuzdaki müşterisini telefonsuz görür ve Kendime al ile Bugün listesine alır", async ({ browser }) => {
   const { context, page } = await freshPage(browser, { viewport: { width: 375, height: 812 } });
   await loginOk(page, "ayse");

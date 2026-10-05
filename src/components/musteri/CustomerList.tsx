@@ -37,6 +37,8 @@ export function CustomerList({
   // Yalnız görünen sayfadaki satırlar sayılır; sayfa veya filtre değişince eski seçim düşer.
   const picked = rows.filter((r) => checked.has(r.id));
   const allPicked = rows.length > 0 && picked.length === rows.length;
+  // Seçimin tamamı atanmamışsa işlem "atama"dır (elle dağıtım akışı); metin buna göre değişir
+  const assigning = picked.length > 0 && picked.every((r) => !r.assigned_to);
 
   useEffect(() => {
     if (allRef.current) allRef.current.indeterminate = picked.length > 0 && !allPicked;
@@ -57,7 +59,7 @@ export function CustomerList({
     startTransfer(async () => {
       const res = await reassignCustomersAction(ids, to);
       if (res.ok) {
-        toast(`${res.moved} müşteri aktarıldı`);
+        toast(assigning ? `${res.moved} müşteri atandı` : `${res.moved} müşteri aktarıldı`);
         setChecked(new Set());
         setTransferOpen(false);
         setTo("");
@@ -145,15 +147,17 @@ export function CustomerList({
             Temizle
           </Button>
           <Button size="sm" onClick={() => setTransferOpen(true)}>
-            Aktar
+            {assigning ? "Ata" : "Aktar"}
           </Button>
         </div>
       ) : null}
-      <Modal open={transferOpen} onClose={() => (pending ? undefined : setTransferOpen(false))} title="Müşterileri aktar">
+      <Modal open={transferOpen} onClose={() => (pending ? undefined : setTransferOpen(false))} title={assigning ? "Müşterileri ata" : "Müşterileri aktar"}>
         <p className="mu-confirm">
-          {picked.length} müşteri seçilen çalışana aktarılacak. Bugünün listesindeki kayıtları da onun listesine geçer.
+          {assigning
+            ? `${picked.length} müşteri seçilen çalışana atanacak. Elle dağıtımda bugünkü listesine de eklenir.`
+            : `${picked.length} müşteri seçilen çalışana aktarılacak. Bugünün listesindeki kayıtları da onun listesine geçer.`}
         </p>
-        <Select label="Kime aktarılsın" value={to} onChange={(e) => setTo(e.target.value)}>
+        <Select label={assigning ? "Kime atansın" : "Kime aktarılsın"} value={to} onChange={(e) => setTo(e.target.value)}>
           <option value="">Çalışan seçin</option>
           {members
             .filter((m) => m.is_active)
@@ -168,7 +172,7 @@ export function CustomerList({
             Vazgeç
           </Button>
           <Button variant="ink" onClick={confirmTransfer} disabled={pending || !to}>
-            {pending ? "Aktarılıyor" : "Aktar"}
+            {pending ? (assigning ? "Atanıyor" : "Aktarılıyor") : assigning ? "Ata" : "Aktar"}
           </Button>
         </div>
       </Modal>

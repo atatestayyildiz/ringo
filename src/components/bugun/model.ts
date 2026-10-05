@@ -108,6 +108,16 @@ export type LogCallResult =
   | { ok: true; status: CallStatus; attempts: number; poolCount: number; nextCallAt: string }
   | { ok: false; error: string };
 
+export type DistributionMode = "auto_even" | "free_pool" | "manual";
+
+/** Serbest havuz kartı: sırada bekleyen, açık müşteri sayısı ve sınır (claim_queue_status). */
+export type ClaimInfo = { waiting: number; open: number; limit: number };
+
+export type ClaimResult =
+  | { ok: true; id: string; name: string }
+  | { ok: true; id: null }
+  | { ok: false; error: string };
+
 export type DistributeResult = { ok: true; count: number } | { ok: false; error: string };
 
 export function logText(e: LogEntry): string {

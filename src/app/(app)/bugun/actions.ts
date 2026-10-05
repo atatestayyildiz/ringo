@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { OUTCOME_VALUES, type DistributeResult, type LogCallResult, type Outcome } from "@/components/bugun/model";
+import { OUTCOME_VALUES, type ClaimResult, type DistributeResult, type LogCallResult, type Outcome } from "@/components/bugun/model";
 import type { CallStatus } from "@/components/ui";
 import { toUserMessage } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
@@ -74,4 +74,16 @@ export async function distributeDayAction(): Promise<DistributeResult> {
   }
   revalidatePath("/bugun");
   return { ok: true, count: data ?? 0 };
+}
+
+/** Serbest havuz: sıradaki (en eski) bekleyen müşteriyi çağırana verir. Kural ve sınır DB'de (claim_next). */
+export async function claimNextAction(): Promise<ClaimResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("claim_next");
+  if (error) {
+    return { ok: false, error: toUserMessage(error) };
+  }
+  revalidatePath("/bugun");
+  if (!data || !data.id) return { ok: true, id: null };
+  return { ok: true, id: data.id, name: data.full_name };
 }

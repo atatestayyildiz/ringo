@@ -5,6 +5,7 @@ export type RulesValues = {
   pool_wait_days: number;
   max_rounds: number;
   birthday_notice_days: number;
+  claim_limit: number;
   distribution_mode: "auto_even" | "free_pool" | "manual";
 };
 
@@ -13,7 +14,31 @@ export const RULE_LIMITS: Record<Exclude<keyof RulesValues, "distribution_mode">
   pool_wait_days: [1, 60, "Havuz bekleme günü"],
   max_rounds: [0, 10, "Havuza düşme sayısı"],
   birthday_notice_days: [0, 30, "Doğum günü uyarısı"],
+  claim_limit: [1, 50, "Açık müşteri sınırı"],
 };
+
+export type DistributionMode = RulesValues["distribution_mode"];
+
+export const DISTRIBUTION_MODES: DistributionMode[] = ["auto_even", "free_pool", "manual"];
+
+export const MODE_LABEL: Record<DistributionMode, string> = {
+  auto_even: "Otomatik eşit dağıtım",
+  free_pool: "Serbest havuz",
+  manual: "Elle dağıtım",
+};
+
+/** Dağıtım yönteminin sade Türkçe açıklaması (canlı önizleme). */
+export function modeSummary(mode: DistributionMode, claimLimit: number): string {
+  const keep = "Tekrar aranacak müşteri her zaman onu arayan çalışanın listesinde kalır.";
+  switch (mode) {
+    case "auto_even":
+      return `Her sabah dağıtım saatinde bekleyen yeni müşteriler çalışanlara eşit bölünür. ${keep}`;
+    case "free_pool":
+      return `Sabah dağıtım yapılmaz. Çalışan Bugün ekranında "Sıradaki müşteriyi al" der, sistem en eski bekleyen müşteriyi verir; kimse listeden seçemez. Bir çalışanın aynı anda en fazla ${claimLimit} açık müşterisi olur. Havuzdan dönen müşteri sıraya girer. ${keep}`;
+    case "manual":
+      return `Sabah yeni müşteri dağıtılmaz. Yönetici Müşteriler ekranından seçip çalışana atar, atanan müşteri o çalışanın bugünkü listesine düşer. Havuzdan dönen müşteri atanmayı bekler. ${keep}`;
+  }
+}
 
 /** Hata varsa Türkçe mesaj, yoksa null. */
 export function checkRule(key: keyof typeof RULE_LIMITS, n: number): string | null {

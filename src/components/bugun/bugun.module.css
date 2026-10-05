@@ -940,3 +940,26 @@
 .deferredList {
   margin-top: 14px;
 }
+
+/* ---------- serbest havuz: sıradaki müşteriyi al ---------- */
+.claimCard {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.claimText {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+.claimText h2 {
+  margin: 0 0 6px;
+}
+.claimText p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.45;
+}

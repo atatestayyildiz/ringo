@@ -3,6 +3,8 @@ import {
   firstName,
   sourceLabel,
   type BirthdayInfo,
+  type ClaimInfo,
+  type DistributionMode,
   type Item,
   type PoolInfo,
   type TeamRow,
@@ -54,7 +56,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
 
   const weekIso = new Date(now.getTime() + 7 * 86_400_000).toISOString();
 
-  const [customersRes, attemptsRes, birthdaysRes, rulesRes, poolRes, summaryRes, membersRes] = await Promise.all([
+  const mode: DistributionMode =
+    settings.distribution_mode === "free_pool" || settings.distribution_mode === "manual"
+      ? settings.distribution_mode
+      : "auto_even";
+
+  const [customersRes, attemptsRes, birthdaysRes, rulesRes, poolRes, summaryRes, membersRes, claimRes] = await Promise.all([
     ids.length
       ? supabase
           .from("customers")
@@ -73,14 +80,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
       : Promise.resolve({ data: [] }),
     supabase.rpc("upcoming_birthdays"),
     supabase.rpc("rules_summary_text"),
-    supabase
-      .from("customers")
-      .select("next_call_at")
-      .eq("call_status", "pool")
-      .order("next_call_at")
-      .limit(500),
+    // Ortak havuz: kiracının tüm havuzu (Havuz sayfasıyla aynı kaynak, telefon yok)
+    supabase.rpc("list_pool"),
     isManager ? supabase.rpc("day_summary", { p_day: today }) : Promise.resolve({ data: null }),
     teamView ? supabase.from("members").select("id, full_name") : Promise.resolve({ data: [] }),
+    mode === "free_pool" ? supabase.rpc("claim_queue_status") : Promise.resolve({ data: null }),
   ]);
 
   const byId = new Map((customersRes.data ?? []).map((c) => [c.id, c]));
@@ -135,6 +139,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
     thisWeek: poolDates.filter((d) => d <= weekIso).length,
   };
 
+  const cq = claimRes.data?.[0];
+  const claim: ClaimInfo | null = cq ? { waiting: cq.waiting, open: cq.open_count, limit: cq.claim_limit } : null;
+
   const team: TeamRow[] | null = isManager
     ? (summaryRes.data ?? []).map((s) => ({
         memberId: s.member_id,
@@ -156,6 +163,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
       items={items}
       birthday={birthday}
       pool={pool}
+      mode={mode}
+      claim={claim}
       rulesText={rulesRes.data ?? ""}
       rules={{
         maxAttempts: settings.max_attempts,
