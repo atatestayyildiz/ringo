@@ -217,6 +217,20 @@
   color: var(--ink-2);
   font-size: 14px;
 }
+.mu-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+.mu-actions .btn {
+  min-height: 44px;
+  justify-content: center;
+}
+.mu-actions .btn[data-disabled] {
+  opacity: 0.45;
+  pointer-events: none;
+}
 .mu-badges {
   display: flex;
   gap: 6px;
@@ -907,4 +921,16 @@
 .mu-ap-badge[data-overdue] {
   background: color-mix(in srgb, var(--c-bad) 16%, transparent);
   color: var(--c-bad);
+}
+
+/* huni mobil: tüm sütun başlıkları iki satırlık sabit yükseklikte, metin dikeyde ortalı */
+@media (max-width: 560px) {
+  .view-huni .mu-board .mu-col-head b {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: content-box;
+    height: 2.3em;
+    width: 100%;
+  }
 }

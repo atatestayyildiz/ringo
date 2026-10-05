@@ -112,6 +112,9 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+.controls label:empty {
+  display: none;
+}
 .roleSelect {
   width: auto;
   min-width: 130px;
@@ -293,6 +296,21 @@
   }
   .roleSelect {
     min-height: 44px;
+    width: 100%;
+    min-width: 0;
+  }
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+  .controls > * {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    justify-content: center;
+    padding-left: 8px;
+    padding-right: 8px;
   }
   .swatches button {
     width: 44px;
