@@ -184,10 +184,9 @@
 }
 
 /* kuyruk basligi: genisleyince kart icinde yapiskan */
-.queueTop {
-  display: block;
-  height: 0;
-  scroll-margin-top: 24px;
+.queueCard {
+  /* konumu toggleQueue elle korur; tarayıcı çapası çift telafi yapmasın */
+  overflow-anchor: none;
 }
 .qHead {
   display: flex;

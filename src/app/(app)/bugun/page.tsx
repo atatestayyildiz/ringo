@@ -24,7 +24,8 @@ function greeting(now: Date): string {
   return "İyi akşamlar";
 }
 
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ m?: string }> }) {
+  const { m: focusParam } = await searchParams;
   const { member, settings } = await getSessionContext();
   const supabase = await createClient();
   const now = new Date();
@@ -162,6 +163,7 @@ export default async function Page() {
         maxRounds: settings.max_rounds,
       }}
       team={team}
+      focusId={typeof focusParam === "string" ? focusParam : null}
     />
   );
 }

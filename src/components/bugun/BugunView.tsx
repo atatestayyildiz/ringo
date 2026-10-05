@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { distributeDayAction, logCallAction } from "@/app/(app)/bugun/actions";
 import { IconArrow, IconChat, IconClock, IconInfo } from "@/components/icons";
 import {
@@ -45,6 +45,8 @@ type Props = {
   rulesText: string;
   rules: RuleNumbers;
   team: TeamRow[] | null;
+  /** Hatırlatma kartından gelen müşteri: odak kartında açılır */
+  focusId?: string | null;
 };
 
 const QUEUE_LIMIT = 6;
@@ -100,9 +102,19 @@ export function BugunView(props: Props) {
   const activeOf = (l: Item[]) => l.filter((i) => !isDeferred(i, todayKey));
   const [prevItems, setPrevItems] = useState(props.items);
   const [allItems, setItems] = useState(props.items);
+  const startCursor = (list: Item[]) =>
+    props.focusId && list.some((i) => i.id === props.focusId)
+      ? props.focusId
+      : defaultCursor(list);
   const [curId, setCurId] = useState<string | null>(() =>
-    defaultCursor(activeOf(props.items)),
+    startCursor(activeOf(props.items)),
   );
+  const [prevFocus, setPrevFocus] = useState(props.focusId);
+  if (props.focusId !== prevFocus) {
+    setPrevFocus(props.focusId);
+    if (props.focusId && activeOf(props.items).some((i) => i.id === props.focusId))
+      setCurId(props.focusId);
+  }
   const [showDeferred, setShowDeferred] = useState(false);
   const [nonce, setNonce] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -131,20 +143,24 @@ export function BugunView(props: Props) {
   const [showAll, setShowAll] = useState(false);
   const [filter, setFilter] = useState<Tone | null>(null);
   const focusRef = useRef<HTMLElement>(null);
-  const queueTopRef = useRef<HTMLSpanElement>(null);
+  // Daralt/Genişlet: basılan düğme ekranda aynı yerde kalır, içerik onun altında değişir
+  const anchorRef = useRef<{ el: HTMLElement; top: number } | null>(null);
 
-  function toggleQueue() {
-    const collapsing = showAll;
-    setShowAll(!collapsing);
-    if (collapsing) {
-      const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      // Daralan listenin yüksekliği düşmeden önce kartın başına dön
-      queueTopRef.current?.scrollIntoView({
-        block: "start",
-        behavior: calm ? "auto" : "smooth",
-      });
-    }
+  function toggleQueue(e: React.MouseEvent<HTMLButtonElement>) {
+    anchorRef.current = {
+      el: e.currentTarget,
+      top: e.currentTarget.getBoundingClientRect().top,
+    };
+    setShowAll((v) => !v);
   }
+
+  useLayoutEffect(() => {
+    const a = anchorRef.current;
+    anchorRef.current = null;
+    if (!a || !a.el.isConnected) return;
+    const delta = a.el.getBoundingClientRect().top - a.top;
+    if (Math.abs(delta) >= 1) window.scrollBy({ top: delta, behavior: "instant" });
+  }, [showAll]);
 
   const curFallback = items.some((i) => i.id === curId)
     ? curId
@@ -382,7 +398,6 @@ export function BugunView(props: Props) {
 
           {items.length > 0 ? (
             <Card className={styles.queueCard}>
-              <span ref={queueTopRef} className={styles.queueTop} aria-hidden />
               <div className={`${styles.qHead}${showAll ? ` ${styles.qHeadSticky}` : ""}`}>
                 <h2>
                   Bugünün sırası

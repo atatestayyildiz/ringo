@@ -67,8 +67,10 @@ test("3 kez Açmadı müşteriyi havuza düşürür ve Havuz'da görünür", asy
     await slot(page, names.a).click();
     const label = (await slot(page, names.a).getAttribute("aria-label")) ?? "";
     if (/Havuzda/.test(label)) break;
+    // Ekran önce geçici "Tekrar ara" gösterir; kesin durum için server action yanıtını bekle
+    const done = page.waitForResponse((r) => r.request().method() === "POST" && new URL(r.url()).pathname === "/bugun");
     await page.getByRole("button", { name: /Açmadı/ }).click();
-    // sunucu cevabı gelene kadar bekle: düğmeler tekrar açılır
+    await done;
     await expect(slot(page, names.a)).toHaveAccessibleName(/Tekrar ara|Havuzda/);
     await page.waitForLoadState("networkidle");
   }
@@ -159,7 +161,7 @@ test("mobil 375px: Ara butonu görünür, menü örtmez, yatay taşma yok", asyn
   await loginOk(page, owners.c!);
 
   await slot(page, names.c).click();
-  const ara = page.getByRole("link", { name: "Ara", exact: true });
+  const ara = page.getByRole("main").getByRole("link", { name: "Ara", exact: true });
   await ara.scrollIntoViewIfNeeded();
   await expect(ara).toBeVisible();
 
@@ -213,5 +215,57 @@ test("durum filtresi hapları ve listeyi süzer, Daralt başlıkta erişilir", a
   await expect(daralt).toBeInViewport();
   await daralt.click();
   await expect(card.getByRole("button", { name: /^Tümünü göster/ }).first()).toBeVisible();
+  await context.close();
+});
+
+test("Daralt ve Genişlet: basılan düğme ekranda yerinde kalır", async ({ browser }) => {
+  const { context, page } = await freshPage(browser, { viewport: { width: 375, height: 812 }, isMobile: true });
+  await loginOk(page, "yonetici");
+
+  const card = page.locator("section.card", { has: page.getByRole("heading", { name: /Bugünün sırası/ }) });
+  await card.getByRole("button", { name: /^Tümünü göster/ }).first().click();
+  const daralt = card.getByRole("button", { name: "Daralt", exact: true });
+  await expect(daralt).toBeVisible();
+
+  // Listenin ortasına in: başlık yapışkan, Daralt üst menünün altında
+  await card.evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY + 250));
+  await expect(daralt).toBeInViewport();
+  const top = async () => Math.round((await daralt.boundingBox())!.y);
+  const before = await top();
+  await daralt.click();
+  const genislet = card.getByRole("button", { name: /^Tümünü göster/ }).first();
+  await expect(genislet).toBeVisible();
+  await page.waitForTimeout(500); // smooth kaydırma olsaydı bu sürede kayardı
+  expect(Math.abs((await genislet.evaluate((el) => Math.round(el.getBoundingClientRect().top))) - before)).toBeLessThanOrEqual(1);
+  await context.close();
+});
+
+test("vakti gelmiş geri arama hatırlatma kartı görünür, Kapat ile kaybolur", async ({ browser }) => {
+  const { context, page } = await freshPage(browser, { viewport: { width: 375, height: 812 }, isMobile: true });
+  // Vakti gelmiş tekrar-ara müşterisi: yanıt sahte kurgusal veriyle değiştirilir (diğer sorgular gerçek)
+  const fake = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `00000000-0000-4000-8000-00000000000${i + 1}`,
+      full_name: `Kurgu Kisi ${i + 1}`,
+      phone: "05000000000",
+      next_call_at: new Date(Date.now() - 60_000 * (i + 1)).toISOString(),
+    }));
+  const fixture = JSON.stringify(fake(5));
+  await page.route(/\/rest\/v1\/customers\?.*call_status=eq\.retry/, (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: fixture }),
+  );
+  await loginOk(page, owners.c!);
+
+  const status = page.getByRole("status").filter({ hasText: "Geri arama vakti" });
+  await expect(status).toBeVisible();
+  await expect(status.getByRole("link", { name: "Ara" })).toHaveCount(3);
+  await expect(status).toContainText("ve 2 kişi daha");
+  await status.getByRole("button", { name: "Kapat", exact: true }).click();
+  await expect(status).toHaveCount(0);
+
+  // Kapatılan hatırlatma yenilemede geri gelmez
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText("Geri arama vakti")).toHaveCount(0);
   await context.close();
 });
