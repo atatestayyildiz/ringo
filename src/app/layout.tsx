@@ -10,8 +10,8 @@ const figtree = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "Müşteri Takip",
-  description: "Müşteri takip ve arama listesi",
+  title: { default: "Ringo", template: "%s | Ringo" },
+  description: "Ringo: müşteri takip ve arama listesi",
 };
 
 export const viewport: Viewport = {
