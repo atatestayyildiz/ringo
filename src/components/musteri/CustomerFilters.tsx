@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { STATUS_INFO } from "@/components/ui";
+import { SelectBase, STATUS_INFO } from "@/components/ui";
 import { ALL_STAGES, OPERATOR_LABEL, STAGE_LABEL, type MemberLite } from "./shared";
 import "./musteri.css";
 
@@ -50,15 +50,15 @@ export function CustomerFilters({ members }: { members: MemberLite[] }) {
         aria-label="Ad veya telefon ara"
         enterKeyHint="search"
       />
-      <select className="input" aria-label="Durum" value={sel("durum")} onChange={(e) => push({ durum: e.target.value })}>
+      <SelectBase aria-label="Durum" className={sel("durum") ? "is-set" : undefined} value={sel("durum")} onChange={(e) => push({ durum: e.target.value })}>
         <option value="">Tüm durumlar</option>
         {Object.entries(STATUS_INFO).map(([k, v]) => (
           <option key={k} value={k}>
             {v.label}
           </option>
         ))}
-      </select>
-      <select className="input" aria-label="Huni aşaması" value={sel("asama")} onChange={(e) => push({ asama: e.target.value })}>
+      </SelectBase>
+      <SelectBase aria-label="Huni aşaması" className={sel("asama") ? "is-set" : undefined} value={sel("asama")} onChange={(e) => push({ asama: e.target.value })}>
         <option value="">Tüm aşamalar</option>
         <option value="yok">Aşaması yok</option>
         {ALL_STAGES.map((s) => (
@@ -66,8 +66,8 @@ export function CustomerFilters({ members }: { members: MemberLite[] }) {
             {STAGE_LABEL[s]}
           </option>
         ))}
-      </select>
-      <select className="input" aria-label="Operatör" value={sel("operator")} onChange={(e) => push({ operator: e.target.value })}>
+      </SelectBase>
+      <SelectBase aria-label="Operatör" className={sel("operator") ? "is-set" : undefined} value={sel("operator")} onChange={(e) => push({ operator: e.target.value })}>
         <option value="">Tüm operatörler</option>
         {Object.entries(OPERATOR_LABEL).map(([k, v]) => (
           <option key={k} value={k}>
@@ -75,8 +75,8 @@ export function CustomerFilters({ members }: { members: MemberLite[] }) {
           </option>
         ))}
         <option value="yok">Operatör yok</option>
-      </select>
-      <select className="input" aria-label="Atanan çalışan" value={sel("atanan")} onChange={(e) => push({ atanan: e.target.value })}>
+      </SelectBase>
+      <SelectBase aria-label="Atanan çalışan" className={sel("atanan") ? "is-set" : undefined} value={sel("atanan")} onChange={(e) => push({ atanan: e.target.value })}>
         <option value="">Tüm çalışanlar</option>
         <option value="yok">Atanmamış</option>
         {members.map((m) => (
@@ -84,7 +84,7 @@ export function CustomerFilters({ members }: { members: MemberLite[] }) {
             {m.full_name}
           </option>
         ))}
-      </select>
+      </SelectBase>
     </div>
   );
 }

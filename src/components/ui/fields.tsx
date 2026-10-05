@@ -211,7 +211,14 @@ export function SelectBase({
     const r = btn.current?.getBoundingClientRect();
     if (!r) return;
     const vh = window.innerHeight;
-    const below = vh - r.bottom - 12;
+    // mobil yüzen menü açık sayfanın üstünde durur; liste onun altına taşmasın
+    let floor = vh;
+    if (!document.querySelector(".overlay")) {
+      const nav = document.querySelector<HTMLElement>(".nav");
+      if (nav && getComputedStyle(nav).position === "fixed")
+        floor = Math.min(floor, nav.getBoundingClientRect().top);
+    }
+    const below = floor - r.bottom - 12;
     const above = r.top - 12;
     const want = Math.min(320, options.length * 46 + 12);
     const up = below < want && above > below;
