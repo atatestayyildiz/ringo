@@ -118,3 +118,9 @@ Migration `20261005001000_distribution_modes.sql`. `free_pool` ve `manual` çal�
 - Arayüz: Kurallar'da üç mod seçilir; free_pool seçiliyken "Aynı anda en fazla açık müşteri" alanı; canlı özet modu sade anlatır. Bugün: free_pool'da satışçıya üstte "Sıradaki müşteriyi al" kartı (kuyruk sayısı, açık/sınır; sınırda ya da kuyruk boşken düğme kapalı ve açıklamalı); alınca liste yenilenir, müşteri odak kartında (`/bugun?m=`). Yöneticinin Dağıtım kartı: auto_even "Dağıt"; manual "Müşterileri ata" → `/musteriler?atanan=yok`; free_pool yalnız bilgi. Müşteriler çoklu seçimde seçilenlerin hepsi atanmamışsa düğme "Ata".
 - Bugün'deki havuz kartı ortak: sayı ve en yakın dönüş `list_pool()`'dan (kiracının tüm havuzu, telefon yok).
 - Bilinen sınır: `_notification_targets`'ın kaçan dağıtımı yakalama adımı yalnız auto_even içindir; diğer modlarda sabah mesajı 5 dakikalık dağıtımdan önce koşarsa eksik sayı gösterebilir.
+
+### Dağıtım modları ek kararlar (2026-10-05, kullanıcı)
+
+- Migration `20261005001100_morning_modes.sql`. `_notification_targets` sabah adımı: dağıtım saati geçtiyse hedefler hesaplanmadan önce bugünün moda uygun dağıtımı çalışır (auto_even: bugün ataması yokken, eskisi gibi; free_pool/manual: her çağrıda, idempotent). Böylece sabah sayısı sahibin vakti gelen tekrar aramalarını içerir. Yukarıdaki "Bilinen sınır" maddesi kapandı.
+- Serbest havuz modunda Havuz yalnız görüntülenir: `take_from_pool` 22023 "Serbest havuz modunda müşteriler Sıradakini al ile alınır." (auto_even ve manual aynı). Havuz sayfasında "Kendime al" düğmesi yok, üstte not: "Havuzdan dönen müşteriler Sıradakini al kuyruğuna girer." Yukarıdaki "take_from_pool: free_pool'da claim_limit" maddesinin yerine geçer.
+- İzinli/pasif çalışanın açık müşterileri (free_pool/manual): değişiklik yok; yönetici "İşlerini aktar" (transfer_open_work) veya Müşteriler aktarımıyla taşır. Karar: mevcut akış yeterli.

@@ -27,7 +27,16 @@ function returnText(iso: string): { main: string; sub: string } {
   return { main: `${diff} gün sonra`, sub: date };
 }
 
-export function PoolList({ rows, maxRounds }: { rows: PoolRow[]; maxRounds: number }) {
+/** canTake false (serbest havuz modu): yalnız görüntüleme, "Kendime al" yok. */
+export function PoolList({
+  rows,
+  maxRounds,
+  canTake = true,
+}: {
+  rows: PoolRow[];
+  maxRounds: number;
+  canTake?: boolean;
+}) {
   const toast = useToast();
   const [taken, setTaken] = useState<Set<string>>(() => new Set());
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -102,18 +111,20 @@ export function PoolList({ rows, maxRounds }: { rows: PoolRow[]; maxRounds: numb
                       <span className="hv-outcome">{OUTCOME_LABEL[c.last_outcome] ?? ""}</span>
                     ) : null}
                   </span>
-                  <span className="hv-action">
-                    <Button
-                      size="sm"
-                      variant="brand"
-                      onClick={() => take(c)}
-                      disabled={busyId !== null}
-                      aria-busy={busy}
-                      aria-label={`${c.full_name} kendime al`}
-                    >
-                      {busy ? "Alınıyor" : "Kendime al"}
-                    </Button>
-                  </span>
+                  {canTake ? (
+                    <span className="hv-action">
+                      <Button
+                        size="sm"
+                        variant="brand"
+                        onClick={() => take(c)}
+                        disabled={busyId !== null}
+                        aria-busy={busy}
+                        aria-label={`${c.full_name} kendime al`}
+                      >
+                        {busy ? "Alınıyor" : "Kendime al"}
+                      </Button>
+                    </span>
+                  ) : null}
                 </div>
               </li>
             );

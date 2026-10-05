@@ -110,8 +110,9 @@ select is((select row(mode, waiting, open_count, claim_limit)::text from public.
 select is((select (public.claim_next()).id), '40000000-0000-4000-8000-0000000000f6'::uuid,
           'claim_next en eski bekleyeni verir (havuzdan dönen)');
 select throws_ok($$select public.claim_next()$$, '22023', null, 'sınırda claim_next 22023');
-select throws_ok($$select public.take_from_pool('40000000-0000-4000-8000-0000000000f7')$$, '22023', null,
-                 'free_pool: sınırda havuzdan alma da 22023');
+select throws_ok($$select public.take_from_pool('40000000-0000-4000-8000-0000000000f7')$$, '22023',
+                 'Serbest havuz modunda müşteriler Sıradakini al ile alınır.',
+                 'free_pool: havuzdan alma kapalı (20261005001100)');
 
 reset role;
 select is((select row(assigned_to, d.member_id, d.position)::text

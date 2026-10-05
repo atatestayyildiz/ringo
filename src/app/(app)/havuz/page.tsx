@@ -14,6 +14,8 @@ export default async function Page() {
 
   const { data, error } = await supabase.rpc("list_pool").limit(300);
   const rows = (data ?? []) as PoolRow[];
+  // Serbest havuzda havuz yalnız görüntülenir (take_from_pool DB'de kapalı)
+  const canTake = settings.distribution_mode !== "free_pool";
 
   return (
     <div className="view-pool">
@@ -21,8 +23,13 @@ export default async function Page() {
         <h1>Havuz</h1>
         <p>
           {settings.max_attempts} başarısız denemeden sonra havuza düşen müşteriler, {settings.pool_wait_days} gün sonra
-          listeye geri çıkar. Beklemeden aramak istediğini kendi listene alabilirsin.
+          listeye geri çıkar.{canTake ? " Beklemeden aramak istediğini kendi listene alabilirsin." : ""}
         </p>
+        {canTake ? null : (
+          <p className="hv-mode-note" data-testid="pool-mode-note">
+            Havuzdan dönen müşteriler Sıradakini al kuyruğuna girer.
+          </p>
+        )}
       </div>
       <Card>
         <h2>Havuzdakiler</h2>
@@ -35,7 +42,7 @@ export default async function Page() {
             Üst üste ulaşılamayan müşteriler burada bekler, süresi dolunca tekrar arama listesine döner.
           </EmptyState>
         ) : (
-          <PoolList rows={rows} maxRounds={settings.max_rounds} />
+          <PoolList rows={rows} maxRounds={settings.max_rounds} canTake={canTake} />
         )}
       </Card>
     </div>

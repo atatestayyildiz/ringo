@@ -58,3 +58,11 @@
     align-self: center;
   }
 }
+
+/* Serbest havuz modu: yalnız görüntüleme notu */
+.view-pool .hv-mode-note {
+  margin-top: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
