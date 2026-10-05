@@ -328,6 +328,47 @@ export function BugunView(props: Props) {
     </>
   );
 
+  // Liste boşken yönetici ekranında Havuz kartı Dağıtım kartının üstüne taşınır (sol sütun boş kalmasın)
+  const emptyMgr = items.length === 0 && isManager && Boolean(team);
+  const poolCard = (
+    <div className={`${styles.stack} ${styles.poolStack}`}>
+      <Card>
+        <h2>
+          Havuz
+          <Link
+            href="/havuz"
+            className={styles.open}
+            aria-label="Havuzu aç"
+          >
+            <IconArrow />
+          </Link>
+        </h2>
+        <div className={styles.poolBig}>
+          <b data-testid="pool-count">{pool.count}</b>
+          <span>kişi bekliyor</span>
+        </div>
+        <p className={styles.empty}>
+          {pool.count === 0 || pool.nearestDays === null ? (
+            "Havuz şu an boş."
+          ) : (
+            <>
+              En yakın dönüş{" "}
+              <b>
+                {pool.nearestDays === 0
+                  ? "bugün"
+                  : `${pool.nearestDays} gün sonra`}
+              </b>
+              .
+              {pool.thisWeek > 0
+                ? ` ${pool.thisWeek} kişi bu hafta listeye geri çıkacak.`
+                : ""}
+            </>
+          )}
+        </p>
+      </Card>
+    </div>
+  );
+
   return (
     <>
       <section className={styles.hero}>
@@ -635,42 +676,7 @@ export function BugunView(props: Props) {
             </div>
           ) : null}
 
-          <div className={`${styles.stack} ${styles.poolStack}`}>
-            <Card>
-              <h2>
-                Havuz
-                <Link
-                  href="/havuz"
-                  className={styles.open}
-                  aria-label="Havuzu aç"
-                >
-                  <IconArrow />
-                </Link>
-              </h2>
-              <div className={styles.poolBig}>
-                <b data-testid="pool-count">{pool.count}</b>
-                <span>kişi bekliyor</span>
-              </div>
-              <p className={styles.empty}>
-                {pool.count === 0 || pool.nearestDays === null ? (
-                  "Havuz şu an boş."
-                ) : (
-                  <>
-                    En yakın dönüş{" "}
-                    <b>
-                      {pool.nearestDays === 0
-                        ? "bugün"
-                        : `${pool.nearestDays} gün sonra`}
-                    </b>
-                    .
-                    {pool.thisWeek > 0
-                      ? ` ${pool.thisWeek} kişi bu hafta listeye geri çıkacak.`
-                      : ""}
-                  </>
-                )}
-              </p>
-            </Card>
-          </div>
+          {!emptyMgr ? poolCard : null}
 
         </div>
       </div>
@@ -710,6 +716,7 @@ export function BugunView(props: Props) {
               <p className={styles.empty}>Henüz atama yok.</p>
             )}
           </Card>
+          <div className={styles.distCol}>
           <Card className={styles.distCard}>
             <h2>Dağıtım</h2>
                 <div className={styles.distribute}>
@@ -748,6 +755,8 @@ export function BugunView(props: Props) {
                   )}
                 </div>
           </Card>
+          {emptyMgr ? poolCard : null}
+          </div>
         </div>
       ) : null}
 

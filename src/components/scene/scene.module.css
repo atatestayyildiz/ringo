@@ -371,14 +371,16 @@
   place-items: center;
   color: #fff;
   background: radial-gradient(circle at 32% 26%, color-mix(in oklab, var(--c) 55%, #1a1a22), #0c0c11 74%);
-  box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--c) 55%, transparent),
-    0 18px 40px -14px color-mix(in oklab, var(--c) 75%, transparent),
-    inset 0 1px 0 color-mix(in oklab, #fff 22%, transparent);
+  /* Kenarlıksız daire: ince çerçeve ve iç parlama yok, yalnız yumuşak dış ışık */
+  box-shadow: 0 18px 40px -14px color-mix(in oklab, var(--c) 75%, transparent);
   font-weight: 700;
   font-size: 21cqi;
   letter-spacing: -0.02em;
   line-height: 1;
+}
+.mark:has(img) {
+  /* Logo varken koyu zemin kenarda sızmasın (koyu halka görünümü) */
+  background: transparent;
 }
 .mark img {
   width: 100%;

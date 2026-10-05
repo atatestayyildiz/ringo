@@ -717,8 +717,18 @@
   grid-column: span 7;
   min-width: 0;
 }
-.distCard {
+.distCol {
   grid-column: span 5;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.distCol > .distCard {
+  flex: 1 1 auto;
+}
+.distCard {
+  grid-column: auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -746,7 +756,7 @@
 }
 @media (max-width: 980px) {
   .teamCard,
-  .distCard {
+  .distCol {
     grid-column: span 12;
   }
 }
@@ -899,6 +909,17 @@
 }
 .more:hover {
   background: color-mix(in srgb, var(--ink) 8%, var(--surface-2));
+}
+
+/* Liste boşken sol sütun boş kalır: gizle, sağ sütun tam genişlik */
+.colMain:empty {
+  display: none;
+}
+.grid:has(> .colMain:empty) > .colSide {
+  grid-column: 1 / -1;
+}
+.grid:has(> .colMain:empty):not(:has(> .colSide > *)) {
+  display: none;
 }
 
 /* ---------- iki sutun: sol akis kendi icinde, bosluk kalmaz ---------- */
