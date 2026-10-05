@@ -81,7 +81,17 @@ test("masaüstü: menüyle taşıma hâlâ çalışır", async ({ browser }) => 
   const { context, page } = await freshPage(browser, { viewport: { width: 1280, height: 800 } });
   await loginOk(page, "yonetici");
   await page.goto("/huni");
-  await page.getByRole("combobox", { name: `${name} için aşamayı değiştir` }).click();
+  // Kapalı kartta menü yok; tıklayınca açılır, tekrar tıklayınca kapanır
+  const head = card(page).getByRole("button", { expanded: false });
+  const menu = page.getByRole("combobox", { name: `${name} için aşamayı değiştir` });
+  await expect(menu).toHaveCount(0);
+  await head.click();
+  await expect(card(page).getByRole("button", { expanded: true })).toBeVisible();
+  await expect(menu).toBeVisible();
+  await card(page).getByRole("button", { expanded: true }).press("Enter");
+  await expect(menu).toHaveCount(0);
+  await card(page).getByRole("button", { expanded: false }).press("Space");
+  await menu.click();
   await page.getByRole("listbox").getByRole("option", { name: "Başvuru" }).click();
   await expect(col(page, "Başvuru").getByTitle(name)).toBeVisible();
   await page.reload();

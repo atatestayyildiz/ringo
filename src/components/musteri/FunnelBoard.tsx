@@ -90,6 +90,9 @@ export function FunnelBoard({
   const [pending, setPending] = useState<Record<string, true>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const [apptFor, setApptFor] = useState<Customer | null>(null);
+  // Aynı anda yalnız bir kart açık
+  const [openId, setOpenId] = useState<string | null>(null);
+  const toggleOpen = (id: string) => setOpenId((o) => (o === id ? null : id));
 
   const overrides = moved.base === customers ? moved.map : {};
   const effective = (() => {
@@ -245,6 +248,8 @@ export function FunnelBoard({
                 viewer={viewer}
                 busy={pending}
                 activeId={activeId}
+                openId={openId}
+                onToggle={toggleOpen}
                 onMove={onMenu}
               />
             </Column>
@@ -283,6 +288,8 @@ export function FunnelBoard({
                   viewer={viewer}
                   busy={pending}
                   activeId={activeId}
+                  openId={openId}
+                  onToggle={toggleOpen}
                   onMove={onMenu}
                 />
               </Column>
@@ -304,8 +311,8 @@ export function FunnelBoard({
 
       <DragOverlay dropAnimation={reduced ? null : undefined} zIndex={60}>
         {active ? (
-          <article className="mu-card mu-card-overlay">
-            <CardBody c={active} members={members} />
+          <article className="mu-card mu-card-overlay" data-card="">
+            <CardHead c={active} />
           </article>
         ) : null}
       </DragOverlay>
@@ -342,6 +349,8 @@ function Cards({
   viewer,
   busy,
   activeId,
+  openId,
+  onToggle,
   onMove,
 }: {
   list: Customer[];
@@ -349,6 +358,8 @@ function Cards({
   viewer: V;
   busy: Record<string, true>;
   activeId: string | null;
+  openId: string | null;
+  onToggle: (id: string) => void;
   onMove: (c: Customer, stage: string) => void;
 }) {
   if (list.length === 0)
@@ -363,6 +374,8 @@ function Cards({
           viewer={viewer}
           busy={!!busy[c.id]}
           dragging={activeId === c.id}
+          open={openId === c.id}
+          onToggle={onToggle}
           onMove={onMove}
         />
       ))}
@@ -379,27 +392,30 @@ function AppointmentPill({ c }: { c: Customer }) {
   );
 }
 
-function CardBody({ c, members }: { c: Customer; members: MemberLite[] }) {
+function CardHead({ c }: { c: Customer }) {
+  return (
+    <div className="mu-card-main">
+      <Avatar name={c.full_name} />
+      <span className="mu-card-id">
+        <b>{c.full_name}</b>
+        <span className="mu-card-sub">
+          <span className="tel">{formatPhone(c.phone)}</span>
+          {c.pipeline_stage === "appointment" ? <AppointmentPill c={c} /> : null}
+        </span>
+      </span>
+    </div>
+  );
+}
+
+function CardDetail({ c, members }: { c: Customer; members: MemberLite[] }) {
   const who = memberName(members, c.assigned_to);
+  if (!c.operator && !who && !c.last_note) return null;
   return (
     <>
-      <div className="mu-who">
-        <Avatar name={c.full_name} />
-        <span style={{ minWidth: 0 }}>
-          <b>
-            <span className="mu-first">{c.full_name.split(" ")[0]}</span>
-            <span className="mu-rest">
-              {c.full_name.slice(c.full_name.split(" ")[0].length)}
-            </span>
-          </b>
-          <span>{formatPhone(c.phone)}</span>
-        </span>
-      </div>
       <div className="meta">
         {c.operator ? <span>{OPERATOR_LABEL[c.operator]}</span> : null}
         {who ? <span>{who}</span> : null}
       </div>
-      {c.pipeline_stage === "appointment" ? <AppointmentPill c={c} /> : null}
       {c.last_note ? <p className="quote">{c.last_note}</p> : null}
     </>
   );
@@ -411,6 +427,8 @@ function FunnelCard({
   viewer,
   busy,
   dragging,
+  open,
+  onToggle,
   onMove,
 }: {
   c: Customer;
@@ -418,6 +436,8 @@ function FunnelCard({
   viewer: V;
   busy: boolean;
   dragging: boolean;
+  open: boolean;
+  onToggle: (id: string) => void;
   onMove: (c: Customer, stage: string) => void;
 }) {
   const canMove = viewer.isManager || c.assigned_to === viewer.id;
@@ -425,43 +445,61 @@ function FunnelCard({
     id: c.id,
     disabled: !canMove || busy,
   });
+  const detailId = `mu-card-${c.id}`;
 
   return (
     <article
       ref={setNodeRef}
       className="mu-card"
+      data-card=""
       title={c.full_name}
       data-draggable={canMove ? "" : undefined}
       data-dragging={dragging ? "" : undefined}
+      data-open={open ? "" : undefined}
       {...listeners}
     >
-      {canMove ? (
-        <span
-          className="mu-grip"
-          role="img"
-          aria-label={`${c.full_name} kartını sürükle`}
-        />
-      ) : null}
-      <CardBody c={c} members={members} />
-      {canMove ? (
-        <SelectBase
-          className="mu-move"
-          aria-label={`${c.full_name} için aşamayı değiştir`}
-          value=""
-          disabled={busy}
-          onChange={(e) => onMove(c, e.target.value)}
-        >
-          <option value="" hidden>Aşamayı değiştir</option>
-          {c.pipeline_stage === "appointment" ? (
-            <option value={APPT_OPTION}>Randevu zamanını değiştir</option>
+      <div
+        className="mu-card-head"
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        aria-controls={open ? detailId : undefined}
+        aria-label={`${c.full_name}, ${formatPhone(c.phone)}`}
+        onClick={() => onToggle(c.id)}
+        onKeyDown={(ev) => {
+          if (ev.code === "Enter" || ev.code === "Space") {
+            ev.preventDefault();
+            onToggle(c.id);
+          }
+        }}
+      >
+        <CardHead c={c} />
+      </div>
+      {open ? (
+        <div id={detailId} className="mu-card-detail">
+          <CardDetail c={c} members={members} />
+          {canMove ? (
+            <SelectBase
+              className="mu-move"
+              aria-label={`${c.full_name} için aşamayı değiştir`}
+              value=""
+              disabled={busy}
+              onChange={(e) => onMove(c, e.target.value)}
+            >
+              <option value="" hidden>Aşamayı değiştir</option>
+              {c.pipeline_stage === "appointment" ? (
+                <option value={APPT_OPTION}>Randevu zamanını değiştir</option>
+              ) : null}
+              {ALL_STAGES.filter((s) => s !== c.pipeline_stage).map((s) => (
+                <option key={s} value={s}>
+                  {STAGE_LABEL[s]}
+                </option>
+              ))}
+            </SelectBase>
           ) : null}
-          {ALL_STAGES.filter((s) => s !== c.pipeline_stage).map((s) => (
-            <option key={s} value={s}>
-              {STAGE_LABEL[s]}
-            </option>
-          ))}
-        </SelectBase>
+        </div>
       ) : null}
     </article>
   );
 }
+

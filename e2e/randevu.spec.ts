@@ -103,6 +103,7 @@ test("Huni menüsünden randevu zamanı değişir", async ({ browser }) => {
     await loginOk(page, "yonetici");
     await page.goto("/huni");
     await expect(card(page, names.b).getByText("Belli değil")).toBeVisible();
+    await card(page, names.b).getByRole("button", { expanded: false }).click();
     await card(page, names.b).getByRole("combobox", { name: `${names.b} için aşamayı değiştir` }).click();
     await page.getByRole("listbox").getByRole("option", { name: "Randevu zamanını değiştir" }).click();
     const dialog = page.getByRole("dialog", { name: "Randevu zamanını değiştir" });
