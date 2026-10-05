@@ -974,3 +974,28 @@
 .mu-extra-list .mu-check {
   margin-bottom: 4px;
 }
+
+/* Mobil: Müşteriler üst düğmeleri düzenli: Müşteri ekle tam satır, Excel içe aktar | Dışa aktar yan yana */
+@media (max-width: 560px) {
+  .mu-head {
+    align-items: stretch;
+  }
+  .mu-head .mu-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+  }
+  .mu-head .mu-actions > :first-child {
+    grid-column: 1 / -1;
+  }
+  .mu-head .mu-actions .btn {
+    min-height: 46px;
+    justify-content: center;
+    white-space: nowrap;
+  }
+  .mu-head .mu-actions > span {
+    grid-column: 1 / -1;
+    text-align: center;
+  }
+}

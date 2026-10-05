@@ -332,3 +332,29 @@
     flex: 1 1 auto;
   }
 }
+
+/* Mobil: sekmeler tam genişlikte eşit, "Çalışan ekle" tam satır */
+@media (max-width: 560px) {
+  .tabs {
+    overflow: visible;
+  }
+  .tabs :global(.seg) {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+  }
+  .tabs :global(.seg) button {
+    padding: 10px 2px;
+    font-size: 13px;
+    text-align: center;
+  }
+  .head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .head > :global(.btn) {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+  }
+}
