@@ -23,3 +23,14 @@ export function toUserMessage(error: ErrorLike): string {
   for (const [re, text] of KNOWN) if (re.test(message)) return text;
   return GENERIC_ERROR;
 }
+
+const RELOAD_HINT = "Sayfayı yenileyin; sürerse yöneticinize bildirin.";
+
+/** Sayfa verisi okunamadığında gösterilecek metin. Okuma hatası RLS'den İngilizce gelebilir; 42501 de sabit metne çevrilir. */
+export function loadErrorText(error: ErrorLike): string {
+  const code = error?.code ?? "";
+  const message = error?.message ?? "";
+  let known = code === "42501" ? "Bu işlem için yetkiniz yok." : null;
+  for (const [re, text] of KNOWN) if (!known && re.test(message)) known = text;
+  return known ? `${known} ${RELOAD_HINT}` : RELOAD_HINT;
+}

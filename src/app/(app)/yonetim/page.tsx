@@ -5,6 +5,7 @@ import { OUTCOME_LABEL, STAGE_LABEL, firstName, shortName } from "@/components/y
 import s from "@/components/yonetim/yonetim.module.css";
 import { dayKey, formatTime, formatWeekday } from "@/lib/format";
 import { canViewTeam } from "@/lib/access";
+import { loadErrorText } from "@/lib/errors";
 import { requireAccess } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
@@ -48,7 +49,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ g
       .limit(30),
   ]);
 
-  const loadError = summaryRes.error?.message ?? null;
+  if (summaryRes.error) console.error("[yonetim] özet okunamadı:", summaryRes.error.code ?? summaryRes.error.message);
+  const loadError = summaryRes.error ? loadErrorText(summaryRes.error) : null;
   const members = new Map((membersRes.data ?? []).map((m) => [m.id, m]));
   const summary = summaryRes.data ?? [];
 
@@ -126,7 +128,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ g
 
       {loadError ? (
         <Card>
-          <EmptyState title="Özet yüklenemedi">{loadError} Sayfayı yenileyin; sürerse yöneticinize bildirin.</EmptyState>
+          <EmptyState title="Özet yüklenemedi">{loadError}</EmptyState>
         </Card>
       ) : (
         <>

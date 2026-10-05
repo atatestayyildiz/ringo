@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GENERIC_ERROR, toUserMessage } from "./errors";
+import { GENERIC_ERROR, loadErrorText, toUserMessage } from "./errors";
 
 describe("toUserMessage", () => {
   it("22023 ve 42501 Türkçe DB mesajını olduğu gibi geçirir", () => {
@@ -23,5 +23,16 @@ describe("toUserMessage", () => {
   it("bilinmeyen hatada ham metni sızdırmaz", () => {
     expect(toUserMessage({ code: "XX000", message: "internal table foo exploded" })).toBe(GENERIC_ERROR);
     expect(toUserMessage(null)).toBe(GENERIC_ERROR);
+  });
+});
+
+describe("loadErrorText", () => {
+  it("sayfa yükleme hatasında ham metni göstermez, yenileme önerir", () => {
+    expect(loadErrorText({ code: "XX000", message: "relation foo does not exist" })).toBe("Sayfayı yenileyin; sürerse yöneticinize bildirin.");
+  });
+  it("bilinen hatayı Türkçe açıklamayla öne ekler", () => {
+    expect(loadErrorText({ code: "42501", message: "permission denied for table x" })).toBe(
+      "Bu işlem için yetkiniz yok. Sayfayı yenileyin; sürerse yöneticinize bildirin.",
+    );
   });
 });

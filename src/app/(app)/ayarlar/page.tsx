@@ -1,6 +1,7 @@
 import { SettingsTabs } from "@/components/ayarlar/SettingsTabs";
 import type { MemberRow, PermKey } from "@/components/ayarlar/shared";
 import { Card, EmptyState } from "@/components/ui";
+import { loadErrorText } from "@/lib/errors";
 import { requireAccess } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { listAuthEmails } from "./_server/admin";
@@ -29,13 +30,14 @@ export default async function Page() {
   }
 
   if (membersRes.error) {
+    console.error("[ayarlar] üyeler okunamadı:", membersRes.error.code ?? membersRes.error.message);
     return (
       <>
         <div className="page-head">
           <h1>Ayarlar</h1>
         </div>
         <Card>
-          <EmptyState title="Ayarlar yüklenemedi">{membersRes.error.message} Sayfayı yenileyin.</EmptyState>
+          <EmptyState title="Ayarlar yüklenemedi">{loadErrorText(membersRes.error)}</EmptyState>
         </Card>
       </>
     );
