@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
       ["Atanan", t.assigned],
       ["Aranan müşteri", t.customers_called],
       ["Deneme", t.attempts],
-      ["Ulaşılan deneme", t.reached],
+      ["Ulaşılan müşteri", t.reached],
       ["Ulaşma oranı", csvPercent(r.rates.reach_rate)],
       ["Randevu", t.appointments],
       ["Randevu oranı (ulaşılanlardan)", csvPercent(r.rates.appointment_rate)],
@@ -64,12 +64,12 @@ export async function GET(req: NextRequest) {
   );
   section(
     "Çalışanlar",
-    ["Çalışan", "Deneme", "Ulaşılan", "Ulaşma oranı", "Randevu", "İşlem tamam"],
-    r.by_member.map((m) => [m.full_name, m.attempts, m.reached, csvPercent(ratio(m.reached, m.attempts)), m.appointments, m.completed]),
+    ["Çalışan", "Deneme", "Aranan müşteri", "Ulaşılan müşteri", "Ulaşma oranı", "Randevu", "İşlem tamam"],
+    r.by_member.map((m) => [m.full_name, m.attempts, m.customers_called, m.reached, csvPercent(ratio(m.reached, m.customers_called)), m.appointments, m.completed]),
   );
   section(
     "Günlük",
-    ["Gün", "Deneme", "Ulaşılan", "Randevu"],
+    ["Gün", "Deneme", "Ulaşılan müşteri", "Randevu"],
     r.by_day.map((d) => [csvDate(d.day), d.attempts, d.reached, d.appointments]),
   );
   section(

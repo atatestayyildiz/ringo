@@ -1,4 +1,4 @@
-/** report_range / report_range_member JSON yapısı (supabase/migrations/20261004001100_report_scope_view_team.sql). */
+/** report_range / report_range_member JSON yapısı (supabase/migrations/20261005000100_reached_distinct.sql). */
 export type ReportTotals = {
   attempts: number;
   customers_called: number;
@@ -26,7 +26,7 @@ export type Report = {
   member_id: string | null;
   totals: ReportTotals;
   rates: { reach_rate: number; appointment_rate: number; visit_rate: number; close_rate: number };
-  by_member: { member_id: string; full_name: string; attempts: number; reached: number; appointments: number; completed: number }[];
+  by_member: { member_id: string; full_name: string; attempts: number; customers_called: number; reached: number; appointments: number; completed: number }[];
   by_day: { day: string; attempts: number; reached: number; appointments: number }[];
   by_outcome: { outcome: string; count: number }[];
   by_source: { source_detail: string; customers: number; appointments: number; completed: number }[];

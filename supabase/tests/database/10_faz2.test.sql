@@ -473,10 +473,10 @@ select is((select public.report_range(public.tr_today(), public.tr_today()) -> '
           'rapor: oranlar 0-1 arası');
 select is((select public.report_range(public.tr_today(), public.tr_today()) -> 'by_member'),
           jsonb_build_array(
-            jsonb_build_object('member_id', '30000000-0000-4000-8000-0000000000d4', 'full_name', 'Burak Ajan', 'attempts', 1, 'reached', 0, 'appointments', 0, 'completed', 0),
-            jsonb_build_object('member_id', '30000000-0000-4000-8000-0000000000d3', 'full_name', 'Deniz Ajan', 'attempts', 2, 'reached', 2, 'appointments', 0, 'completed', 0),
-            jsonb_build_object('member_id', '30000000-0000-4000-8000-0000000000d1', 'full_name', 'Kurgu Yönetici', 'attempts', 0, 'reached', 0, 'appointments', 0, 'completed', 0),
-            jsonb_build_object('member_id', '30000000-0000-4000-8000-0000000000d2', 'full_name', 'Zeynep Ajan', 'attempts', 4, 'reached', 2, 'appointments', 1, 'completed', 1)),
+            jsonb_build_object('member_id', '30000000-0000-4000-8000-0000000000d4', 'full_name', 'Burak Ajan', 'attempts', 1, 'customers_called', 1, 'reached', 0, 'appointments', 0, 'completed', 0),
+            jsonb_build_object('member_id', '30000000-0000-4000-8000-0000000000d3', 'full_name', 'Deniz Ajan', 'attempts', 2, 'customers_called', 2, 'reached', 2, 'appointments', 0, 'completed', 0),
+            jsonb_build_object('member_id', '30000000-0000-4000-8000-0000000000d1', 'full_name', 'Kurgu Yönetici', 'attempts', 0, 'customers_called', 0, 'reached', 0, 'appointments', 0, 'completed', 0),
+            jsonb_build_object('member_id', '30000000-0000-4000-8000-0000000000d2', 'full_name', 'Zeynep Ajan', 'attempts', 4, 'customers_called', 4, 'reached', 2, 'appointments', 1, 'completed', 1)),
           'rapor: by_member (aktif ajanlar ve hareketi olan üyeler, ada göre)');
 select is((select public.report_range(public.tr_today(), public.tr_today()) -> 'by_day'),
           jsonb_build_array(jsonb_build_object('day', public.tr_today(), 'attempts', 7, 'reached', 4, 'appointments', 1)),

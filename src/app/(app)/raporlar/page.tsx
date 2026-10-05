@@ -243,7 +243,7 @@ export default async function Page({
             <b>
               <CountUp value={t.attempts} />
             </b>
-            <em>{t.reached} ulaşılan</em>
+            <em>{t.reached} ulaşılan müşteri</em>
           </div>
           <div className={s.kpi}>
             <small>Ulaşma oranı</small>
@@ -252,7 +252,7 @@ export default async function Page({
             </b>
             <div>
               <em>
-                {t.reached} / {t.attempts} deneme
+                {t.reached} / {t.customers_called} aranan müşteri
               </em>
               <Meter rate={report.rates.reach_rate} />
             </div>
@@ -334,7 +334,7 @@ export default async function Page({
                         Deneme
                       </th>
                       <th scope="col" className={s.num}>
-                        Ulaşılan
+                        Ulaşılan müşteri
                       </th>
                       <th scope="col" className={s.num}>
                         Ulaşma
@@ -354,7 +354,7 @@ export default async function Page({
                         <td className={s.num}>{m.attempts}</td>
                         <td className={s.num}>{m.reached}</td>
                         <td className={s.num}>
-                          {pct(ratio(m.reached, m.attempts))}
+                          {pct(ratio(m.reached, m.customers_called))}
                         </td>
                         <td className={s.num}>{m.appointments}</td>
                         <td className={s.num}>{m.completed}</td>

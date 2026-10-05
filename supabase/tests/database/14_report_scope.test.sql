@@ -98,7 +98,7 @@ select is((select public.report_range(public.tr_today(), public.tr_today()) -> '
           'kapsam: ajanın oranları kendi sayılarından');
 select is((select public.report_range(public.tr_today(), public.tr_today()) -> 'by_member'),
           jsonb_build_array(jsonb_build_object('member_id', '30000000-0000-4000-8000-0000000000e2', 'full_name', 'Zeynep Ajan',
-            'attempts', 2, 'reached', 1, 'appointments', 1, 'completed', 0)),
+            'attempts', 2, 'customers_called', 2, 'reached', 1, 'appointments', 1, 'completed', 0)),
           'kapsam: by_member yalnız kendi satırı');
 select is((select public.report_range(public.tr_today(), public.tr_today()) -> 'by_day'),
           jsonb_build_array(jsonb_build_object('day', public.tr_today(), 'attempts', 2, 'reached', 1, 'appointments', 1)),
