@@ -32,6 +32,13 @@
 .accSolo {
   grid-column: span 12;
 }
+/* Tam genişlik kartta (yönetici, Telegram kartı yok) 6 sütunluk ızgara seyrek kalır: sola yaslı tek dizi */
+.accSolo .swatches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 10px 12px;
+}
 @media (min-width: 1101px) {
   .pw .formStack {
     display: grid;
