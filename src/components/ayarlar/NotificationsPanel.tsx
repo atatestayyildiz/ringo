@@ -8,21 +8,19 @@ import {
   type NotificationsData,
 } from "@/app/(app)/ayarlar/notification-actions";
 import s from "@/components/profil/profil.module.css";
+import { formatHm, maskHm, parseHm } from "@/components/ayarlar/shared";
 import { Avatar, Button, Card, Chip, EmptyState, Input, Switch, useToast } from "@/components/ui";
 import type { TenantSettings } from "@/lib/session";
 
-const hourError = (raw: string) => {
-  const n = raw.trim() === "" ? NaN : Number(raw);
-  return Number.isInteger(n) && n >= 0 && n <= 23 ? undefined : "0 ile 23 arasında bir tam sayı girin.";
-};
+const timeError = (raw: string) => (parseHm(raw) ? undefined : "Saati SS:DD biçiminde girin, örneğin 08:30.");
 
 export function NotificationsPanel({ settings }: { settings: TenantSettings }) {
   const toast = useToast();
   const [pending, start] = useTransition();
   const [enabled, setEnabled] = useState(settings.telegram_enabled);
   const [bot, setBot] = useState(settings.telegram_bot_username ?? "");
-  const [morning, setMorning] = useState(String(settings.distribution_hour));
-  const [evening, setEvening] = useState(String(settings.summary_hour));
+  const [morning, setMorning] = useState(formatHm(settings.distribution_hour, settings.distribution_minute));
+  const [evening, setEvening] = useState(formatHm(settings.summary_hour, settings.summary_minute));
   const [data, setData] = useState<NotificationsData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -48,8 +46,8 @@ export function NotificationsPanel({ settings }: { settings: TenantSettings }) {
     };
   }, []);
 
-  const morningErr = hourError(morning);
-  const eveningErr = hourError(evening);
+  const morningErr = timeError(morning);
+  const eveningErr = timeError(evening);
   const botClean = bot.trim().replace(/^@/, "");
   const botErr = botClean !== "" && !/^[A-Za-z0-9_]{3,64}$/.test(botClean) ? "Harf, rakam ve alt çizgi, en az 3 karakter." : undefined;
 
@@ -66,11 +64,15 @@ export function NotificationsPanel({ settings }: { settings: TenantSettings }) {
   };
 
   const saveHours = () => {
-    if (morningErr || eveningErr) return toast("Kırmızı işaretli alanları düzeltin.", "error");
+    const m = parseHm(morning);
+    const e = parseHm(evening);
+    if (!m || !e) return toast("Kırmızı işaretli alanları düzeltin.", "error");
     start(async () => {
       const res = await saveNotificationSettingsAction({
-        distribution_hour: Number(morning),
-        summary_hour: Number(evening),
+        distribution_hour: m.hour,
+        distribution_minute: m.minute,
+        summary_hour: e.hour,
+        summary_minute: e.minute,
       });
       if (res.ok) toast("Gönderim saatleri kaydedildi.");
       else toast(res.error, "error");
@@ -156,29 +158,39 @@ export function NotificationsPanel({ settings }: { settings: TenantSettings }) {
       <div className={s.stack}>
         <Card>
           <h2>Gönderim saatleri</h2>
-          <p className={s.sub}>Saatler yerel saattir.</p>
+          <p className={s.sub}>Saatler yerel saattir, 24 saat biçiminde (örneğin 08:30).</p>
           <div className={s.formGrid}>
             <Input
               label="Sabah listesi"
               hint="Müşteriler bu saatte dağıtılır ve sabah mesajı gider."
               error={morningErr}
-              type="number"
+              type="text"
               inputMode="numeric"
-              min={0}
-              max={23}
+              placeholder="08:30"
+              maxLength={5}
+              autoComplete="off"
               value={morning}
-              onChange={(e) => setMorning(e.target.value)}
+              onChange={(e) => setMorning(maskHm(e.target.value))}
+              onBlur={() => {
+                const p = parseHm(morning);
+                if (p) setMorning(formatHm(p.hour, p.minute));
+              }}
             />
             <Input
               label="Akşam özeti"
               hint="Gün sonu özeti bu saatte gider."
               error={eveningErr}
-              type="number"
+              type="text"
               inputMode="numeric"
-              min={0}
-              max={23}
+              placeholder="19:00"
+              maxLength={5}
+              autoComplete="off"
               value={evening}
-              onChange={(e) => setEvening(e.target.value)}
+              onChange={(e) => setEvening(maskHm(e.target.value))}
+              onBlur={() => {
+                const p = parseHm(evening);
+                if (p) setEvening(formatHm(p.hour, p.minute));
+              }}
             />
           </div>
           <div className={s.row}>

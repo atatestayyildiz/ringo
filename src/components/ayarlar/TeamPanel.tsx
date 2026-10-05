@@ -213,28 +213,38 @@ function AddMemberModal({ open, onClose }: { open: boolean; onClose: () => void 
             required
             autoComplete="off"
           />
-          <div className={s.pwRow}>
-            <Input
-              label="Geçici şifre"
-              hint="En az 8 karakter."
-              type="text"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              autoComplete="off"
-            />
-            <Button variant="soft" size="sm" onClick={() => setPassword(generatePassword())}>
-              Öner
-            </Button>
-            <Button
-              variant="soft"
-              size="sm"
-              disabled={!password}
-              onClick={() => copy(password, "Şifre kopyalandı.")}
-            >
-              Kopyala
-            </Button>
+          <div className="field">
+            <label className={s.pwLabel} htmlFor="new-member-password">
+              Geçici şifre
+            </label>
+            <div className={s.pwRow}>
+              <input
+                id="new-member-password"
+                className="input"
+                type="text"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="off"
+                aria-describedby="new-member-password-hint"
+              />
+              <Button variant="soft" size="sm" className={s.pwBtn} onClick={() => setPassword(generatePassword())}>
+                Öner
+              </Button>
+              <Button
+                variant="soft"
+                size="sm"
+                className={s.pwBtn}
+                disabled={!password}
+                onClick={() => copy(password, "Şifre kopyalandı.")}
+              >
+                Kopyala
+              </Button>
+            </div>
+            <span className="hint" id="new-member-password-hint">
+              En az 8 karakter.
+            </span>
           </div>
           <Select label="Rol" value={role} onChange={(e) => setRole(e.target.value as "agent" | "manager")}>
             <option value="agent">Çalışan</option>

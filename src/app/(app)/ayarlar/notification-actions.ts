@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { checkHour } from "@/components/ayarlar/shared";
+import { checkHour, checkMinute } from "@/components/ayarlar/shared";
 import type { TablesUpdate } from "@/lib/database.types";
 import { toUserMessage } from "@/lib/errors";
 import { getSessionContext } from "@/lib/session";
@@ -62,7 +62,9 @@ export async function saveNotificationSettingsAction(v: {
   telegram_enabled?: boolean;
   telegram_bot_username?: string;
   distribution_hour?: number;
+  distribution_minute?: number;
   summary_hour?: number;
+  summary_minute?: number;
 }): Promise<Result> {
   const ctx = await requireManager();
   if (!ctx) return { ok: false, error: NOT_MANAGER };
@@ -81,10 +83,20 @@ export async function saveNotificationSettingsAction(v: {
     if (err) return { ok: false, error: err };
     patch.distribution_hour = v.distribution_hour;
   }
+  if (v.distribution_minute !== undefined) {
+    const err = checkMinute(Number(v.distribution_minute), "Sabah listesi saati");
+    if (err) return { ok: false, error: err };
+    patch.distribution_minute = v.distribution_minute;
+  }
   if (v.summary_hour !== undefined) {
     const err = checkHour(Number(v.summary_hour), "Akşam özeti saati");
     if (err) return { ok: false, error: err };
     patch.summary_hour = v.summary_hour;
+  }
+  if (v.summary_minute !== undefined) {
+    const err = checkMinute(Number(v.summary_minute), "Akşam özeti saati");
+    if (err) return { ok: false, error: err };
+    patch.summary_minute = v.summary_minute;
   }
   if (Object.keys(patch).length === 0) return { ok: true };
 

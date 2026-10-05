@@ -28,6 +28,33 @@ export function checkHour(n: number, name: string): string | null {
   return null;
 }
 
+export function checkMinute(n: number, name: string): string | null {
+  if (!Number.isInteger(n) || n < 0 || n > 59) return `${name} dakikası 0 ile 59 arasında bir tam sayı olmalı.`;
+  return null;
+}
+
+/** 24 saat "SS:DD" biçimi (örn. 08:00). */
+export function formatHm(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+/** Yazılan metni "SS:DD" maskesine sokar: yalnız rakam, iki rakamdan sonra iki nokta, en çok 4 rakam. */
+export function maskHm(raw: string): string {
+  if (/^\d{1,2}:\d{0,2}$/.test(raw)) return raw;
+  const d = raw.replace(/\D/g, "").slice(0, 4);
+  return d.length > 2 ? `${d.slice(0, 2)}:${d.slice(2)}` : d;
+}
+
+/** "SS:DD" metnini saat ve dakikaya çevirir; geçersizse null. */
+export function parseHm(raw: string): { hour: number; minute: number } | null {
+  const m = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(raw.trim());
+  if (!m) return null;
+  const hour = Number(m[1]);
+  const minute = Number(m[2]);
+  if (hour > 23 || minute > 59) return null;
+  return { hour, minute };
+}
+
 /** rules_summary_text() ile aynı cümle kalıbı (canlı önizleme). */
 export function rulesSummary(v: Pick<RulesValues, "max_attempts" | "pool_wait_days" | "max_rounds">): string {
   return `Ulaşılamayan müşteri aynı gün tekrar aranır. ${v.max_attempts} başarısız denemeden sonra havuza düşer ve ${v.pool_wait_days} gün sonra listeye geri çıkar. Havuza en fazla ${v.max_rounds} kez düşer, sonra 'ulaşılamadı' olarak kapanır.`;

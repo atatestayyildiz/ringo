@@ -90,15 +90,19 @@ test("bildirim sekmesinden gönderim saatleri değişir, Kurallar'da saat alanı
 
   const morning = page.getByLabel("Sabah listesi");
   const original = await morning.inputValue();
-  const changed = String(Number(original) === 9 ? 8 : 9);
+  expect(original).toMatch(/^\d{2}:\d{2}$/);
+  const changed = original === "08:30" ? "08:45" : "08:30";
   const save = async (value: string) => {
     await morning.fill(value);
     await page.getByRole("button", { name: "Saatleri kaydet" }).click();
     await expect(page.getByText("Gönderim saatleri kaydedildi.")).toBeVisible();
   };
   try {
-    await morning.fill("24");
-    await expect(page.getByText("0 ile 23 arasında bir tam sayı girin.")).toBeVisible();
+    await morning.fill("24:00");
+    await expect(page.getByText("Saati SS:DD biçiminde girin, örneğin 08:30.")).toBeVisible();
+    await morning.fill("0861");
+    await expect(morning).toHaveValue("08:61");
+    await expect(page.getByText("Saati SS:DD biçiminde girin, örneğin 08:30.")).toBeVisible();
     await save(changed);
     await page.reload();
     await page.getByRole("button", { name: "Bildirimler", exact: true }).click();
@@ -106,5 +110,32 @@ test("bildirim sekmesinden gönderim saatleri değişir, Kurallar'da saat alanı
   } finally {
     await page.getByLabel("Sabah listesi").fill(original);
     await page.getByRole("button", { name: "Saatleri kaydet" }).click();
+    await expect(page.getByText("Gönderim saatleri kaydedildi.").first()).toBeVisible();
   }
 });
+
+for (const viewport of [
+  { name: "masaüstü", width: 1280, height: 800 },
+  { name: "mobil", width: 375, height: 812 },
+]) {
+  test(`çalışan ekle: Öner ve Kopyala geçici şifre alanıyla aynı hizada (${viewport.name})`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await loginOk(page, "yonetici");
+    await page.goto("/ayarlar");
+    await page.getByRole("button", { name: "Ekip", exact: true }).click();
+    await page.getByRole("button", { name: "Çalışan ekle" }).first().click();
+    const dialog = page.getByRole("dialog");
+    const input = dialog.getByLabel("Geçici şifre");
+    await expect(input).toBeVisible();
+    const box = await input.boundingBox();
+    expect(box).not.toBeNull();
+    for (const name of ["Öner", "Kopyala"]) {
+      const b = await dialog.getByRole("button", { name, exact: true }).boundingBox();
+      expect(b).not.toBeNull();
+      expect(Math.abs(b!.y - box!.y)).toBeLessThanOrEqual(2);
+      expect(Math.abs(b!.y + b!.height - (box!.y + box!.height))).toBeLessThanOrEqual(2);
+      expect(b!.x + b!.width).toBeLessThanOrEqual(viewport.width);
+    }
+    await dialog.getByRole("button", { name: "Vazgeç" }).click();
+  });
+}

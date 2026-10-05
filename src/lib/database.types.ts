@@ -250,13 +250,13 @@ isOneToOne: false
                   ]
                 },"tenant_settings": {
                   Row: {
-                    "birthday_notice_days": number,"brand_color": string,"brand_name": string,"distribution_hour": number,"distribution_mode": string,"logo_url": string | null,"max_attempts": number,"max_rounds": number,"pool_wait_days": number,"reminder_hour": number,"summary_hour": number,"telegram_bot_username": string | null,"telegram_enabled": boolean,"tenant_id": string
+                    "birthday_notice_days": number,"brand_color": string,"brand_name": string,"distribution_hour": number,"distribution_minute": number,"distribution_mode": string,"logo_url": string | null,"max_attempts": number,"max_rounds": number,"pool_wait_days": number,"reminder_hour": number,"summary_hour": number,"summary_minute": number,"telegram_bot_username": string | null,"telegram_enabled": boolean,"tenant_id": string
                   }
                   Insert: {
-                    "birthday_notice_days"?: number,"brand_color"?: string,"brand_name"?: string,"distribution_hour"?: number,"distribution_mode"?: string,"logo_url"?: string | null,"max_attempts"?: number,"max_rounds"?: number,"pool_wait_days"?: number,"reminder_hour"?: number,"summary_hour"?: number,"telegram_bot_username"?: string | null,"telegram_enabled"?: boolean,"tenant_id": string
+                    "birthday_notice_days"?: number,"brand_color"?: string,"brand_name"?: string,"distribution_hour"?: number,"distribution_minute"?: number,"distribution_mode"?: string,"logo_url"?: string | null,"max_attempts"?: number,"max_rounds"?: number,"pool_wait_days"?: number,"reminder_hour"?: number,"summary_hour"?: number,"summary_minute"?: number,"telegram_bot_username"?: string | null,"telegram_enabled"?: boolean,"tenant_id": string
                   }
                   Update: {
-                    "birthday_notice_days"?: number,"brand_color"?: string,"brand_name"?: string,"distribution_hour"?: number,"distribution_mode"?: string,"logo_url"?: string | null,"max_attempts"?: number,"max_rounds"?: number,"pool_wait_days"?: number,"reminder_hour"?: number,"summary_hour"?: number,"telegram_bot_username"?: string | null,"telegram_enabled"?: boolean,"tenant_id"?: string
+                    "birthday_notice_days"?: number,"brand_color"?: string,"brand_name"?: string,"distribution_hour"?: number,"distribution_minute"?: number,"distribution_mode"?: string,"logo_url"?: string | null,"max_attempts"?: number,"max_rounds"?: number,"pool_wait_days"?: number,"reminder_hour"?: number,"summary_hour"?: number,"summary_minute"?: number,"telegram_bot_username"?: string | null,"telegram_enabled"?: boolean,"tenant_id"?: string
                   }
                   Relationships: [
                     {

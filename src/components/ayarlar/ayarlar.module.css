@@ -155,14 +155,28 @@
   font-size: 14px;
   padding: 12px 0 4px;
 }
+.pwLabel {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+/* Öner ve Kopyala, input ile aynı satırda ve aynı yükseklikte */
 .pwRow {
   display: flex;
   gap: 8px;
-  align-items: flex-end;
+  align-items: stretch;
 }
 .pwRow > :first-child {
   flex: 1;
   min-width: 0;
+}
+.pwRow > .pwBtn {
+  flex: none;
+  height: auto;
+  min-height: 0;
+  align-self: stretch;
 }
 .formStack {
   display: flex;
