@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import {
   createMemberAction,
+  resetMemberPinAction,
   setMemberActiveAction,
   setMemberRoleAction,
   setPermissionAction,
@@ -104,6 +105,20 @@ function MemberCard({ m, expanded, onToggle }: { m: MemberRow; expanded: boolean
           >
             {m.is_active ? "Pasifleştir" : "Aktifleştir"}
           </Button>
+          {!m.isSelf ? (
+            <Button
+              variant="soft"
+              size="sm"
+              disabled={pending}
+              onClick={() => {
+                if (window.confirm(`${m.full_name} için PIN sıfırlansın mı? Bir sonraki girişte yeni PIN belirler.`)) {
+                  run(() => resetMemberPinAction(m.id), `${m.full_name} için PIN sıfırlandı.`);
+                }
+              }}
+            >
+              PIN sıfırla
+            </Button>
+          ) : null}
           <Button variant="ink" size="sm" aria-expanded={expanded} onClick={onToggle}>
             Yetkiler
           </Button>

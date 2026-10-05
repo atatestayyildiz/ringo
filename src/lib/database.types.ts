@@ -462,8 +462,8 @@ isOneToOne: true
 "set_my_auto_lock":
 { Args: { "p_minutes": number }; Returns: undefined
                            },
-"clear_my_lock":
-{ Args: Record<PropertyKey, never>; Returns: undefined
+"reset_member_pin":
+{ Args: { "p_member": string }; Returns: undefined
                            },
 "auth_unlocked":
 { Args: Record<PropertyKey, never>; Returns: boolean

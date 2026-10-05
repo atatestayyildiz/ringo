@@ -25,7 +25,7 @@ export async function unlockAction(pin: string): Promise<UnlockResult> {
   const remaining = typeof r.remaining === "number" ? r.remaining : 0;
   if (r.signed_out === true) {
     await supabase.auth.signOut({ scope: "local" });
-    return { ok: false, error: "Çok fazla yanlış deneme. E-posta ve şifrenle yeniden giriş yap.", remaining: 0, signedOut: true };
+    return { ok: false, error: "Çok fazla yanlış deneme. PIN'ini sıfırlaması için yöneticine başvur.", remaining: 0, signedOut: true };
   }
   return { ok: false, error: `PIN yanlış. ${remaining} hakkın kaldı.`, remaining, signedOut: false };
 }
@@ -38,9 +38,9 @@ export async function lockAction(): Promise<LockResult> {
   return { ok: true };
 }
 
-/** "PIN'imi unuttum": yerel oturumu kapatır, e-posta + şifre girişine gönderir (kilit girişte kalkar). */
+/** "PIN'imi unuttum": yerel oturumu kapatır; PIN'i yönetici sıfırlar (Ayarlar > Ekip). */
 export async function forgotPinAction(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut({ scope: "local" });
-  redirect("/giris");
+  redirect("/giris?hata=pinunuttum");
 }

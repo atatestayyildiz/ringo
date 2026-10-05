@@ -25,10 +25,7 @@ export async function signInAction(_prev: LoginState, formData: FormData): Promi
     return { error: "Hesabınız etkin değil. Yöneticinize başvurun." };
   }
 
-  // E-posta + şifre ile taze giriş panel kilidini ve yanlış PIN sayacını sıfırlar (DB yalnız
-  // kilitten sonra açılmış oturuma izin verir). Başarısızsa proxy kilit ekranına yönlendirir.
-  await supabase.rpc("clear_my_lock");
-
+  // Şifreli giriş kilidi kaldırmaz: kilit yalnız doğru PIN ya da yöneticinin PIN sıfırlamasıyla kalkar.
   // Hedef proxy'yi beklemeden burada belirlenir: PIN/kilit yönlendirmesi burada da yapılır.
   const { data: st } = await supabase.rpc("lock_status");
   const lock = parseLockStatus(st);

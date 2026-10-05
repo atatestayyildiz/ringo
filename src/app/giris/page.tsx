@@ -37,8 +37,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     hata === "uye"
       ? "Hesabın bir mağazaya bağlı değil ya da pasif. Yöneticinle görüş."
       : hata === "pin"
-        ? "Çok fazla yanlış PIN denemesi. E-posta ve şifrenle giriş yap."
-        : undefined;
+        ? "Çok fazla yanlış PIN denemesi. PIN'ini yöneticin sıfırlayabilir."
+        : hata === "pinunuttum"
+          ? "PIN'ini unuttuysan yöneticinden Ayarlar > Ekip içinden sıfırlamasını iste."
+          : undefined;
   const brand = await loadBranding();
   return (
     <ToastProvider>

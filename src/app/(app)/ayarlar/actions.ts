@@ -186,6 +186,16 @@ export async function setMemberActiveAction(memberId: string, active: boolean): 
   return { ok: true };
 }
 
+export async function resetMemberPinAction(memberId: string): Promise<ActionResult> {
+  const ctx = await requireManager();
+  if (!ctx) return { ok: false, error: NOT_MANAGER };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reset_member_pin", { p_member: memberId });
+  if (error) return { ok: false, error: toUserMessage(error) };
+  revalidatePath("/ayarlar");
+  return { ok: true };
+}
+
 export async function setMemberRoleAction(memberId: string, role: "manager" | "agent"): Promise<ActionResult> {
   const ctx = await requireManager();
   if (!ctx) return { ok: false, error: NOT_MANAGER };

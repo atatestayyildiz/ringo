@@ -781,7 +781,7 @@ async function panelLockProbe() {
     ["unlock_with_pin", { p_pin: "000000" }],
     ["set_my_pin", { p_new: "135790" }],
     ["set_my_auto_lock", { p_minutes: 0 }],
-    ["clear_my_lock", {}],
+    ["reset_member_pin", { p_member: "00000000-0000-4000-8000-000000000000" }],
     ["auth_unlocked", {}],
   ]) {
     await check(G, `anon ${fn} çağıramaz`, async () => expectError(await anonClient.rpc(fn, args)));
@@ -815,8 +815,10 @@ async function panelLockProbe() {
     await check(G, "kilitliyken daily_assignments okunamaz", async () => expectNoRows(await can.from("daily_assignments").select("id").limit(5)));
     await check(G, "kilitliyken call_attempts okunamaz", async () => expectNoRows(await can.from("call_attempts").select("id").limit(5)));
     await check(G, "kilitliyken list_pool 42501", async () => expectError(await can.rpc("list_pool"), ["42501"]));
-    await check(G, "kilitli eski oturum clear_my_lock ile PIN'i atlayamaz", async () =>
-      expectError(await can.rpc("clear_my_lock"), ["42501"]));
+    await check(G, "clear_my_lock kaldırıldı (şifreli giriş kilidi açamaz)", async () =>
+      expectError(await can.rpc("clear_my_lock")));
+    await check(G, "kilitliyken reset_member_pin 42501", async () =>
+      expectError(await can.rpc("reset_member_pin", { p_member: canId }), ["42501"]));
     await check(G, "kilitliyken uygulama sayfası /kilit'e yönlenir", async () => {
       const { header } = await appCookie(USERS.can);
       // Yeni şifreli oturum: uygulama girişi değil, doğrudan çerez; kilit DB'de duruyor.

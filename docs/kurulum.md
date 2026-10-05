@@ -61,7 +61,10 @@ npx supabase db push
 - `login` tarayıcıyı açar, onaylayın.
 - `link` veritabanı şifresini sorar (1. adımda kaydettiğiniz).
 - `db push` tüm tabloları, kuralları ve zamanlayıcıları (sabah dağıtımı `telefoncu-distribution`, bildirim `telefoncu-notify`) kurar. Onay sorusuna `Y` deyin.
+- `db push` sonrası SQL Editor'da RLS kontrolü: `select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and relkind='r' and not relrowsecurity;` Sonuç **boş** olmalı.
 - **Seed (demo verisi) ÇALIŞTIRILMAZ.** `db push`'a `--include-seed` eklemeyin. `npx supabase db reset --linked` komutunu **asla** çalıştırmayın (canlı veriyi siler).
+
+- **Kilit ve PIN:** Çalışan PIN'ini unutursa ya da 5 kez yanlış girerse yönetici **Ayarlar > Ekip > PIN sıfırla** yapar. Yöneticinin kendi PIN'i için ikinci bir yönetici gerekir; yoksa Supabase **SQL Editor**'da: `update public.members set pin_hash = null, locked_at = null, pin_failed = 0 where user_id = (select id from auth.users where email = '<e-posta>');` Not: kilit hesap düzeyindedir; bir cihazda PIN'le açmak aynı kullanıcının diğer cihazlarını da açar.
 
 Kontrol: Supabase panelinde **Table Editor**'da `tenants`, `customers` vb. tablolar görünmeli (boş). **Integrations > Cron** (ya da **Database > Cron Jobs**) altında iki iş görünmeli.
 
@@ -75,7 +78,7 @@ Supabase panelinde **Authentication** bölümü:
    - **Enable Email provider:** açık.
    - **Confirm email:** açık kalabilir (çalışanları uygulama onaylı oluşturur).
    - **Minimum password length:** `8`.
-   - **Secure password change:** açık. (Şifre değiştirirken oturum çok eskiyse çıkış yapıp yeniden girmeniz istenebilir; normaldir.)
+   - **Secure password change:** açık. (Şifre değiştirirken oturum çok eskiyse çıkış yapıp yeniden girmeniz istenebilir; normaldir.) Bu ayar tek başına yeterli değildir: 24 saatten taze oturum şifreyi yeniden doğrulamadan değiştirebilir. Panel kilidi bu yüzden şifreli girişle açılmaz; yalnız PIN ya da yönetici sıfırlaması açar.
    - **Allow new users to sign up** (Sign In / Providers sayfasının üstünde, "User Signups"): **kapalı**. Hesapları yalnız yönetici açar.
 2. **URL Configuration** (bu adımı Vercel adresi belli olduktan sonra, 5. adımın sonunda tamamlayın):
    - **Site URL:** `https://<vercel-adresiniz>` (ör. `https://telefoncu.vercel.app`).
@@ -94,7 +97,7 @@ Supabase panelinde **Authentication** bölümü:
    - Alternatif **Resend** (https://resend.com): Host `smtp.resend.com`, Port `465`, Username `resend`, Password = Resend API anahtarı. Alan adınızı doğrulamadan yalnız kendi adresinize gönderir; alan adınız yoksa Gmail'i seçin.
    - SMTP kurulunca **Authentication > Rate Limits** içinde e-posta sınırını saatte 30 civarı bırakın.
    - SMTP'yi bu gece kuramazsanız: uygulama çalışır, yalnız "Şifremi unuttum" e-postaları gitmez. Şifreyi unutan çalışanın şifresini yönetici Supabase panelinden (**Authentication > Users > ... > Send password recovery** ya da kullanıcıyı silip yeniden ekleme) yönetebilir.
-5. (Önerilir) **Project Settings > JWT Keys / Auth > JWT expiry:** `900` saniye.
+5. (**Zorunlu**) **Project Settings > JWT Keys / Auth > JWT expiry:** `900` saniye. İptal edilen ya da pasifleştirilen oturumun jetonu bu süre kadar geçerli kalır; varsayılan 1 saat çok uzundur.
 
 ---
 
@@ -131,7 +134,7 @@ Supabase panelinde **Authentication** bölümü:
 1. https://vercel.com adresinde **Continue with GitHub** ile hesap açın (Hobby, ücretsiz).
 2. **Add New... > Project** > GitHub deposu listesinde `telefoncu` > **Import**. (Görünmüyorsa "Adjust GitHub App Permissions" ile Vercel'e bu depoya erişim verin.)
 3. **Framework Preset:** Next.js (kendisi seçer). Build/Output ayarlarına dokunmayın.
-4. **Environment Variables** bölümüne şunları tek tek ekleyin (hepsi Production için; Preview için de ekleyebilirsiniz):
+4. **Environment Variables** bölümüne şunları tek tek ekleyin. **Yalnız Production** ortamını işaretleyin; özellikle `SUPABASE_SERVICE_ROLE_KEY` Preview ve Development'a girmesin (her dal yayını tam yetkiyle çalışmasın):
 
    | Ad | Değer nereden |
    |---|---|

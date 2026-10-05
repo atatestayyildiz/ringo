@@ -5,6 +5,13 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      {
         // Sıfırlama kodu URL'de gelir: dışarıya Referer sızmasın, sayfa önbelleğe alınmasın.
         source: "/sifre-sifirla/:path*",
         headers: [

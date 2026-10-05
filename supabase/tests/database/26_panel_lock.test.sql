@@ -1,7 +1,7 @@
 -- Panel kilidi (migration 20261005001200_panel_lock.sql)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(69);
+select plan(72);
 
 insert into auth.users (instance_id, id, aud, role, email) values
   ('00000000-0000-0000-0000-000000000000', '20000000-0000-4000-8000-0000000000e1', 'authenticated', 'authenticated', 'lk-yonetici@test.test'),
@@ -28,14 +28,14 @@ select ok(not has_function_privilege('anon', 'public.lock_me()', 'EXECUTE'), 'an
 select ok(not has_function_privilege('anon', 'public.unlock_with_pin(text)', 'EXECUTE'), 'anon unlock_with_pin çağıramaz');
 select ok(not has_function_privilege('anon', 'public.lock_status()', 'EXECUTE'), 'anon lock_status çağıramaz');
 select ok(not has_function_privilege('anon', 'public.set_my_auto_lock(integer)', 'EXECUTE'), 'anon set_my_auto_lock çağıramaz');
-select ok(not has_function_privilege('anon', 'public.clear_my_lock()', 'EXECUTE'), 'anon clear_my_lock çağıramaz');
+select ok(to_regprocedure('public.clear_my_lock()') is null, 'clear_my_lock kaldırıldı (şifreli giriş kilidi açmaz)');
 select ok(not has_function_privilege('anon', 'public.auth_unlocked()', 'EXECUTE'), 'anon auth_unlocked çağıramaz');
 select ok(has_function_privilege('authenticated', 'public.set_my_pin(text,text)', 'EXECUTE')
           and has_function_privilege('authenticated', 'public.lock_me()', 'EXECUTE')
           and has_function_privilege('authenticated', 'public.unlock_with_pin(text)', 'EXECUTE')
           and has_function_privilege('authenticated', 'public.lock_status()', 'EXECUTE')
           and has_function_privilege('authenticated', 'public.set_my_auto_lock(integer)', 'EXECUTE')
-          and has_function_privilege('authenticated', 'public.clear_my_lock()', 'EXECUTE'),
+          and has_function_privilege('authenticated', 'public.reset_member_pin(uuid)', 'EXECUTE'),
           'authenticated kilit RPC''lerini çağırır');
 select ok(not has_function_privilege('authenticated', 'public._assert_unlocked()', 'EXECUTE'), '_assert_unlocked authenticated''a kapalı');
 select ok(not has_function_privilege('authenticated', 'public._pin_is_weak(text)', 'EXECUTE'), '_pin_is_weak authenticated''a kapalı');
@@ -109,7 +109,7 @@ select throws_ok($$select public.set_my_auto_lock(10)$$, '42501', null, 'kilitli
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000e1","role":"authenticated"}', true);
 select is((select count(*)::int from public.customers), 1, 'yönetici (açık) müşteriyi görür');
 select is(public.unlock_with_pin('135790') ->> 'ok', 'true', 'yöneticinin unlock''u yalnız kendi (açık) satırına bakar');
-select lives_ok($$select public.clear_my_lock()$$, 'yöneticinin clear_my_lock''u kendi satırında no-op');
+select is((public.lock_status() ->> 'locked')::boolean, false, 'yönetici açık kalır');
 select throws_ok($$update public.members set locked_at = null where id = '30000000-0000-4000-8000-0000000000e2'$$, '42501', null, 'yönetici ajanın locked_at''ini yazamaz');
 reset role;
 select ok((select locked_at is not null from public.members where id = '30000000-0000-4000-8000-0000000000e2'), 'ajan hâlâ kilitli');
@@ -133,23 +133,27 @@ select is(public.unlock_with_pin('000005'), '{"ok": false, "remaining": 0, "sign
 select is(public.unlock_with_pin('135790') ->> 'signed_out', 'true', 'aynı oturumda doğru PIN de kabul edilmez');
 select is((public.lock_status() ->> 'locked')::boolean, true, 'kilit kalır');
 
--- clear_my_lock: yalnız kilitten sonra açılmış oturum
-select throws_ok($$select public.clear_my_lock()$$, '42501', null, 'oturum kimliği yokken clear reddedilir');
+-- Y1: şifreli giriş kilidi kaldıramaz; yalnız yönetici PIN'i sıfırlayabilir.
+select throws_ok($$select public.reset_member_pin('30000000-0000-4000-8000-0000000000e2')$$, '42501', 'Panel kilitli.', 'kilitli üye PIN sıfırlayamaz');
 reset role;
-insert into auth.sessions (id, user_id, created_at) values
-  ('50000000-0000-4000-8000-0000000000e1', '20000000-0000-4000-8000-0000000000e2', now() - interval '1 hour'),
-  ('50000000-0000-4000-8000-0000000000e2', '20000000-0000-4000-8000-0000000000e2', now() + interval '1 second'),
-  ('50000000-0000-4000-8000-0000000000e3', '20000000-0000-4000-8000-0000000000e1', now() + interval '1 second');
-select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000e2","role":"authenticated","session_id":"50000000-0000-4000-8000-0000000000e1"}', true);
+select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000e1","role":"authenticated"}', true);
 set local role authenticated;
-select throws_ok($$select public.clear_my_lock()$$, '42501', null, 'kilitten önceki oturum kilidi kaldıramaz');
-select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000e2","role":"authenticated","session_id":"50000000-0000-4000-8000-0000000000e3"}', true);
-select throws_ok($$select public.clear_my_lock()$$, '42501', null, 'başkasının oturum kimliği kullanılamaz');
-select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000e2","role":"authenticated","session_id":"50000000-0000-4000-8000-0000000000e2"}', true);
-select lives_ok($$select public.clear_my_lock()$$, 'yeni şifreli oturum kilidi kaldırır');
-select is((public.lock_status() ->> 'locked')::boolean, false, 'kilit kalktı');
+select throws_ok($$select public.reset_member_pin('30000000-0000-4000-8000-0000000000e1')$$, '22023', null, 'yönetici kendi PIN''ini sıfırlayamaz');
+select lives_ok($$select public.reset_member_pin('30000000-0000-4000-8000-0000000000e2')$$, 'yönetici üyenin PIN''ini sıfırlar');
 reset role;
-select is((select pin_failed::int from public.members where id = '30000000-0000-4000-8000-0000000000e2'), 0, 'clear sayacı sıfırlar');
+select ok((select pin_hash is null and locked_at is null and pin_failed = 0 from public.members where id = '30000000-0000-4000-8000-0000000000e2'), 'PIN silindi, kilit ve sayaç temiz');
+select ok(exists (select 1 from public.audit_log where action = 'pin_reset' and entity_id = '30000000-0000-4000-8000-0000000000e2'), 'PIN sıfırlama audit''e yazıldı');
+
+-- Y2: kilitli yönetici yetki/ayar yazamaz, audit okuyamaz.
+select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000e1","role":"authenticated"}', true);
+set local role authenticated;
+select public.set_my_pin('864219');
+select public.lock_me();
+select is(public.auth_is_manager(), false, 'kilitli yönetici auth_is_manager false');
+select is_empty($$update public.members set role = 'manager' where id = '30000000-0000-4000-8000-0000000000e2' returning 1$$, 'kilitli yönetici rol yazamaz');
+select is_empty($$update public.tenant_settings set brand_name = 'X' returning 1$$, 'kilitli yönetici ayar yazamaz');
+select is((select count(*)::int from public.audit_log), 0, 'kilitli yönetici audit okuyamaz');
+reset role;
 
 -- Üyeliği olmayan kullanıcı
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000e3","role":"authenticated"}', true);
