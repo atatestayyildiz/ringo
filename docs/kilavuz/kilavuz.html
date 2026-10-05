@@ -239,11 +239,11 @@
   <li><b>Arama:</b> "Ad veya telefon ara" kutusuna ad ya da numaradan bir parça yazın.</li>
   <li><b>Filtreler:</b> Durum, Huni aşaması, Operatör ve Atanan çalışan (<b>Tüm durumlar</b>, <b>Tüm aşamalar</b> vb.). <b>Atanmamış</b> seçeneği sahibi olmayan müşterileri gösterir.</li>
   <li><b>Müşteri detayı:</b> satıra dokununca yan panel açılır. Telefon, ikinci telefon, operatör, kaynak, başvuru zamanı, doğum tarihi, atanan çalışan, <b>Huni aşaması</b> ve randevu zamanı görünür. <b>Geçmiş</b> bölümünde tüm aramalar ve aşama değişiklikleri vardır. Yönetici bilgileri düzenleyip <kbd>Kaydet</kbd> ile günceller. Yetkiliyse <kbd>Devret</kbd> ile başka çalışana verir.</li>
-  <li><b>Müşteri ekle</b> (yönetici veya "Müşteri eklesin" yetkisi): ad soyad, telefon (örnek 0532 123 45 67), isteğe bağlı operatör ve doğum tarihi. Eklenen müşteri bir sonraki dağıtımda listeye girer. Aynı numara varsa program uyarır.</li>
+  <li><b>Müşteri ekle</b> (yönetici veya "Müşteri eklesin / silsin" yetkisi): ad soyad, telefon (örnek 0532 123 45 67), isteğe bağlı operatör ve doğum tarihi. Eklenen müşteri bir sonraki dağıtımda listeye girer. Aynı numara varsa program uyarır.</li>
   <li><b>Excel içe aktar</b> (aynı yetki): bkz. aşağıdaki başlık.</li>
   <li><b>Dışa aktar</b> (yönetici veya "Dışa aktarabilsin" yetkisi): o anki filtrelerle listeyi Excel'de açılan CSV dosyası olarak indirir (en fazla 10.000 satır). Her dışa aktarma kayda geçer.</li>
-  <li><b>Toplu seçim:</b> yönetici veya "Devredebilsin" yetkisi olanlar listede birden çok müşteri işaretleyebilir. Altta çıkan çubukta <kbd>Aktar</kbd> (başka çalışana verir; müşteriler atanmamışsa düğme <kbd>Ata</kbd> olur) ve <kbd>Temizle</kbd> vardır. Seçilen müşterilerin bugünkü liste kayıtları da yeni kişiye geçer.</li>
-  <li><b>Silme:</b> yalnız tek tek yapılır ve yalnız yönetici veya "Müşteri silebilsin" yetkisi olanlar için vardır. Müşteri detay panelinde <kbd>Müşteriyi sil</kbd> sonra <kbd>Kalıcı olarak sil</kbd>. Müşterinin tüm geçmişi geri alınamaz biçimde silinir. Yalnız müşterinin kişisel veri (KVKK) silme talebi için kullanın ve talebi kayıt altına alın. Toplu silme yoktur.</li>
+  <li><b>Toplu seçim:</b> yönetici, "Devredebilsin" ya da "Müşteri eklesin / silsin" yetkisi olanlar listede birden çok müşteri işaretleyebilir. Altta çıkan çubukta <kbd>Aktar</kbd> (başka çalışana verir; müşteriler atanmamışsa düğme <kbd>Ata</kbd> olur), <kbd>Sil</kbd> (onay ister, kalıcıdır) ve <kbd>Temizle</kbd> vardır. Seçilen müşterilerin bugünkü liste kayıtları da yeni kişiye geçer.</li>
+  <li><b>Silme:</b> yalnız yönetici veya "Müşteri eklesin / silsin" yetkisi olanlar için vardır. Tek müşteri için müşteri detay panelinde <kbd>Müşteriyi sil</kbd> sonra <kbd>Kalıcı olarak sil</kbd>; birden çok müşteri için listede işaretleyip <kbd>Sil</kbd> ve onay. Müşterinin tüm geçmişi geri alınamaz biçimde silinir. Yalnız müşterinin kişisel veri (KVKK) silme talebi için kullanın ve talebi kayıt altına alın.</li>
 </ul>
 <h3>Excel içe aktarma adımları</h3>
 <ol>
@@ -341,7 +341,7 @@
   <li>Çalışanın kartında yetki anahtarlarını tek tek açıp kapatın (tablo bölüm 4'te). Yönetici rolü her şeyi yapabildiği için ayrı yetki gerekmez.</li>
   <li><kbd>Pasifleştir</kbd> çalışanı sistemden çıkarmadan girişini ve dağıtım almasını durdurur, <kbd>Aktifleştir</kbd> geri açar. İşten ayrılanı silmek yerine pasifleştirin; sonra Yönetim'de <kbd>İşlerini aktar</kbd> ile açık müşterilerini devredin.</li>
 </ol>
-<p>Açılabilir yetkiler: <b>Tüm müşterileri görsün</b>, <b>Müşteri eklesin</b>, <b>Devredebilsin</b>, <b>Dışa aktarabilsin</b>, <b>Ekibin raporlarını görsün</b>, <b>Yönetim ekranını görsün</b>, <b>Müşteri silebilsin</b>. "Müşteri eklesin" yetkisi hem tek tek eklemeyi hem Excel ile toplu içe aktarmayı kapsar; "Müşteri silebilsin" müşteriyi kalıcı silme yetkisidir, dikkatle verin.</p>
+<p>Açılabilir yetkiler: <b>Tüm müşterileri görsün</b>, <b>Müşteri eklesin / silsin</b>, <b>Devredebilsin</b>, <b>Dışa aktarabilsin</b>, <b>Ekibin raporlarını görsün</b>, <b>Yönetim ekranını görsün</b>. "Müşteri eklesin / silsin" tek anahtardır: tek tek eklemeyi, Excel ile toplu içe aktarmayı ve müşteriyi kalıcı silmeyi (tek ya da toplu) birlikte açar; dikkatle verin.</p>
 
 <h3>Bildirimler</h3>
 <ul>
@@ -364,16 +364,16 @@
     <tr><td>Raporlar: kendi sonuçları</td><td class="c">Evet</td><td class="c">Evet</td><td>Gerekmez</td></tr>
     <tr><td>Raporlar: tüm ekip</td><td class="c">Evet</td><td class="c">Hayır</td><td>Ekibin raporlarını görsün</td></tr>
     <tr><td>Tüm müşterileri görme (yalnız okuma)</td><td class="c">Evet</td><td class="c">Hayır</td><td>Tüm müşterileri görsün</td></tr>
-    <tr><td>Müşteri ekleme ve Excel içe aktarma</td><td class="c">Evet</td><td class="c">Hayır</td><td>Müşteri eklesin</td></tr>
+    <tr><td>Müşteri ekleme ve Excel içe aktarma</td><td class="c">Evet</td><td class="c">Hayır</td><td>Müşteri eklesin / silsin</td></tr>
     <tr><td>Müşteriyi başkasına devretme, toplu Aktar ve Ata</td><td class="c">Evet</td><td class="c">Hayır</td><td>Devredebilsin</td></tr>
     <tr><td>Müşteri listesini ve rapor dosyasını dışa aktarma</td><td class="c">Evet</td><td class="c">Hayır</td><td>Dışa aktarabilsin (rapor dosyası için ayrıca Ekibin raporlarını görsün)</td></tr>
     <tr><td>Yönetim ekranını görme</td><td class="c">Evet</td><td class="c">Hayır</td><td>Yönetim ekranını görsün</td></tr>
-    <tr><td>Müşteriyi kalıcı silme</td><td class="c">Evet</td><td class="c">Hayır</td><td>Müşteri silebilsin</td></tr>
+    <tr><td>Müşteriyi kalıcı silme (tek ve toplu)</td><td class="c">Evet</td><td class="c">Hayır</td><td>Müşteri eklesin / silsin</td></tr>
     <tr><td>Müşteri bilgisi düzenleme, Dağıt, Bugün yok, İşlerini aktar</td><td class="c">Evet</td><td class="c">Hayır</td><td>Açılamaz (yalnız yönetici)</td></tr>
     <tr><td>Ayarlar (kurallar, ekip, yetkiler, bildirim, marka)</td><td class="c">Evet</td><td class="c">Hayır</td><td>Açılamaz (yalnız yönetici)</td></tr>
   </tbody>
 </table>
-<div class="note"><b>Tavsiye.</b> Yetkileri en az gerektiği kadar verin. Müşteri listesi kişisel veri içerir; özellikle "Dışa aktarabilsin", "Tüm müşterileri görsün" ve "Müşteri silebilsin" yetkilerini yalnız güvendiğiniz kişilere açın.</div>
+<div class="note"><b>Tavsiye.</b> Yetkileri en az gerektiği kadar verin. Müşteri listesi kişisel veri içerir; özellikle "Dışa aktarabilsin", "Tüm müşterileri görsün" ve "Müşteri eklesin / silsin" yetkilerini yalnız güvendiğiniz kişilere açın.</div>
 
 <h1>5. İsteğe bağlı: telefona bildirim (Telegram)</h1>
 <div class="note"><b>Şu an kapalı.</b> Bu kurulumda Telegram bildirimleri <b>kullanılmamaktadır</b> (Ayarlar > Bildirimler'de Telegram kapalıdır). Bu bölümü okumanız ve bir şey yapmanız gerekmez. Yönetici isterse sonradan Ayarlar > Bildirimler'den açabilir; o zaman aşağıdaki adımlar geçerli olur.</div>
