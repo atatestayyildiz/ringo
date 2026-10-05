@@ -1,9 +1,11 @@
 import { AccentCard } from "@/components/profil/AccentCard";
 import { PasswordCard } from "@/components/profil/PasswordCard";
+import { SecurityCard } from "@/components/profil/SecurityCard";
 import { TelegramCard } from "@/components/profil/TelegramCard";
 import s from "@/components/profil/profil.module.css";
 import { Avatar, Card, Chip } from "@/components/ui";
 import { can, getSessionContext } from "@/lib/session";
+import { parseLockStatus } from "@/components/lock/activity";
 import { createClient } from "@/lib/supabase/server";
 import { botTokenConfigured } from "@/lib/telegram/client";
 
@@ -18,6 +20,8 @@ export default async function Page() {
     .select("telegram_linked_at, notify_morning, notify_summary, accent_color")
     .eq("id", ctx.member.id)
     .maybeSingle();
+  const { data: lockData } = await supabase.rpc("lock_status");
+  const autoLockMinutes = parseLockStatus(lockData)?.auto_lock_minutes ?? 10;
 
   const isManager = ctx.member.role === "manager";
   const showSummary = isManager || can(ctx.member, "view_reports");
@@ -62,6 +66,9 @@ export default async function Page() {
         </div>
         <div className={`${s.cell} ${s.pw}`}>
           <PasswordCard />
+        </div>
+        <div className={`${s.cell} ${s.pw}`}>
+          <SecurityCard autoLockMinutes={autoLockMinutes} />
         </div>
       </div>
     </>

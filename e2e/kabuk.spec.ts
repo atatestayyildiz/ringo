@@ -70,3 +70,69 @@ test.describe("kabuk: masaüstü", () => {
     expect(top).toBe(0);
   });
 });
+
+for (const vp of [
+  { name: "masaüstü", width: 1440, height: 900 },
+  { name: "mobil", width: 375, height: 812 },
+]) {
+  test.describe(`kabuk: hesap menüsü (${vp.name})`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height } });
+
+    test("avatar menüsü: klavye, Escape, dışarı tıklama, tema ve profil", async ({ page }) => {
+      await loginOk(page, "elif");
+      const trigger = page.getByRole("button", { name: "Hesap menüsü" });
+      await expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+      await expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+      await trigger.click();
+      const menu = page.getByRole("menu", { name: "Hesap" });
+      await expect(menu).toBeVisible();
+      await expect(trigger).toHaveAttribute("aria-expanded", "true");
+      const items = menu.getByRole("menuitem");
+      await expect(items).toHaveText(["Profil", /(Koyu|Açık) tema/, "Paneli kilitle", "Çıkış yap"]);
+      await expect(items.first()).toBeFocused();
+      await page.keyboard.press("ArrowDown");
+      await expect(items.nth(1)).toBeFocused();
+      await page.keyboard.press("ArrowUp");
+      await page.keyboard.press("ArrowUp");
+      await expect(items.last()).toBeFocused();
+      await page.keyboard.press("Escape");
+      await expect(menu).toBeHidden();
+      await expect(trigger).toBeFocused();
+
+      // dışarı tıklayınca kapanır
+      await trigger.click();
+      await expect(menu).toBeVisible();
+      await page.mouse.click(10, vp.height - 10);
+      await expect(menu).toBeHidden();
+
+      // tema: menü açık kalır, etiket değişir
+      await trigger.click();
+      const before = await page.evaluate(() => document.documentElement.dataset.theme ?? "");
+      await menu.getByRole("menuitem", { name: /tema$/ }).click();
+      await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).not.toBe(before);
+      await expect(menu).toBeVisible();
+      await page.evaluate(() => {
+        delete document.documentElement.dataset.theme;
+        localStorage.removeItem("theme");
+      });
+
+      await menu.getByRole("menuitem", { name: "Profil" }).click();
+      await expect(page).toHaveURL(/\/profil/);
+    });
+  });
+}
+
+test("hesap menüsü: karartma katmanına tıklayınca kapanır", async ({ page }) => {
+  await loginOk(page, "ayse");
+  const trigger = page.getByRole("button", { name: "Hesap menüsü" });
+  await trigger.click();
+  const menu = page.getByRole("menu", { name: "Hesap" });
+  await expect(menu).toBeVisible();
+  const scrim = page.getByTestId("user-menu-scrim");
+  await expect(scrim).toHaveCSS("opacity", "1");
+  await page.mouse.click(200, 600);
+  await expect(menu).toBeHidden();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(page).toHaveURL(/\/bugun/);
+});

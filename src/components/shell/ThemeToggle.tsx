@@ -20,7 +20,8 @@ function subscribe(cb: () => void) {
   };
 }
 
-export function ThemeToggle() {
+/** Tema durumu ve geçiş (ThemeToggle ve hesap menüsü ortak kullanır). */
+export function useThemeToggle() {
   const dark = useSyncExternalStore(subscribe, isDark, () => false);
   const toggle = () => {
     const next = dark ? "light" : "dark";
@@ -31,6 +32,11 @@ export function ThemeToggle() {
       // depolama kapalı olabilir
     }
   };
+  return { dark, toggle };
+}
+
+export function ThemeToggle() {
+  const { dark, toggle } = useThemeToggle();
   return (
     <RoundButton label={dark ? "Açık temaya geç" : "Koyu temaya geç"} onClick={toggle} aria-pressed={dark}>
       {dark ? <IconSun /> : <IconMoon />}

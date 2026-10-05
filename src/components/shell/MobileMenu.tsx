@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { IconLogout, IconX } from "@/components/icons";
+import { useLock } from "@/components/lock/useLock";
+import { IconLock } from "./IconLock";
 import { NAV_ITEMS, type NavKey } from "./MainNav";
 import { SignOutDialog } from "./SignOutButton";
 
@@ -40,6 +42,7 @@ export function MobileMenu({
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
+  const { lockNow } = useLock();
 
   useEffect(() => {
     if (!open) return;
@@ -130,6 +133,16 @@ export function MobileMenu({
                 <IconUser />
                 <span>Profil</span>
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  void lockNow();
+                }}
+              >
+                <IconLock />
+                <span>Paneli kilitle</span>
+              </button>
               <button
                 type="button"
                 aria-haspopup="dialog"

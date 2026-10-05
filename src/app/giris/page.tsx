@@ -1,6 +1,7 @@
 import { Card, ToastProvider } from "@/components/ui";
 import { MadeBy } from "@/components/shell/MadeBy";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
+import { Scene, sceneGlass } from "@/components/scene/Scene";
 import { isAllowedLogoUrl } from "@/lib/brand-logo";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "./LoginForm";
@@ -38,34 +39,21 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const brand = await loadBranding();
   return (
     <ToastProvider>
-    <div className="login-wrap">
       {brand?.color ? <style>{`:root{--brand:${brand.color}}`}</style> : null}
-      <div style={{ position: "fixed", top: 16, right: 16 }}>
+      <div style={{ position: "fixed", top: 16, right: 16, zIndex: 5 }}>
         <ThemeToggle />
       </div>
-      <Card className="login-card">
-        {brand ? (
-          <div className="logo" data-testid="login-brand">
-            <span className="logo-mark" aria-hidden="true">
-              {brand.logo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={brand.logo} alt="" />
-              ) : (
-                (brand.name[0] ?? "M").toLocaleUpperCase("tr")
-              )}
-            </span>
-            <span className="logo-name">{brand.name}</span>
+      <Scene brandName={brand?.name ?? ""} brandColor={brand?.color ?? null} logoUrl={brand?.logo ?? null} brandTestId="login-brand">
+        <Card className={`login-card ${sceneGlass}`}>
+          <div>
+            <h1>Hoş geldin</h1>
+            <p style={{ color: "var(--ink-2)", marginTop: 6 }}>Devam etmek için giriş yap.</p>
           </div>
-        ) : null}
-        <div>
-          <h1>Hoş geldin</h1>
-          <p style={{ color: "var(--ink-2)", marginTop: 6 }}>Devam etmek için giriş yap.</p>
-        </div>
-        <LoginForm notice={notice} />
-      </Card>
-      <MadeBy />
+          <LoginForm notice={notice} />
+        </Card>
+        <MadeBy />
+      </Scene>
       <ResetFlash show={sifre === "yenilendi"} />
-    </div>
     </ToastProvider>
   );
 }

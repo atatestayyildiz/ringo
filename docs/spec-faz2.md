@@ -124,3 +124,12 @@ Migration `20261005001000_distribution_modes.sql`. `free_pool` ve `manual` çal�
 - Migration `20261005001100_morning_modes.sql`. `_notification_targets` sabah adımı: dağıtım saati geçtiyse hedefler hesaplanmadan önce bugünün moda uygun dağıtımı çalışır (auto_even: bugün ataması yokken, eskisi gibi; free_pool/manual: her çağrıda, idempotent). Böylece sabah sayısı sahibin vakti gelen tekrar aramalarını içerir. Yukarıdaki "Bilinen sınır" maddesi kapandı.
 - Serbest havuz modunda Havuz yalnız görüntülenir: `take_from_pool` 22023 "Serbest havuz modunda müşteriler Sıradakini al ile alınır." (auto_even ve manual aynı). Havuz sayfasında "Kendime al" düğmesi yok, üstte not: "Havuzdan dönen müşteriler Sıradakini al kuyruğuna girer." Yukarıdaki "take_from_pool: free_pool'da claim_limit" maddesinin yerine geçer.
 - İzinli/pasif çalışanın açık müşterileri (free_pool/manual): değişiklik yok; yönetici "İşlerini aktar" (transfer_open_work) veya Müşteriler aktarımıyla taşır. Karar: mevcut akış yeterli.
+
+## Panel kilidi (2026-10-05)
+Tasarım: `docs/superpowers/specs/2026-10-05-kilit-ve-acilis-design.md` §1. Migration `20261005001200_panel_lock.sql`.
+- Kilit sunucuda: `members.locked_at`; kolonlar istemciye kapalı, yalnız RPC (`set_my_pin`, `lock_me`, `unlock_with_pin`, `lock_status`, `set_my_auto_lock(integer)`, `clear_my_lock`).
+- Kilitliyken customers / daily_assignments / call_attempts / pipeline_events select politikaları 0 satır (`auth_unlocked()`); iş RPC'leri `current_member()` üzerinden 42501 "Panel kilitli.".
+- 5. yanlış PIN: `signed_out`, sayaç 5'te kalır ve o oturumdan deneme kabul edilmez; `clear_my_lock` yalnız kilitten sonra açılmış (taze şifreli) oturumda çalışır.
+- Proxy tek `lock_status()` çağrısıyla üyelik + PIN + kilit kararını verir (PIN yok → `/pin-belirle`, kilitli → `/kilit`).
+- Demo PIN'i `000000` yalnız seed/yerel DB'de doğrudan hash; `set_my_pin` bu PIN'i kabul etmez.
+- Üst çubuk: tema, kilit, profil ve çıkış tek hesap menüsünde (avatar tetikleyici, gradyan karartma katmanı).

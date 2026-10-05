@@ -137,13 +137,13 @@ isOneToOne: false
                   ]
                 },"members": {
                   Row: {
-                    "absent_on": string | null,"accent_color": string | null,"created_at": string | null,"full_name": string,"id": string,"is_active": boolean,"notify_morning": boolean,"notify_reminder": boolean,"notify_summary": boolean,"permissions": NonNullable<Json>,"role": string,"telegram_chat_id": number | null,"telegram_linked_at": string | null,"tenant_id": string,"user_id": string
+                    "absent_on": string | null,"accent_color": string | null,"created_at": string | null,"full_name": string,"id": string,"is_active": boolean,"auto_lock_minutes": number,"locked_at": string | null,"pin_failed": number,"pin_hash": string | null,"notify_morning": boolean,"notify_reminder": boolean,"notify_summary": boolean,"permissions": NonNullable<Json>,"role": string,"telegram_chat_id": number | null,"telegram_linked_at": string | null,"tenant_id": string,"user_id": string
                   }
                   Insert: {
-                    "absent_on"?: string | null,"accent_color"?: string | null,"created_at"?: string | null,"full_name": string,"id"?: string,"is_active"?: boolean,"notify_morning"?: boolean,"notify_reminder"?: boolean,"notify_summary"?: boolean,"permissions"?: NonNullable<Json>,"role": string,"telegram_chat_id"?: number | null,"telegram_linked_at"?: string | null,"tenant_id": string,"user_id": string
+                    "absent_on"?: string | null,"accent_color"?: string | null,"created_at"?: string | null,"full_name": string,"id"?: string,"is_active"?: boolean,"auto_lock_minutes"?: number,"locked_at"?: string | null,"pin_failed"?: number,"pin_hash"?: string | null,"notify_morning"?: boolean,"notify_reminder"?: boolean,"notify_summary"?: boolean,"permissions"?: NonNullable<Json>,"role": string,"telegram_chat_id"?: number | null,"telegram_linked_at"?: string | null,"tenant_id": string,"user_id": string
                   }
                   Update: {
-                    "absent_on"?: string | null,"accent_color"?: string | null,"created_at"?: string | null,"full_name"?: string,"id"?: string,"is_active"?: boolean,"notify_morning"?: boolean,"notify_reminder"?: boolean,"notify_summary"?: boolean,"permissions"?: NonNullable<Json>,"role"?: string,"telegram_chat_id"?: number | null,"telegram_linked_at"?: string | null,"tenant_id"?: string,"user_id"?: string
+                    "absent_on"?: string | null,"accent_color"?: string | null,"created_at"?: string | null,"full_name"?: string,"id"?: string,"is_active"?: boolean,"auto_lock_minutes"?: number,"locked_at"?: string | null,"pin_failed"?: number,"pin_hash"?: string | null,"notify_morning"?: boolean,"notify_reminder"?: boolean,"notify_summary"?: boolean,"permissions"?: NonNullable<Json>,"role"?: string,"telegram_chat_id"?: number | null,"telegram_linked_at"?: string | null,"tenant_id"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -443,6 +443,27 @@ isOneToOne: true
       } },
 "log_export":
 { Args: { "p_filters"?: Json,"p_kind": string,"p_rows": number }; Returns: undefined
+                           },
+"lock_status":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"lock_me":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"unlock_with_pin":
+{ Args: { "p_pin": string }; Returns: Json
+                           },
+"set_my_pin":
+{ Args: { "p_new": string,"p_current_pin"?: string }; Returns: undefined
+                           },
+"set_my_auto_lock":
+{ Args: { "p_minutes": number }; Returns: undefined
+                           },
+"clear_my_lock":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"auth_unlocked":
+{ Args: Record<PropertyKey, never>; Returns: boolean
                            },
 "login_branding":
 { Args: Record<PropertyKey, never>; Returns: {

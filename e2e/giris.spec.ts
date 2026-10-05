@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { login, loginOk, logout } from "./helpers";
+import { login, loginOk, logout, userMenuItem } from "./helpers";
 
 test.describe("giriş", () => {
   test("oturumsuz kullanıcı giriş sayfasına yönlenir", async ({ page }) => {
@@ -33,12 +33,12 @@ test.describe("giriş", () => {
   test("çıkış onay ister: İptal ve Esc oturumu korur", async ({ page }) => {
     await loginOk(page, "elif");
     const dialog = page.getByRole("dialog", { name: "Çıkış yapılsın mı?" });
-    await page.getByRole("button", { name: "Çıkış yap" }).click();
+    await userMenuItem(page, "Çıkış yap");
     await expect(dialog).toBeVisible();
     await dialog.getByRole("button", { name: "İptal" }).click();
     await expect(dialog).toBeHidden();
     await expect(page).toHaveURL(/\/bugun/);
-    await page.getByRole("button", { name: "Çıkış yap" }).click();
+    await userMenuItem(page, "Çıkış yap");
     await expect(dialog).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();

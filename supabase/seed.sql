@@ -1,6 +1,7 @@
 -- Yerel geliştirme seed'i (spec §10). Tüm kişi ve numaralar kurgusaldır.
 -- Giriş: yonetici@demo.test, elif@demo.test, ayse@demo.test, can@demo.test
 -- Şifre (yalnız yerel test değeri): Demo1234!
+-- Panel kilidi PIN'i (yalnız demo; set_my_pin bu PIN'i kabul etmez): 000000
 
 -- ---------------------------------------------------------------------------
 -- Kiracı ve marka
@@ -60,6 +61,12 @@ insert into public.members (id, tenant_id, user_id, full_name, role, permissions
    'aaaaaaaa-0000-4000-8000-000000000003', 'Ayşe Demo', 'agent', '{}'),
   ('bbbbbbbb-0000-4000-8000-000000000004', '11111111-1111-1111-1111-111111111111',
    'aaaaaaaa-0000-4000-8000-000000000004', 'Can Demo', 'agent', '{}');
+
+-- Panel kilidi PIN'i: 000000 (yalnız demo; set_my_pin bu PIN'i kabul etmez).
+-- Zayıf PIN kuralını atlamak için hash doğrudan yazılır, RPC'den geçmez.
+update public.members
+set pin_hash = extensions.crypt('000000', extensions.gen_salt('bf'))
+where tenant_id = '11111111-1111-1111-1111-111111111111';
 
 -- ---------------------------------------------------------------------------
 -- 40 kurgusal müşteri: telefonlar 0532 000 00 01 ... 0532 000 00 40

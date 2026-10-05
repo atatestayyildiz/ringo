@@ -764,8 +764,76 @@ async function logoAndResetProbe() {
   await elifC.auth.signOut({ scope: "local" }).catch(() => {});
 }
 
+// ---------------------------------------------------------------------------
+// Panel kilidi (spec 2026-10-05 §1)
+// ---------------------------------------------------------------------------
+async function panelLockProbe() {
+  const G = "kilit";
+  for (const [fn, args] of [
+    ["lock_status", {}],
+    ["lock_me", {}],
+    ["unlock_with_pin", { p_pin: "000000" }],
+    ["set_my_pin", { p_new: "135790" }],
+    ["set_my_auto_lock", { p_minutes: 0 }],
+    ["clear_my_lock", {}],
+    ["auth_unlocked", {}],
+  ]) {
+    await check(G, `anon ${fn} çağıramaz`, async () => expectError(await anonClient.rpc(fn, args)));
+  }
+  for (const fn of ["_assert_unlocked", "_pin_is_weak"]) {
+    await check(G, `iç ${fn} istemciye kapalı`, async () => {
+      const c = await signIn(USERS.can);
+      const r = await c.rpc(fn, fn === "_pin_is_weak" ? { p: "111111" } : {});
+      await c.auth.signOut({ scope: "local" }).catch(() => {});
+      return expectError(r);
+    });
+  }
+
+  const can = await signIn(USERS.can);
+  const { data: canUser } = await can.auth.getUser();
+  const canId = canUser.user?.id;
+  try {
+    await check(G, "kilit kolonları istemciden okunamaz", async () =>
+      expectError(await can.from("members").select("pin_hash, locked_at").limit(1)));
+    await check(G, "locked_at istemciden yazılamaz", async () =>
+      expectError(await can.from("members").update({ locked_at: null }).eq("user_id", canId)));
+    await check(G, "açıkken customers okunur (kontrol)", async () => {
+      const r = await can.from("customers").select("id").limit(5);
+      return r.error ? `hata ${r.error.code}` : true;
+    });
+    await check(G, "lock_me çalışır", async () => {
+      const r = await can.rpc("lock_me");
+      return r.error ? `hata ${r.error.code}` : true;
+    });
+    await check(G, "kilitliyken customers okunamaz", async () => expectNoRows(await can.from("customers").select("id").limit(5)));
+    await check(G, "kilitliyken daily_assignments okunamaz", async () => expectNoRows(await can.from("daily_assignments").select("id").limit(5)));
+    await check(G, "kilitliyken call_attempts okunamaz", async () => expectNoRows(await can.from("call_attempts").select("id").limit(5)));
+    await check(G, "kilitliyken list_pool 42501", async () => expectError(await can.rpc("list_pool"), ["42501"]));
+    await check(G, "kilitli eski oturum clear_my_lock ile PIN'i atlayamaz", async () =>
+      expectError(await can.rpc("clear_my_lock"), ["42501"]));
+    await check(G, "kilitliyken uygulama sayfası /kilit'e yönlenir", async () => {
+      const { header } = await appCookie(USERS.can);
+      // Yeni şifreli oturum: uygulama girişi değil, doğrudan çerez; kilit DB'de duruyor.
+      const r = await rawRequest("GET", "/musteriler", { cookie: header });
+      return r.status === 307 && String(r.headers.location ?? "").endsWith("/kilit") ? true : `durum ${r.status} ${r.headers.location ?? ""}`;
+    });
+    await check(G, "5 yanlış PIN sonrası aynı oturum doğru PIN'le de açamaz", async () => {
+      let last;
+      for (let i = 0; i < 5; i++) last = await can.rpc("unlock_with_pin", { p_pin: "975318" });
+      if (!last?.data?.signed_out) return "5. yanlışta signed_out yok";
+      const again = await can.rpc("unlock_with_pin", { p_pin: "000000" });
+      return again.data?.ok === false && again.data?.signed_out === true ? true : "doğru PIN kabul edildi";
+    });
+  } finally {
+    // Kalıcı iz bırakma: demo kullanıcının kilidini temizle.
+    if (canId) await admin.from("members").update({ locked_at: null, pin_failed: 0 }).eq("user_id", canId);
+    await can.auth.signOut({ scope: "local" }).catch(() => {});
+  }
+}
+
 main()
   .then(() => logoAndResetProbe())
+  .then(() => panelLockProbe())
   .catch((e) => {
     record("kurulum", "probe çalıştı", false, e instanceof Error ? e.message : String(e));
   })

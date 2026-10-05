@@ -1,0 +1,476 @@
+/* Açılış sahnesi + kapı. Renk: --sc (bileşen prop'u) yoksa --brand. Yalnız transform/opacity/stroke/clip-path hareketi. */
+
+.scene,
+.door {
+  --c: var(--sc, var(--brand));
+  --c-soft: color-mix(in oklab, var(--c) 52%, #fff);
+  --c-deep: color-mix(in oklab, var(--c) 72%, #000);
+  --c-alt: color-mix(in oklab, var(--c) 60%, #6d5cff);
+  --c-glint: color-mix(in oklab, var(--c) 28%, #fff);
+  --aura: 0.5;
+  --disk: 0.55;
+}
+@supports (color: oklch(from red l c h)) {
+  .scene,
+  .door {
+    --c-alt: oklch(from var(--c) calc(l + 0.04) c calc(h + 48));
+  }
+}
+:global(:root[data-theme="dark"]) .scene,
+:global(:root[data-theme="dark"]) .door {
+  --aura: 0.62;
+  --disk: 0.42;
+}
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .scene,
+  :global(:root:not([data-theme="light"])) .door {
+    --aura: 0.62;
+    --disk: 0.42;
+  }
+}
+
+.scene {
+  position: relative;
+  min-height: 100dvh;
+  isolation: isolate;
+}
+
+/* ---------- arka plan ---------- */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  /* durağan derin ton (katman değil, boyama): sağ üst */
+  background:
+    radial-gradient(60vmax 60vmax at 100% 0%, color-mix(in oklab, var(--c-deep) calc(var(--aura) * 60%), transparent), transparent 70%),
+    var(--bg);
+  pointer-events: none;
+}
+.aura,
+.hatchLayer {
+  position: absolute;
+  inset: -40px;
+  will-change: transform;
+}
+.scene .aura {
+  animation: auraIn 1.1s ease-out both;
+}
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  opacity: var(--aura);
+  will-change: transform;
+}
+.b1 {
+  width: 64vmax;
+  height: 64vmax;
+  top: -26vmax;
+  left: -20vmax;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--c) 72%, transparent), transparent);
+}
+.b2 {
+  width: 66vmax;
+  height: 66vmax;
+  bottom: -30vmax;
+  right: -22vmax;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--c-alt) 62%, transparent), transparent);
+}
+.b3 {
+  width: 40vmax;
+  height: 40vmax;
+  top: 26%;
+  left: 38%;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--c-soft) 55%, transparent), transparent);
+}
+
+/* tasarım dilindeki taralı daire: köşegenin iki ucunda (kapının yarılacağı yön) */
+.disk {
+  position: absolute;
+  width: 68vmin;
+  height: 68vmin;
+  border-radius: 50%;
+  opacity: var(--disk);
+  background: repeating-linear-gradient(135deg, var(--hatch) 0 2px, transparent 2px 9px);
+  -webkit-mask-image: radial-gradient(closest-side, #000 52%, transparent);
+  mask-image: radial-gradient(closest-side, #000 52%, transparent);
+}
+.diskTr {
+  top: -22vmin;
+  right: -18vmin;
+}
+.diskBl {
+  bottom: -24vmin;
+  left: -20vmin;
+}
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 90% at 50% 38%, transparent 52%, color-mix(in oklab, var(--bg) 78%, transparent) 100%);
+}
+
+/* ---------- yerleşim ---------- */
+.stage {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(56px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+}
+.top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  will-change: transform;
+}
+.sceneEmblem {
+  width: clamp(150px, 20vmin + 70px, 236px);
+}
+.scene[data-mode="lock"] .sceneEmblem {
+  width: clamp(156px, 24vmin + 52px, 224px);
+}
+.brandName {
+  margin-top: 2px;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  max-width: min(320px, 86vw);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
+}
+.content {
+  width: min(420px, 100%);
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: contentIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
+}
+.scene[data-mode="lock"] .content {
+  width: min(360px, 100%);
+}
+
+/* ---------- cam kart ---------- */
+.glass:global(.card) {
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow:
+    var(--shadow-lift),
+    inset 0 0 0 1px color-mix(in oklab, var(--surface) 55%, transparent),
+    inset 0 1px 0 color-mix(in oklab, #fff 30%, transparent);
+}
+@media (pointer: coarse) {
+  .glass:global(.card) {
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    backdrop-filter: blur(12px) saturate(1.4);
+  }
+}
+
+/* ---------- amblem ---------- */
+.emblem {
+  position: relative;
+  flex: none;
+  aspect-ratio: 1;
+  container-type: inline-size;
+}
+.halo {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--c) 58%, transparent), transparent);
+  opacity: 0.5;
+  transform: scale(0.9);
+}
+.door[data-glow] .halo {
+  opacity: 1;
+  transform: scale(1.08);
+}
+.ring,
+.orbit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  will-change: transform;
+}
+.ring circle {
+  fill: none;
+}
+.ring1C {
+  stroke: var(--c);
+  stroke-width: 1.15;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  opacity: 0.85;
+}
+.ring2C {
+  stroke: color-mix(in oklab, var(--ink) 38%, transparent);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-dasharray: 22 3 7 3 34 3 4 24;
+}
+.ring2Mask {
+  stroke: #fff;
+  stroke-width: 14;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+}
+.breathC {
+  stroke: var(--c);
+  stroke-width: 1.4;
+}
+.ring[data-a="pulse"],
+.ring[data-a="danger"] {
+  opacity: 0;
+}
+.pulseC {
+  stroke: var(--c);
+  stroke-width: 2.2;
+}
+.dangerC {
+  stroke: var(--c-bad);
+  stroke-width: 2.6;
+}
+.spark {
+  position: absolute;
+  left: 50%;
+  border-radius: 50%;
+  background: var(--c-glint);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, #fff 50%, transparent),
+    0 0 12px 3px color-mix(in oklab, var(--c) 80%, transparent);
+}
+.sparkOuter {
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  top: calc(10% - 3px);
+}
+.sparkInner {
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  top: calc(18% - 2px);
+  opacity: 0.85;
+}
+.mark {
+  position: absolute;
+  inset: 25%;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--on-ink);
+  background: radial-gradient(circle at 32% 26%, color-mix(in oklab, var(--c) 42%, var(--ink)), var(--ink) 72%);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--c) 45%, transparent),
+    0 18px 40px -14px color-mix(in oklab, var(--c) 75%, transparent),
+    inset 0 1px 0 color-mix(in oklab, #fff 22%, transparent);
+  font-weight: 700;
+  font-size: 21cqi;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* giriş koreografisi (~1.2 sn): logo oturur, halkalar sırayla çizilir, ışık noktaları belirir */
+.intro .mark {
+  animation: markIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;
+}
+.intro .halo {
+  animation: haloIn 0.9s ease-out 0.1s both;
+}
+.intro .ring1C {
+  animation: draw 0.85s cubic-bezier(0.65, 0, 0.35, 1) 0.15s both;
+}
+.intro .ring2Mask {
+  animation: draw 0.95s cubic-bezier(0.65, 0, 0.35, 1) 0.3s both;
+}
+.intro .breathC {
+  animation: fade 0.6s ease-out 0.6s both;
+}
+.intro .spark {
+  animation: fade 0.4s ease-out 0.95s both;
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes markIn {
+  from {
+    opacity: 0;
+    transform: scale(0.78);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes haloIn {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes auraIn {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes contentIn {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+/* ---------- kapı ---------- */
+.door {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  visibility: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+.door[data-stage="closed"],
+.door[data-stage="lines"],
+.door[data-stage="split"] {
+  visibility: visible;
+  pointer-events: auto;
+}
+.face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.face .backdrop {
+  position: absolute;
+}
+.half {
+  visibility: hidden;
+  will-change: transform;
+}
+.door[data-stage="split"] .half {
+  visibility: visible;
+}
+.door[data-stage="split"] .face:not(.half) {
+  visibility: hidden;
+}
+.emblem.doorEmblem {
+  position: absolute;
+  z-index: 1;
+}
+.seam {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+}
+.seamGlow,
+.seamCore {
+  fill: none;
+  stroke-linejoin: round;
+}
+.seamGlow {
+  stroke: var(--c);
+  stroke-width: 12;
+  opacity: 0.4;
+}
+.seamCore {
+  stroke: var(--c-glint);
+  stroke-width: 2.4;
+}
+.lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  overflow: visible;
+  visibility: hidden;
+  pointer-events: none;
+}
+.lineGlow,
+.lineCore {
+  fill: none;
+  stroke-linecap: round;
+}
+.lineGlow {
+  stroke: var(--c);
+  stroke-width: 8;
+  opacity: 0.32;
+}
+.lineCore {
+  stroke: var(--c-glint);
+  stroke-width: 1.8;
+}
+.tip {
+  position: absolute;
+  z-index: 4;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--c) 55%, transparent),
+    0 0 22px 7px var(--c);
+  opacity: 0;
+  visibility: hidden;
+  will-change: transform;
+}
+.door[data-stage="lines"] .lines,
+.door[data-stage="lines"] .tip {
+  visibility: visible;
+}
+
+/* ---------- azaltılmış hareket: koreografi yok, içerik 200 ms solar ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .scene .aura,
+  .brandName,
+  .intro .mark,
+  .intro .halo,
+  .intro .ring1C,
+  .intro .ring2Mask,
+  .intro .breathC,
+  .intro .spark {
+    animation: none;
+  }
+  .content {
+    animation: fade 0.2s linear both;
+  }
+  .top {
+    will-change: auto;
+  }
+}

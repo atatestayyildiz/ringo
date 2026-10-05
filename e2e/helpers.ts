@@ -17,13 +17,47 @@ export async function login(page: Page, who: UserKey, password = PASSWORD) {
   await page.getByRole("button", { name: "Giriş yap" }).click();
 }
 
+/** Demo kullanıcıların panel kilidi PIN'i (seed ve yerel DB'de doğrudan hash; yalnız demo, set_my_pin kabul etmez). */
+export const TEST_PIN = "000000";
+
+/** Kilit/PIN ekranında PIN'i klavyeyle girer (tuş takımı klavye rakamlarını da alır). */
+export async function typePin(page: Page, pin: string) {
+  for (const d of pin) await page.keyboard.press(d);
+}
+
+/** PIN belirleme ekranındaysa PIN'i iki kez girip panele geçer. */
+export async function setupPinIfAsked(page: Page, pin = TEST_PIN) {
+  await expect(page).toHaveURL(/\/(bugun|pin-belirle)/);
+  if (!/\/pin-belirle/.test(page.url())) return;
+  await expect(page.getByRole("heading", { name: "PIN belirle" })).toBeVisible();
+  await typePin(page, pin);
+  await expect(page.getByRole("heading", { name: "PIN'i tekrar gir" })).toBeVisible();
+  await typePin(page, pin);
+}
+
 export async function loginOk(page: Page, who: UserKey) {
   await login(page, who);
+  await setupPinIfAsked(page);
   await expect(page).toHaveURL(/\/bugun/);
 }
 
+/** Üst çubuktaki hesap menüsünü açar (Profil, tema, Paneli kilitle, Çıkış yap). */
+export async function openUserMenu(page: Page) {
+  const trigger = page.getByRole("button", { name: "Hesap menüsü" });
+  if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click();
+  const menu = page.getByRole("menu", { name: "Hesap" });
+  await expect(menu).toBeVisible();
+  return menu;
+}
+
+/** Hesap menüsünden bir öğe seçer. */
+export async function userMenuItem(page: Page, name: string) {
+  const menu = await openUserMenu(page);
+  await menu.getByRole("menuitem", { name }).click();
+}
+
 export async function logout(page: Page) {
-  await page.getByRole("button", { name: "Çıkış yap" }).click();
+  await userMenuItem(page, "Çıkış yap");
   const dialog = page.getByRole("dialog", { name: "Çıkış yapılsın mı?" });
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Çıkış yap" }).click();

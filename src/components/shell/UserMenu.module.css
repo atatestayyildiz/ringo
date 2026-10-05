@@ -1,0 +1,151 @@
+/* Hesap menüsü: tetikleyici (.me görünümü) altında, kart içinde değil; bağımsız yuvarlak düğmeler. */
+.root {
+  position: relative;
+}
+/* Menü açıkken sayfanın üstünde dikey gradyan karartma: üstte koyu, aşağı doğru şeffaf.
+   Bulanıklık ayrı katmanda, aynı yönde maske ile (desteklenmezse yalnız renk gradyanı). Tıklayınca kapanır. */
+.scrim {
+  --scrim-rgb: 10, 12, 18;
+  --scrim-a0: 0.55;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--scrim-rgb), var(--scrim-a0)) 0%,
+    rgba(var(--scrim-rgb), calc(var(--scrim-a0) * 0.55)) 35%,
+    rgba(var(--scrim-rgb), 0.08) 75%,
+    transparent 100%
+  );
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 160ms ease, visibility 0s linear 160ms;
+}
+.scrim::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.6) 35%, rgba(0, 0, 0, 0.15) 75%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.6) 35%, rgba(0, 0, 0, 0.15) 75%, transparent 100%);
+}
+.scrimOn {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 160ms ease, visibility 0s;
+}
+:global(:root[data-theme="dark"]) .scrim {
+  --scrim-rgb: 0, 0, 0;
+  --scrim-a0: 0.68;
+}
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .scrim {
+    --scrim-rgb: 0, 0, 0;
+    --scrim-a0: 0.68;
+  }
+}
+.trigger {
+  position: relative;
+  z-index: 71;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.trigger:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.chev {
+  width: 14px;
+  height: 14px;
+  color: var(--ink-3);
+  transition: transform 0.2s;
+}
+.trigger[aria-expanded="true"] .chev {
+  transform: rotate(180deg);
+}
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  animation: drop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+.label {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: transform 0.15s, background 0.15s;
+}
+.item:hover .icon,
+.item:focus-visible .icon {
+  transform: translateY(-1px);
+  background: var(--surface-2);
+}
+.item:focus-visible {
+  outline: none;
+}
+.item:focus-visible .label {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scrim,
+  .scrimOn {
+    transition: none;
+  }
+  .item {
+    animation: none;
+  }
+  .chev,
+  .icon {
+    transition: none;
+  }
+}

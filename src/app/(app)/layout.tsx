@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { AutoLock } from "@/components/lock/AutoLock";
+import { DoorProvider } from "@/components/scene/DoorProvider";
 import { CallbackReminder } from "@/components/shell/CallbackReminder";
 import { MadeBy } from "@/components/shell/MadeBy";
 import { MainNav, type NavKey } from "@/components/shell/MainNav";
 import { MobileMenu } from "@/components/shell/MobileMenu";
-import { SignOutButton } from "@/components/shell/SignOutButton";
-import { ThemeToggle } from "@/components/shell/ThemeToggle";
-import { Avatar, ToastProvider } from "@/components/ui";
+import { UserMenu } from "@/components/shell/UserMenu";
+import { ToastProvider } from "@/components/ui";
 import { navKeys } from "@/lib/access";
 import { isAllowedLogoUrl } from "@/lib/brand-logo";
 import { getSessionContext } from "@/lib/session";
@@ -15,7 +16,7 @@ import { signOutAction } from "./actions";
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { member, settings } = await getSessionContext();
+  const { user, member, settings } = await getSessionContext();
   const isManager = member.role === "manager";
 
   // Etkin vurgu: kişisel seçim ?? (yönetici: marka rengi, satışçı: nötr token)
@@ -33,6 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <ToastProvider>
+      <DoorProvider brandName={brandName} brandColor={HEX.test(settings.brand_color) ? settings.brand_color : null} logoUrl={logoUrl}>
       {brandCss ? <style>{`:root{--brand:${brandCss}}`}</style> : null}
       <header className="top">
         <div className="top-in">
@@ -50,23 +52,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
           <MainNav visible={visible} />
           <div className="tools">
-            <ThemeToggle />
-            <Link href="/profil" className="me" aria-label="Profil" style={{ textDecoration: "none", color: "inherit" }}>
-              <Avatar name={member.full_name} />
-              <div>
-                <small>{isManager ? "Yönetici" : "Çalışan"}</small>
-                <b>{member.full_name}</b>
-              </div>
-            </Link>
-            <SignOutButton action={signOutAction} />
+            <UserMenu name={member.full_name} roleLabel={isManager ? "Yönetici" : "Çalışan"} signOutAction={signOutAction} />
           </div>
         </div>
       </header>
       <CallbackReminder memberId={member.id} />
+      <AutoLock sessionKey={user.last_sign_in_at ?? user.id} />
       <div className="app">
         <main>{children}</main>
         <MadeBy />
       </div>
+      </DoorProvider>
     </ToastProvider>
   );
 }

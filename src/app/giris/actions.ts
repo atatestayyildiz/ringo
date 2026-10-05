@@ -1,9 +1,9 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { parseLockStatus } from "@/components/lock/activity";
 import { createClient } from "@/lib/supabase/server";
 
-export type LoginState = { error: string | null };
+export type LoginState = { error: string | null; to?: "/bugun" | "/pin-belirle" | "/kilit" };
 
 export async function signInAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
@@ -25,5 +25,15 @@ export async function signInAction(_prev: LoginState, formData: FormData): Promi
     return { error: "Hesabınız etkin değil. Yöneticinize başvurun." };
   }
 
-  redirect("/bugun");
+  // E-posta + şifre ile taze giriş panel kilidini ve yanlış PIN sayacını sıfırlar (DB yalnız
+  // kilitten sonra açılmış oturuma izin verir). Başarısızsa proxy kilit ekranına yönlendirir.
+  await supabase.rpc("clear_my_lock");
+
+  // Hedef proxy'yi beklemeden burada belirlenir: PIN/kilit yönlendirmesi burada da yapılır.
+  const { data: st } = await supabase.rpc("lock_status");
+  const lock = parseLockStatus(st);
+  // Başarı: istemci hedefe gider (panel ise kapı açılışıyla).
+  if (lock && !lock.has_pin) return { error: null, to: "/pin-belirle" };
+  if (lock?.locked) return { error: null, to: "/kilit" };
+  return { error: null, to: "/bugun" };
 }

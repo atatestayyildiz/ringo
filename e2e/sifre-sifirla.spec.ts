@@ -134,7 +134,8 @@ test("bağlantı iste, e-postadaki bağlantıdan yeni şifre belirle, yeni şifr
   await p2.getByLabel("E-posta").fill(email);
   await p2.getByLabel("Şifre").fill(NEW_PASSWORD);
   await p2.getByRole("button", { name: "Giriş yap" }).click();
-  await expect(p2).toHaveURL(/\/bugun/);
+  // Geçici kullanıcının panel PIN'i yok: girişten sonra zorunlu PIN belirleme ekranı.
+  await expect(p2).toHaveURL(/\/pin-belirle/);
 
   // Aynı bağlantı ikinci kez kullanılamaz
   const ctx3 = await browser.newContext();

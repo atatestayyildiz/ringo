@@ -1,12 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { parseLockStatus } from "@/components/lock/activity";
 import type { Database } from "@/lib/database.types";
 import { supabaseEnv } from "./env";
 
 /** Oturum gerektirmeyen tam yollar. */
 const PUBLIC_EXACT_PATHS = new Set(["/sifre-sifirla", "/sifre-sifirla/yeni"]);
 
-/** Oturumu yeniler; oturumsuzu /giris'e, oturumluyu /giris'ten /bugun'a yönlendirir. */
+/**
+ * Oturumu yeniler; oturumsuzu /giris'e, oturumluyu /giris'ten /bugun'a yönlendirir.
+ * Panel kilidi: PIN yoksa /pin-belirle, kilitliyse /kilit (ikisi dışındaki tüm oturumlu yollar).
+ */
 export async function updateSession(request: NextRequest) {
   // Telegram webhook'u ve zamanlayıcı kendi sırlarıyla doğrulanır; oturum yönlendirmesinden muaf.
   const p = request.nextUrl.pathname;
@@ -55,20 +59,24 @@ export async function updateSession(request: NextRequest) {
   if (!signedIn && !onLogin) return redirectTo("/giris");
 
   if (signedIn) {
-    // Oturum var ama aktif üyelik yoksa çerezleri burada temizle (server component çerez yazamaz).
-    const { data: member } = await supabase
-      .from("members")
-      .select("id")
-      .eq("user_id", String(data?.claims?.sub))
-      .eq("is_active", true)
-      .maybeSingle();
-    if (!member) {
+    // Tek RPC: aktif üyelik + panel kilidi + PIN durumu (üyelik yoksa null).
+    const { data: st } = await supabase.rpc("lock_status");
+    const lock = parseLockStatus(st);
+    if (!lock) {
+      // Oturum var ama aktif üyelik yoksa çerezleri burada temizle (server component çerez yazamaz).
       await supabase.auth.signOut({ scope: "local" });
       return onLogin ? response : redirectTo("/giris?hata=uye");
     }
+    // ?hata: giriş ekranı notu gösteriliyor, yönlendirme yapma.
+    if (onLogin && request.nextUrl.searchParams.has("hata")) return response;
+    // PIN yoksa belirleme zorunlu; kilitliyse yalnız kilit ekranı. Panel verisi DB'de de kilitli.
+    if (!lock.has_pin) return path === PIN_SETUP_PATH ? response : redirectTo(PIN_SETUP_PATH);
+    if (lock.locked) return path === LOCK_PATH ? response : redirectTo(LOCK_PATH);
+    if (onLogin || path === "/" || path === LOCK_PATH || path === PIN_SETUP_PATH) return redirectTo("/bugun");
   }
 
-  // ?hata: giriş ekranı notu gösteriliyor, yönlendirme yapma.
-  if (signedIn && ((onLogin && !request.nextUrl.searchParams.has("hata")) || path === "/")) return redirectTo("/bugun");
   return response;
 }
+
+const LOCK_PATH = "/kilit";
+const PIN_SETUP_PATH = "/pin-belirle";

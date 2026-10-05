@@ -1,0 +1,107 @@
+/* PIN tuş takımı ve kilit ekranları: sade görünüm (sahne/kapı kardeş şeritte). */
+.pad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.dots {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+}
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--ink-3);
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.dotOn {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.err .dot {
+  border-color: var(--c-bad);
+}
+.msg {
+  min-height: 20px;
+  font-size: 14px;
+  color: var(--c-bad);
+  text-align: center;
+}
+.keys {
+  display: grid;
+  grid-template-columns: repeat(3, 64px);
+  gap: 14px;
+  justify-content: center;
+}
+.key {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 22px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.12s, background 0.15s;
+}
+.key:active {
+  transform: scale(0.94);
+}
+.key:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.key:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.keyGhost {
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+.screen h1 {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.screen p {
+  color: var(--ink-2);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.link {
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
