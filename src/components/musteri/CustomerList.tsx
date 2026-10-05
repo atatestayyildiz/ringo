@@ -1,5 +1,6 @@
 "use client";
 
+import { OperatorLogo } from "@/components/ui/OperatorLogo";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { reassignCustomersAction } from "@/app/(app)/musteriler/actions";
@@ -7,7 +8,7 @@ import { Avatar, Button, EmptyState, Modal, Select, StatusBadge, useToast, type 
 import { IconUsers } from "@/components/icons";
 import { formatPhone } from "@/lib/format";
 import { CustomerSheet } from "./CustomerSheet";
-import { memberName, OPERATOR_LABEL, STAGE_LABEL, type Customer, type MemberLite, type Viewer } from "./shared";
+import { memberName, STAGE_LABEL, type Customer, type MemberLite, type Viewer } from "./shared";
 import "./musteri.css";
 
 export function CustomerList({
@@ -101,7 +102,7 @@ export function CustomerList({
       <ul className="mu-list" aria-label={`Müşteri listesi, toplam ${total}`}>
         {rows.map((c) => {
           const stage = c.pipeline_stage ? STAGE_LABEL[c.pipeline_stage] : "";
-          const op = c.operator ? OPERATOR_LABEL[c.operator] : "";
+          const op = c.operator || "";
           const who = memberName(members, c.assigned_to);
           return (
             <li key={c.id} className={canSelect ? "mu-sel-li" : undefined}>
@@ -123,7 +124,7 @@ export function CustomerList({
                     <span>{formatPhone(c.phone)}</span>
                   </span>
                 </span>
-                <span className="mu-cell mu-hide-m">{op || "-"}</span>
+                <span className="mu-cell mu-hide-m">{op ? <OperatorLogo operator={op} /> : "-"}</span>
                 <span className="mu-st">
                   <StatusBadge status={c.call_status as CallStatus} />
                 </span>
@@ -131,7 +132,7 @@ export function CustomerList({
                 <span className="mu-cell mu-hide-m">{who || "-"}</span>
                 <span className="mu-note mu-hide-m">{c.last_note ?? ""}</span>
                 <span className="mu-meta-m">
-                  {op ? <span>{op}</span> : null}
+                  {op ? <span><OperatorLogo operator={op} /></span> : null}
                   {stage ? <span>{stage}</span> : null}
                   {who ? <span>{who}</span> : null}
                 </span>

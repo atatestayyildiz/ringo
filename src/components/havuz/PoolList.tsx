@@ -1,9 +1,10 @@
 "use client";
 
+import { OperatorLogo } from "@/components/ui/OperatorLogo";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { takeFromPoolAction } from "@/app/(app)/havuz/actions";
-import { OPERATOR_LABEL, OUTCOME_LABEL } from "@/components/musteri/shared";
+import { OUTCOME_LABEL } from "@/components/musteri/shared";
 import { Avatar, Button, Chip, useToast } from "@/components/ui";
 import { dayDiff, formatDayMonth } from "@/lib/format";
 import "./havuz.css";
@@ -82,12 +83,6 @@ export function PoolList({
         <ul className="mu-list" aria-label="Havuzdaki müşteriler">
           {visible.map((c) => {
             const r = returnText(c.next_call_at);
-            const meta = [
-              c.operator ? (OPERATOR_LABEL[c.operator] ?? c.operator) : null,
-              c.last_member_name ? `Son: ${c.last_member_name}` : null,
-            ]
-              .filter(Boolean)
-              .join(", ");
             const busy = busyId === c.id;
             return (
               <li key={c.id} data-testid="pool-row">
@@ -96,7 +91,11 @@ export function PoolList({
                     <Avatar name={c.full_name} />
                     <span style={{ minWidth: 0 }}>
                       <b>{c.full_name}</b>
-                      <span>{meta}</span>
+                      <span>
+                        {c.operator ? <OperatorLogo operator={c.operator} /> : null}
+                        {c.operator && c.last_member_name ? ", " : null}
+                        {c.last_member_name ? `Son: ${c.last_member_name}` : null}
+                      </span>
                     </span>
                   </span>
                   <span className="mu-days">

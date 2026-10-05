@@ -1,4 +1,5 @@
 import { Card, EmptyState } from "@/components/ui";
+import { OperatorLogo } from "@/components/ui/OperatorLogo";
 import { TrendChart } from "@/components/raporlar/TrendChart";
 import { CountUp } from "@/components/raporlar/CountUp";
 import {
@@ -9,7 +10,6 @@ import {
   type Preset,
 } from "@/components/raporlar/range";
 import {
-  OPERATOR_NAME,
   OUTCOME_NAME,
   isEmptyReport,
   normalizeReport,
@@ -443,7 +443,7 @@ export default async function Page({
                     report.by_operator.map((r) => (
                       <tr key={r.operator}>
                         <th scope="row">
-                          {OPERATOR_NAME[r.operator] ?? r.operator}
+                          <OperatorLogo operator={r.operator} />
                         </th>
                         <td className={s.num}>{r.customers}</td>
                         <td className={s.num}>{r.completed}</td>

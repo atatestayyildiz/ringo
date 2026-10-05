@@ -1,5 +1,6 @@
 "use client";
 
+import { OperatorLogo } from "@/components/ui/OperatorLogo";
 import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -34,7 +35,6 @@ import {
   ALL_STAGES,
   MAIN_STAGES,
   memberName,
-  OPERATOR_LABEL,
   SIDE_STAGES,
   STAGE_LABEL,
   type Customer,
@@ -413,7 +413,7 @@ function CardDetail({ c, members }: { c: Customer; members: MemberLite[] }) {
   return (
     <>
       <div className="meta">
-        {c.operator ? <span>{OPERATOR_LABEL[c.operator]}</span> : null}
+        {c.operator ? <span><OperatorLogo operator={c.operator} /></span> : null}
         {who ? <span>{who}</span> : null}
       </div>
       {c.last_note ? <p className="quote">{c.last_note}</p> : null}

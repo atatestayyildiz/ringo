@@ -1,5 +1,6 @@
 "use client";
 
+import { OperatorLogo } from "@/components/ui/OperatorLogo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useRef, useState } from "react";
@@ -19,7 +20,6 @@ import { AppointmentDialog, type AppointmentValue } from "@/components/musteri/A
 import { CallbackDialog, ReasonDialog } from "./Dialogs";
 import { FocusCard } from "./FocusCard";
 import {
-  OPERATORS,
   firstName,
   isCallOpen,
   isDeferred,
@@ -497,14 +497,9 @@ export function BugunView(props: Props) {
                     <div className={styles.qT}>
                       <b>{x.name}</b>
                       <span>
-                        {[
-                          x.operator
-                            ? (OPERATORS[x.operator] ?? x.operator)
-                            : null,
-                          x.owner ?? x.appliedLabel,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
+                        {x.operator ? <OperatorLogo operator={x.operator} /> : null}
+                        {x.operator && (x.owner ?? x.appliedLabel) ? " · " : null}
+                        {x.owner ?? x.appliedLabel}
                       </span>
                     </div>
                     <StatusBadge status={x.status} />
