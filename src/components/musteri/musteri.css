@@ -934,3 +934,43 @@
     width: 100%;
   }
 }
+
+.mu-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+.mu-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ink);
+}
+.mu-check em {
+  color: var(--ink-3);
+  font-style: normal;
+}
+.mu-extra {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line, color-mix(in srgb, var(--ink) 12%, transparent));
+  border-radius: 14px;
+}
+.mu-extra legend {
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+.mu-extra-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  max-height: 160px;
+  overflow: auto;
+}
+.mu-extra-list .mu-check {
+  margin-bottom: 4px;
+}

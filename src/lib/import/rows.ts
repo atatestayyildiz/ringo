@@ -25,6 +25,8 @@ export type PreparedRow = {
   reason?: string;
   /** Dosyada aynı telefonun daha önce geçtiği satır varsa true */
   duplicateInFile: boolean;
+  /** Ad ya da notta `?` / bozuk karakter var: dosya ANSI kaydedilmiş olabilir. */
+  suspectChars: boolean;
 };
 
 export function cellToString(c: Cell): string {
@@ -76,7 +78,11 @@ export function prepareRows(dataRows: Cell[][], map: Mapping, firstSheetRow = 2)
       const p = parseDate(get(map.applied_at));
       if (p) payload.applied_at = toIsoDateTime(p);
     }
-    const note = map.note != null ? cellToString(get(map.note)) : "";
+    const noteParts = [map.note, ...(map.extraNotes ?? [])]
+      .filter((idx): idx is number => idx != null)
+      .map((idx) => cellToString(row[idx]))
+      .filter(Boolean);
+    const note = noteParts.join(" · ");
     if (note) payload.note = note;
 
     let valid = true;
@@ -102,6 +108,7 @@ export function prepareRows(dataRows: Cell[][], map: Mapping, firstSheetRow = 2)
       valid,
       reason,
       duplicateInFile,
+      suspectChars: /[?�]/.test(fullName) || /[?�]/.test(note),
     });
   });
 

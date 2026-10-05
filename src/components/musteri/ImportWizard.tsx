@@ -3,8 +3,8 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Button, buttonClass, Card, Chip, Input, Select } from "@/components/ui";
-import { FIELD_LABELS, guessMapping, validateMapping, type FieldKey, type Mapping } from "@/lib/import/columns";
-import { ImportFileError, parseImportFile, type ParsedSheet } from "@/lib/import/parse";
+import { FIELD_LABELS, guessMapping, guessMappingFromContent, validateMapping, type FieldKey, type Mapping } from "@/lib/import/columns";
+import { applyHeaderless, ImportFileError, parseImportFile, type ParsedSheet } from "@/lib/import/parse";
 import { chunk, cellToString, prepareRows, type PreparedRow } from "@/lib/import/rows";
 import { formatPhone } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
@@ -33,12 +33,13 @@ export function ImportWizard() {
 
   const mapError = validateMapping(map);
   const prepared = useMemo<PreparedRow[]>(
-    () => (sheet && step !== "upload" && !validateMapping(map) ? prepareRows(sheet.rows, map) : []),
+    () => (sheet && step !== "upload" && !validateMapping(map) ? prepareRows(sheet.rows, map, sheet.headerless ? 1 : 2) : []),
     [sheet, map, step],
   );
   const validCount = prepared.filter((r) => r.valid).length;
   const invalidCount = prepared.length - validCount;
   const dupCount = prepared.filter((r) => r.valid && r.duplicateInFile).length;
+  const suspectCount = prepared.filter((r) => r.valid && r.suspectChars).length;
 
   const reset = () => {
     setStep("upload");
@@ -59,12 +60,31 @@ export function ImportWizard() {
       setSheet(parsed);
       setFileName(file.name);
       setSource(file.name);
-      setMap(guessMapping(parsed.headers));
+      setMap(parsed.headerless ? guessMappingFromContent(parsed.rows) : guessMapping(parsed.headers));
       setStep("map");
     } catch (e) {
       setError(e instanceof ImportFileError ? e.message : "Dosya okunamadı. Dosyayı .xlsx veya .csv olarak kaydedip tekrar yükleyin.");
     }
     if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const toggleHeaderless = (headerless: boolean) => {
+    if (!sheet) return;
+    const next = applyHeaderless(sheet, headerless);
+    setSheet(next);
+    setMap(headerless ? guessMappingFromContent(next.rows) : guessMapping(next.headers));
+  };
+
+  const toggleExtraNote = (idx: number, on: boolean) => {
+    setMap((m) => {
+      const cur = new Set(m.extraNotes ?? []);
+      if (on) cur.add(idx);
+      else cur.delete(idx);
+      const next = { ...m };
+      if (cur.size) next.extraNotes = [...cur].sort((a, b) => a - b);
+      else delete next.extraNotes;
+      return next;
+    });
   };
 
   const run = async () => {
@@ -154,7 +174,7 @@ export function ImportWizard() {
             aria-label="Dosya seç"
           />
           <b>Dosyayı buraya bırakın veya seçin</b>
-          <span>.xlsx veya .csv. İlk satır başlık olmalı. En fazla 10 MB.</span>
+          <span>.xlsx veya .csv. Başlık satırı yoksa kendiliğinden anlaşılır. En fazla 10 MB.</span>
           <span className={buttonClass("ink", "sm")}>Dosya seç</span>
         </label>
       ) : null}
@@ -164,6 +184,10 @@ export function ImportWizard() {
           <p style={{ color: "var(--ink-2)", marginBottom: 14, fontSize: 14 }}>
             <b>{fileName}</b>, {sheet.rows.length} satır. Sütunları kontrol edin; yanlış tahmin varsa değiştirin.
           </p>
+          <label className="mu-check">
+            <input type="checkbox" checked={sheet.headerless} onChange={(e) => toggleHeaderless(e.target.checked)} />
+            <span>İlk satır başlık değil, müşteri bilgisi</span>
+          </label>
           <div className="mu-map">
             {FIELD_ORDER.map((f) => (
               <Select
@@ -190,6 +214,27 @@ export function ImportWizard() {
               </Select>
             ))}
           </div>
+          {map.note != null ? (
+            <fieldset className="mu-extra">
+              <legend>Nota eklenecek diğer sütunlar</legend>
+              <div className="mu-extra-list">
+                {sheet.headers.map((h, i) => {
+                  const taken = Object.entries(map).some(([k, v]) => k !== "extraNotes" && v === i);
+                  if (taken) return null;
+                  const sample = cellToString(sheet.rows.find((r) => cellToString(r[i]) !== "")?.[i]);
+                  return (
+                    <label key={i} className="mu-check">
+                      <input type="checkbox" checked={(map.extraNotes ?? []).includes(i)} onChange={(e) => toggleExtraNote(i, e.target.checked)} />
+                      <span>
+                        {h}
+                        {sample ? <em> ({sample.length > 24 ? `${sample.slice(0, 24)}...` : sample})</em> : null}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          ) : null}
           <p className="mu-warn" style={{ marginTop: 14 }}>
             Ad soyad ayrı sütunlardaysa &quot;Ad&quot; ve &quot;Soyad&quot; seçin, ikisi birleştirilir. Telefon ve ad zorunludur.
           </p>
@@ -225,6 +270,13 @@ export function ImportWizard() {
               <span>Dosyada tekrar</span>
             </div>
           </div>
+          {suspectCount > 0 ? (
+            <p className="mu-warn" role="alert" style={{ marginBottom: 12 }}>
+              {suspectCount} satırda ad ya da notta &quot;?&quot; işareti var. Dosya Excel&apos;de &quot;CSV (ANSI)&quot; olarak kaydedilmişse ş, ı, ğ gibi harfler
+              dosyada zaten silinmiştir. Bu harfleri geri getirmek mümkün değil; Excel&apos;de &quot;CSV UTF-8&quot; ya da .xlsx olarak kaydedip
+              yeniden yükleyin.
+            </p>
+          ) : null}
           <div className="mu-table-wrap">
             <table className="mu-table">
               <thead>
@@ -248,7 +300,7 @@ export function ImportWizard() {
                     <td>
                       {r.valid ? (
                         <span className="st" data-s={r.duplicateInFile ? "pool" : "done"}>
-                          {r.duplicateInFile ? "Dosyada tekrar" : "Geçerli"}
+                          {r.duplicateInFile ? "Dosyada tekrar" : r.suspectChars ? "Karakter?" : "Geçerli"}
                         </span>
                       ) : (
                         <span className="st" data-s="bad">

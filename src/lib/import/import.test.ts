@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { guessMapping, validateMapping, normalizeHeader } from "./columns";
+import { guessMapping, guessMappingFromContent, validateMapping, normalizeHeader } from "./columns";
 import { birthDateIso, excelSerialToDate, parseDate, toIsoDate, toIsoDateTime } from "./dates";
 import { decodeCsvBytes } from "./encoding";
-import { parseCsvText } from "./parse";
+import { applyHeaderless, parseCsvText } from "./parse";
 import { normalizeTrPhone } from "./phone";
 import { chunk, prepareRows } from "./rows";
 
@@ -161,5 +161,71 @@ describe("CSV ayrıştırma ve parçalama", () => {
   it("500'lük parçalar", () => {
     const parts = chunk(Array.from({ length: 1201 }, (_, i) => i), 500);
     expect(parts.map((p) => p.length)).toEqual([500, 500, 201]);
+  });
+});
+
+describe("başlıksız dosya", () => {
+  const csv =
+    "vodafone;Deniz Kurgusal;5320000001;-1;yanlış oldu\n" +
+    "turkcell;Ela Örnek;0532 000 00 02;güniçi;\n" +
+    "türktelekom;Can Deneme;05320000003;31300;yarın\n";
+  it("ilk satırda telefon varsa başlıksız sayar ve satırı kaybetmez", () => {
+    const sheet = parseCsvText(csv);
+    expect(sheet.headerless).toBe(true);
+    expect(sheet.rows).toHaveLength(3);
+    expect(sheet.headers[0]).toBe("Sütun 1");
+  });
+  it("başlık seçimi geri alınabilir", () => {
+    const sheet = applyHeaderless(parseCsvText(csv), false);
+    expect(sheet.headerless).toBe(false);
+    expect(sheet.rows).toHaveLength(2);
+  });
+  it("normal başlıklı dosya başlıksız sayılmaz", () => {
+    expect(parseCsvText("Ad;Telefon\nZeynep Kurgusal;05320000001\n").headerless).toBe(false);
+  });
+  it("sütun içeriğinden telefon, operatör, ad ve notları tahmin eder", () => {
+    const sheet = parseCsvText(csv);
+    const m = guessMappingFromContent(sheet.rows);
+    expect(m.operator).toBe(0);
+    expect(m.full_name).toBe(1);
+    expect(m.phone).toBe(2);
+    expect(m.note).toBe(3);
+    expect(m.extraNotes).toEqual([4]);
+  });
+  it("ek not sütunlarını ana notla birleştirir", () => {
+    const sheet = parseCsvText(csv);
+    const m = guessMappingFromContent(sheet.rows);
+    const p = prepareRows(sheet.rows, m, 1);
+    expect(p).toHaveLength(3);
+    expect(p[0].payload.note).toBe("-1 · yanlış oldu");
+    expect(p[1].payload.note).toBe("güniçi");
+    expect(p[0].sheetRow).toBe(1);
+  });
+});
+
+describe("karakter şüphesi ve kodlama", () => {
+  it("adında ? olan satırı işaretler", () => {
+    const p = prepareRows([["?ahin Kurgusal", "05320000001"], ["Ece Örnek", "05320000002"]], { full_name: 0, phone: 1 });
+    expect(p[0].suspectChars).toBe(true);
+    expect(p[1].suspectChars).toBe(false);
+  });
+  it("UTF-16LE (Meta) CSV baytlarını çözer", () => {
+    const text = "full_name\tphone_number\nİpek Öztürk\tp:+905320000001\n";
+    const u16 = new Uint8Array(2 + text.length * 2);
+    u16[0] = 0xff;
+    u16[1] = 0xfe;
+    for (let i = 0; i < text.length; i++) {
+      const c = text.charCodeAt(i);
+      u16[2 + i * 2] = c & 0xff;
+      u16[3 + i * 2] = c >> 8;
+    }
+    const decoded = decodeCsvBytes(u16);
+    expect(decoded.startsWith("full_name")).toBe(true);
+    const sheet = parseCsvText(decoded);
+    expect(sheet.rows[0][0]).toBe("İpek Öztürk");
+    const m = guessMapping(sheet.headers);
+    expect(m.phone).toBe(1);
+    expect(m.full_name).toBe(0);
+    expect(prepareRows(sheet.rows, m)[0].phoneNormalized).toBe("05320000001");
   });
 });
