@@ -3,25 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef } from "react";
-import { Door, type DoorHandle } from "@/components/scene/Door";
-import { armDoor } from "@/components/scene/doorFlag";
-import { prefersReducedMotion } from "@/components/scene/motion";
-import { useScene } from "@/components/scene/Scene";
+import { useDoorExit } from "@/components/scene/useDoorExit";
 import { Button, Input } from "@/components/ui";
 import { signInAction, type LoginState } from "./actions";
 
-const HEX = /^#[0-9a-fA-F]{6}$/;
-
-/** Giriş sayfasında kökte tanımlı marka rengi (kapı panelde aynı renkle açılsın). */
-function rootBrand(): string | null {
-  const v = getComputedStyle(document.documentElement).getPropertyValue("--brand").trim();
-  return HEX.test(v) ? v : null;
-}
-
 export function LoginForm({ notice }: { notice?: string }) {
   const router = useRouter();
-  const { handle, face } = useScene();
-  const door = useRef<DoorHandle>(null);
+  const { exit, door } = useDoorExit();
   const [state, action, pending] = useActionState<LoginState, FormData>(signInAction, { error: null });
   const handled = useRef<LoginState | null>(null);
   // Gönderim kilidi: istek sürerken ya da kapı oynarken ikinci gönderim yok.
@@ -35,19 +23,12 @@ export function LoginForm({ notice }: { notice?: string }) {
     if (!to) busy.current = false;
     if (!to || handled.current === state) return;
     handled.current = state;
-    router.prefetch(to);
     if (to !== "/bugun") {
       router.replace(to);
       return;
     }
-    void (async () => {
-      const geom = await handle.depart();
-      door.current?.cover(geom);
-      await door.current?.drawLines();
-      armDoor(geom, { ...face, color: face.color ?? rootBrand() }, prefersReducedMotion() ? "closed" : "lines");
-      router.replace(to);
-    })();
-  }, [state, router, handle, face]);
+    void exit(to);
+  }, [state, router, exit]);
 
   return (
     <form
@@ -70,7 +51,7 @@ export function LoginForm({ notice }: { notice?: string }) {
       <Link href="/sifre-sifirla" style={{ textAlign: "center", fontSize: 14, color: "var(--ink-2)" }}>
         Şifremi unuttum
       </Link>
-      <Door ref={door} face={face} />
+      {door}
     </form>
   );
 }

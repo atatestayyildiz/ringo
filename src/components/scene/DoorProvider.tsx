@@ -5,19 +5,29 @@
  *
  * - Girişten / kilit açılışından gelindiyse (armDoor bayrağı) kapı ilk karede kapalı çizilir,
  *   ilk boyamadan sonra açılır (<main> hafif yakınlaşır) ve kaldırılır.
- * - Kilit için: const { close } = useDoor(); await close(); router.replace("/kilit");
- *   close(geom?) kapıyı köşelerden kapatır (~1.3 sn). geom verilmezse amblem ekran ortasının üstünde
- *   (x %50, y %32, kenar min(vw,vh) * 0.42) varsayılır; /kilit sahnesinin amblemiyle hizalamak için ver.
+ * - Kilit için (useLock.lockNow): await useDoor().close(); router.replace("/kilit");
+ *   close(geom?) kapıyı köşelerden kapatır (~1.3 sn). geom verilmezse /kilit amblemiyle hizalanır
+ *   (son ölçü ya da yerleşim tahmini); /kilit sahnesi kapının bıraktığı konumdan devralır.
  */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Door, type DoorHandle } from "./Door";
-import { clearDoorFlag, flagGeom, parseDoorFlag, readDoorFlagRaw } from "./doorFlag";
+import { armArrival, clearArrival, clearDoorFlag, docState, flagGeom, lockEmblemGuess, parseDoorFlag, readDoorFlagRaw } from "./doorFlag";
 import type { EmblemSnapshot } from "./Scene";
 import type { Face } from "./parts";
 
-type DoorApi = { close(geom?: EmblemSnapshot): Promise<void> };
+type DoorApi = {
+  /** Kapıyı köşelerden kapatır; /kilit varışı için konumu bırakır (armArrival) ve kullanılan konumu döner. */
+  close(geom?: EmblemSnapshot): Promise<EmblemSnapshot>;
+  /** Kapanmış kapıyı yeniden açar (kilitleme başarısızsa). */
+  reopen(): Promise<void>;
+};
 const Ctx = createContext<DoorApi | null>(null);
+
+/** Sağlayıcı yoksa (ör. /kilit, /pin-belirle) null. */
+export function useDoorOptional(): DoorApi | null {
+  return useContext(Ctx);
+}
 
 export function useDoor(): DoorApi {
   const v = useContext(Ctx);
@@ -40,7 +50,9 @@ export function DoorProvider({
 }) {
   const raw = useSyncExternalStore(noop, readDoorFlagRaw, () => null);
   const [done, setDone] = useState<string | null>(null);
-  const flag = raw && raw !== done ? parseDoorFlag(raw) : null;
+  // Yalnız istemci gezinmesiyle gelindiyse (girişten / kilitten) kapı oynar; tam yüklemede asla.
+  const [eligible] = useState(() => typeof window !== "undefined" && docState.painted);
+  const flag = eligible && raw && raw !== done ? parseDoorFlag(raw) : null;
 
   const openRef = useRef<DoorHandle>(null);
   const started = useRef<string | null>(null);
@@ -48,7 +60,7 @@ export function DoorProvider({
   useEffect(() => {
     if (!raw || raw === done || started.current === raw) return;
     started.current = raw;
-    if (!parseDoorFlag(raw)) {
+    if (!eligible || !parseDoorFlag(raw)) {
       clearDoorFlag();
       queueMicrotask(() => setDone(raw));
       return;
@@ -61,7 +73,11 @@ export function DoorProvider({
         setDone(raw);
       }),
     );
-  }, [raw, done]);
+  }, [raw, done, eligible]);
+
+  useEffect(() => {
+    docState.painted = true;
+  }, []);
 
   /* ---- kapanma (kilit) ---- */
   const closeRef = useRef<DoorHandle>(null);
@@ -76,18 +92,42 @@ export function DoorProvider({
     list.forEach((f) => f());
   }, [closing]);
 
-  const close = useCallback(async (geom?: EmblemSnapshot) => {
-    if (!closeRef.current) {
-      await new Promise<void>((r) => {
-        waiters.current.push(r);
-        setClosing(true);
-      });
-    }
-    const g = geom ?? { cx: innerWidth / 2, cy: innerHeight * 0.32, size: Math.min(innerWidth, innerHeight) * 0.42 };
-    await closeRef.current?.close(g);
+  const safety = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (safety.current) clearTimeout(safety.current);
+    },
+    [],
+  );
+
+  const reopen = useCallback(async () => {
+    if (safety.current) clearTimeout(safety.current);
+    safety.current = null;
+    clearArrival();
+    await closeRef.current?.split();
+    setClosing(false);
   }, []);
 
-  const api = useMemo(() => ({ close }), [close]);
+  const close = useCallback(
+    async (geom?: EmblemSnapshot) => {
+      if (!closeRef.current) {
+        await new Promise<void>((r) => {
+          waiters.current.push(r);
+          setClosing(true);
+        });
+      }
+      const g = geom ?? lockEmblemGuess();
+      await closeRef.current?.close(g);
+      armArrival(g);
+      // Gezinme olmazsa (ağ hatası, yönlendirme) panel kapının arkasında kilitli kalmasın.
+      if (safety.current) clearTimeout(safety.current);
+      safety.current = window.setTimeout(() => void reopen(), 10_000);
+      return g;
+    },
+    [reopen],
+  );
+
+  const api = useMemo<DoorApi>(() => ({ close, reopen }), [close, reopen]);
 
   return (
     <Ctx.Provider value={api}>

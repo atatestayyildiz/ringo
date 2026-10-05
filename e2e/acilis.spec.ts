@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { PASSWORD, USERS } from "./helpers";
+import { loginOk, PASSWORD, TEST_PIN, typePin, USERS, userMenuItem } from "./helpers";
 
 // Açılış sahnesi + kapı: girişten sonra kapı katmanı görünür, panel arkada yüklenir, kapı kaldırılır.
 // FPS kaba ölçümdür (requestAnimationFrame sayacı); eşik test edilmez, yalnız raporlanır.
@@ -161,5 +161,33 @@ test.describe("açılış sahnesi ve kapı", () => {
     await expect(page).toHaveURL(/\/musteriler/);
     await page.waitForTimeout(400);
     await expect(page.getByTestId("door")).toHaveCount(0);
+  });
+
+  test("kilit: kapı panelin üstünde kapanır, /kilit sahnesi belirir; PIN ile kapı açılır", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await loginOk(page, "can");
+    await expect(page.getByTestId("door")).toHaveCount(0, { timeout: 10_000 });
+    await page.evaluate(() => {
+      (window as unknown as { __probe: Raw }).__probe.stages = [];
+    });
+    await startFps(page);
+    await userMenuItem(page, "Paneli kilitle");
+    await expect(page).toHaveURL(/\/kilit$/);
+    await expect(page.getByRole("heading", { name: "Panel kilitli" })).toBeVisible();
+    // Panel içeriği DOM'dan kalktı; kapı katmanı yok, PIN ekranı etkileşime açık.
+    await expect(page.locator("main")).toHaveCount(0);
+    await expect(page.getByTestId("door")).toBeHidden();
+    const closed = await stopProbe(page);
+    report("masaüstü kapı kapanışı", closed);
+    expect(closed.stages).toEqual(expect.arrayContaining(["split", "lines", "closed"]));
+
+    await page.evaluate(() => {
+      (window as unknown as { __probe: Raw }).__probe.stages = [];
+    });
+    await typePin(page, TEST_PIN);
+    await expect(page).toHaveURL(/\/bugun/);
+    await expect(page.getByTestId("door")).toHaveCount(0, { timeout: 10_000 });
+    const opened = await stopProbe(page);
+    expect(opened.stages).toContain("split");
   });
 });

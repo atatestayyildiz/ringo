@@ -14,6 +14,9 @@
  *   sceneRef.current.arrive()  // depart geri alınır (ör. gezinme başarısız)
  * Çocuklar useScene() ile aynı tutamağa ve marka yüzüne erişebilir.
  * Marka rengi brandColor (#rrggbb) yoksa --brand. Azaltılmış harekette yalnız solma.
+ * Kapı panelde kapanıp buraya gelindiyse (armArrival) giriş koreografisi atlanır: amblem kapının
+ * bıraktığı konumdan kendi yerine kayar, içerik belirir. mode="lock" amblem konumunu sonraki
+ * kapanış için saklar (saveLockEmblem).
  */
 
 import {
@@ -21,11 +24,15 @@ import {
   useContext,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
+  useState,
+  useSyncExternalStore,
   type ReactNode,
   type Ref,
 } from "react";
+import { clearArrival, docState, parseArrival, readArrivalRaw, saveLockEmblem } from "./doorFlag";
 import { EASE_OUT, play, prefersReducedMotion, shake } from "./motion";
 import { Backdrop, Emblem, faceStyle, type Face } from "./parts";
 import s from "./scene.module.css";
@@ -64,11 +71,13 @@ export type SceneProps = {
   brandColor?: string | null;
   logoUrl?: string | null;
   mode?: "login" | "lock";
-  /** Mağaza adı satırına test kimliği. */
+  /** Amblem + mağaza adı bloğuna test kimliği. */
   brandTestId?: string;
   children: ReactNode;
   ref?: Ref<SceneHandle>;
 };
+
+const noopSub = () => () => {};
 
 /** Ekran koordinatında amblem ölçüsü. */
 function measure(el: HTMLElement | null): EmblemSnapshot | null {
@@ -83,6 +92,31 @@ export function Scene({ brandName, brandColor = null, logoUrl = null, mode = "lo
   const contentRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLParagraphElement>(null);
   const par = useRef({ tx: 0, ty: 0, x: 0, y: 0, frozen: false });
+
+  // Varış bayrağı yalnız istemci gezinmesinde okunur (sunucu/hidrasyon: null); ilk değer sabitlenir.
+  const arrivalRaw = useSyncExternalStore(noopSub, readArrivalRaw, () => null);
+  const [arrivalFrom] = useState(() => (typeof window !== "undefined" && docState.painted ? arrivalRaw : null));
+  useEffect(() => {
+    docState.painted = true;
+    if (!arrivalFrom) clearArrival();
+  }, [arrivalFrom]);
+  const arriving = arrivalFrom !== null;
+
+  useLayoutEffect(() => {
+    const em = emblemRef.current;
+    if (!em) return;
+    const real = measure(em);
+    if (real && mode === "lock") saveLockEmblem(real);
+    if (!arrivalFrom) return;
+    clearArrival();
+    const from = parseArrival(arrivalFrom);
+    if (!from || !real || prefersReducedMotion()) return;
+    const dx = from.cx - real.cx;
+    const dy = from.cy - real.cy;
+    const k = from.size / real.size;
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(k - 1) < 0.005) return;
+    void play(em, [{ transform: `translate(${dx}px,${dy}px) scale(${k})` }, { transform: "none" }], { duration: 650, easing: EASE_OUT });
+  }, [arrivalFrom, mode]);
 
   const face = useMemo<Face>(() => ({ name: brandName, color: brandColor, logo: logoUrl }), [brandName, brandColor, logoUrl]);
 
@@ -229,13 +263,13 @@ export function Scene({ brandName, brandColor = null, logoUrl = null, mode = "lo
 
   return (
     <Ctx.Provider value={ctx}>
-      <div ref={rootRef} className={s.scene} data-mode={mode} style={faceStyle(face)}>
+      <div ref={rootRef} className={s.scene} data-mode={mode} data-arrive={arriving ? "" : undefined} style={faceStyle(face)}>
         <Backdrop />
         <div className={s.stage}>
-          <div className={s.top} data-parallax="">
-            <Emblem ref={emblemRef} face={face} intro className={s.sceneEmblem} />
+          <div className={s.top} data-parallax="" data-testid={brandTestId}>
+            <Emblem ref={emblemRef} face={face} intro={!arriving} className={s.sceneEmblem} />
             {brandName.trim() ? (
-              <p ref={nameRef} className={s.brandName} data-testid={brandTestId}>
+              <p ref={nameRef} className={s.brandName}>
                 {brandName}
               </p>
             ) : null}

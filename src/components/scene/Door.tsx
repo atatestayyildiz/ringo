@@ -163,6 +163,7 @@ export function Door({ face, initial = null, ref }: DoorProps) {
     const h: DoorHandle = {
       cover(g) {
         clearAnims();
+        if (root.current) root.current.style.pointerEvents = "";
         apply(g);
         setLines(0);
         if (root.current) root.current.dataset.glow = "";
@@ -180,12 +181,15 @@ export function Door({ face, initial = null, ref }: DoorProps) {
         const g = geo.current ?? (apply(), geo.current);
         if (!g) return;
         if (prefersReducedMotion()) {
+          if (root.current) root.current.style.pointerEvents = "none";
           await play(root.current, [{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: "linear", fill: "forwards" });
           setStage("open");
           clearAnims();
           return;
         }
         setStage("split");
+        // Açılırken panel hemen etkileşime açık: yarılar tıklamayı/dokunmayı yutmaz.
+        if (root.current) root.current.style.pointerEvents = "none";
         const opts: KeyframeAnimationOptions = { duration: 800, easing: EASE_DOOR, fill: "forwards" };
         const seam: Keyframe[] = [{ opacity: 0.4 }, { opacity: 1, offset: 0.12 }, { opacity: 0.85, offset: 0.4 }, { opacity: 0 }];
         await Promise.all([
@@ -212,6 +216,7 @@ export function Door({ face, initial = null, ref }: DoorProps) {
       },
       async merge(g) {
         clearAnims();
+        if (root.current) root.current.style.pointerEvents = "";
         apply(g);
         if (root.current) delete root.current.dataset.glow;
         const cur = geo.current;

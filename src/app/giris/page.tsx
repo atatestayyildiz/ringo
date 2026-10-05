@@ -35,7 +35,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const notice =
     hata === "uye"
       ? "Hesabın bir mağazaya bağlı değil ya da pasif. Yöneticinle görüş."
-      : undefined;
+      : hata === "pin"
+        ? "Çok fazla yanlış PIN denemesi. E-posta ve şifrenle yeniden giriş yap."
+        : undefined;
   const brand = await loadBranding();
   return (
     <ToastProvider>
@@ -43,7 +45,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <div style={{ position: "fixed", top: 16, right: 16, zIndex: 5 }}>
         <ThemeToggle />
       </div>
-      <Scene brandName={brand?.name ?? ""} brandColor={brand?.color ?? null} logoUrl={brand?.logo ?? null} brandTestId="login-brand">
+      <Scene brandName={brand?.name ?? ""} brandColor={brand?.color ?? null} logoUrl={brand?.logo ?? null} brandTestId={brand ? "login-brand" : undefined}>
         <Card className={`login-card ${sceneGlass}`}>
           <div>
             <h1>Hoş geldin</h1>

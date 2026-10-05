@@ -129,8 +129,19 @@
 .sceneEmblem {
   width: clamp(150px, 20vmin + 70px, 236px);
 }
+/* kilit: amblem biraz küçük (tuş takımı sığsın); doorFlag.guessLockEmblem bu ölçüyü modeller */
 .scene[data-mode="lock"] .sceneEmblem {
-  width: clamp(156px, 24vmin + 52px, 224px);
+  width: clamp(124px, 16vmin + 64px, 184px);
+}
+/* kapı kapanıp gelindi: arka plan ve amblem zaten ekranda, yalnız içerik belirir */
+.scene[data-arrive] .aura {
+  animation: none;
+}
+.scene[data-arrive] .brandName {
+  animation: fadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+.scene[data-arrive] .content {
+  animation: contentIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
 }
 .brandName {
   margin-top: 2px;
@@ -154,6 +165,8 @@
 }
 .scene[data-mode="lock"] .content {
   width: min(360px, 100%);
+  margin-top: 18px;
+  gap: 14px;
 }
 
 /* ---------- cam kart ---------- */
@@ -467,8 +480,12 @@
   .intro .spark {
     animation: none;
   }
-  .content {
+  .content,
+  .scene[data-arrive] .content {
     animation: fade 0.2s linear both;
+  }
+  .scene[data-arrive] .brandName {
+    animation: none;
   }
   .top {
     will-change: auto;
