@@ -23,3 +23,21 @@ export async function reassignCustomersAction(customerIds: string[], memberId: s
   revalidatePath("/bugun");
   return { ok: true, moved: data ?? 0 };
 }
+
+export type BulkDeleteResult = { ok: true; deleted: number } | { ok: false; error: string };
+
+export async function deleteCustomersAction(customerIds: string[]): Promise<BulkDeleteResult> {
+  const ctx = await getSessionContext();
+  if (!can(ctx.member, "delete_customers")) {
+    return { ok: false, error: "Müşteri silme yetkiniz yok." };
+  }
+  if (!Array.isArray(customerIds) || customerIds.length === 0) {
+    return { ok: false, error: "Silinecek müşteri seçilmedi." };
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("delete_customers", { p_customers: customerIds });
+  if (error) return { ok: false, error: toUserMessage(error) };
+  revalidatePath("/musteriler");
+  revalidatePath("/bugun");
+  return { ok: true, deleted: data ?? 0 };
+}

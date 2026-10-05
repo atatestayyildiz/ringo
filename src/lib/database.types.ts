@@ -390,6 +390,9 @@ isOneToOne: true
 "delete_customer":
 { Args: { "p_customer": string,"p_reason"?: string }; Returns: undefined
                            },
+"delete_customers":
+{ Args: { "p_customers": string[] }; Returns: number
+                           },
 "distribute_day":
 { Args: { "p_day"?: string }; Returns: number
                            },

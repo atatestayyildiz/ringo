@@ -8,7 +8,7 @@ import {
   setPermissionAction,
 } from "@/app/(app)/ayarlar/actions";
 import { Avatar, Button, Chip, EmptyState, Input, Modal, Select, Switch, useToast } from "@/components/ui";
-import { PERMISSIONS, generatePassword, type MemberRow, type PermKey } from "./shared";
+import { PERMISSIONS, generatePassword, permGroup, type MemberRow, type PermKey } from "./shared";
 import s from "./ayarlar.module.css";
 
 export function TeamPanel({ members, emailWarning }: { members: MemberRow[]; emailWarning: string | null }) {
@@ -55,7 +55,7 @@ function MemberCard({ m, expanded, onToggle }: { m: MemberRow; expanded: boolean
 
   const togglePerm = (key: PermKey, value: boolean) => {
     const prev = perms;
-    setPerms({ ...perms, [key]: value });
+    setPerms({ ...perms, ...Object.fromEntries(permGroup(key).map((k) => [k, value])) });
     start(async () => {
       const res = await setPermissionAction(m.id, key, value);
       if (!res.ok) {
@@ -124,7 +124,7 @@ function MemberCard({ m, expanded, onToggle }: { m: MemberRow; expanded: boolean
                 <Switch
                   label=""
                   aria-label={`${m.full_name}: ${p.label}`}
-                  checked={perms[p.key] === true}
+                  checked={(p.group ?? [p.key]).some((k) => perms[k] === true)}
                   disabled={pending}
                   onChange={(e) => togglePerm(p.key, e.target.checked)}
                 />

@@ -89,9 +89,15 @@ export const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
 export const BRAND_SWATCHES = ["#FF5E2B", "#3D7BFF", "#8B5CF6", "#16A765", "#E5484D", "#F59E0B", "#0EA5A0", "#EC4899"];
 
-export const PERMISSIONS: { key: PermKey; label: string; desc: string }[] = [
+/** `group` doluysa tek anahtar bu DB yetkilerini birlikte yönetir (müşteri ekleme ve silme). */
+export const PERMISSIONS: { key: PermKey; group?: PermKey[]; label: string; desc: string }[] = [
   { key: "view_all_customers", label: "Tüm müşterileri görsün", desc: "Kendine atanmayanlar dahil tüm listeyi okur, değiştiremez." },
-  { key: "import_customers", label: "Müşteri eklesin", desc: "Tek tek ekler ve Excel ile toplu içe aktarır." },
+  {
+    key: "import_customers",
+    group: ["import_customers", "delete_customers"],
+    label: "Müşteri eklesin / silsin",
+    desc: "Müşteri ekler, Excel içe aktarır ve siler.",
+  },
   { key: "reassign", label: "Devredebilsin", desc: "Müşteriyi başka çalışana aktarır." },
   { key: "export", label: "Dışa aktarabilsin", desc: "Müşteri listesini dosya olarak indirir." },
   {
@@ -100,7 +106,6 @@ export const PERMISSIONS: { key: PermKey; label: string; desc: string }[] = [
     desc: "Raporlar sayfasında tüm ekibin toplamlarını görür, müşteri listesi açmaz. Kapalıysa yalnız kendi sonuçlarını görür.",
   },
   { key: "view_team", label: "Yönetim ekranını görsün", desc: "Ekip özet kartları, kim ne yaptı ve havuz durumu." },
-  { key: "delete_customers", label: "Müşteri silebilsin", desc: "Müşteriyi kalıcı siler (KVKK silme talebi)." },
 ];
 
 export type PermKey =
@@ -112,7 +117,12 @@ export type PermKey =
   | "view_team"
   | "delete_customers";
 
-export const PERM_KEYS = PERMISSIONS.map((p) => p.key);
+export const PERM_KEYS = PERMISSIONS.flatMap((p) => p.group ?? [p.key]);
+
+/** Aynı anahtarla birlikte yazılan yetkiler (tek anahtarlı gruplar için). */
+export function permGroup(key: PermKey): PermKey[] {
+  return PERMISSIONS.find((p) => (p.group ?? [p.key]).includes(key))?.group ?? [key];
+}
 
 export type MemberRow = {
   id: string;

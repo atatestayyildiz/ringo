@@ -3,7 +3,7 @@
 import { OperatorLogo } from "@/components/ui/OperatorLogo";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { reassignCustomersAction } from "@/app/(app)/musteriler/actions";
+import { deleteCustomersAction, reassignCustomersAction } from "@/app/(app)/musteriler/actions";
 import { Avatar, Button, EmptyState, Modal, Select, StatusBadge, useToast, type CallStatus } from "@/components/ui";
 import { IconUsers } from "@/components/icons";
 import { formatPhone } from "@/lib/format";
@@ -31,10 +31,11 @@ export function CustomerList({
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [transferOpen, setTransferOpen] = useState(false);
   const [to, setTo] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [pending, startTransfer] = useTransition();
   const allRef = useRef<HTMLInputElement>(null);
 
-  const canSelect = viewer.canReassign;
+  const canSelect = viewer.canReassign || viewer.canDelete;
   // Yalnız görünen sayfadaki satırlar sayılır; sayfa veya filtre değişince eski seçim düşer.
   const picked = rows.filter((r) => checked.has(r.id));
   const allPicked = rows.length > 0 && picked.length === rows.length;
@@ -64,6 +65,22 @@ export function CustomerList({
         setChecked(new Set());
         setTransferOpen(false);
         setTo("");
+        router.refresh();
+      } else {
+        toast(res.error, "error");
+      }
+    });
+  };
+
+  const confirmDelete = () => {
+    if (picked.length === 0) return;
+    const ids = picked.map((r) => r.id);
+    startTransfer(async () => {
+      const res = await deleteCustomersAction(ids);
+      if (res.ok) {
+        toast(`${res.deleted} müşteri silindi`);
+        setChecked(new Set());
+        setDeleteOpen(false);
         router.refresh();
       } else {
         toast(res.error, "error");
@@ -147,9 +164,16 @@ export function CustomerList({
           <Button size="sm" variant="soft" onClick={() => setChecked(new Set())}>
             Temizle
           </Button>
-          <Button size="sm" onClick={() => setTransferOpen(true)}>
-            {assigning ? "Ata" : "Aktar"}
-          </Button>
+          {viewer.canReassign ? (
+            <Button size="sm" onClick={() => setTransferOpen(true)}>
+              {assigning ? "Ata" : "Aktar"}
+            </Button>
+          ) : null}
+          {viewer.canDelete ? (
+            <Button size="sm" className="btn-danger" onClick={() => setDeleteOpen(true)}>
+              Sil
+            </Button>
+          ) : null}
         </div>
       ) : null}
       <Modal open={transferOpen} onClose={() => (pending ? undefined : setTransferOpen(false))} title={assigning ? "Müşterileri ata" : "Müşterileri aktar"}>
@@ -174,6 +198,17 @@ export function CustomerList({
           </Button>
           <Button variant="ink" onClick={confirmTransfer} disabled={pending || !to}>
             {pending ? (assigning ? "Atanıyor" : "Aktarılıyor") : assigning ? "Ata" : "Aktar"}
+          </Button>
+        </div>
+      </Modal>
+      <Modal open={deleteOpen} onClose={() => (pending ? undefined : setDeleteOpen(false))} title="Müşteriler silinsin mi?">
+        <p className="mu-confirm">{picked.length} müşteri kalıcı olarak silinecek. Bu işlem geri alınamaz.</p>
+        <div className="modal-foot">
+          <Button variant="soft" onClick={() => setDeleteOpen(false)} disabled={pending}>
+            Vazgeç
+          </Button>
+          <Button className="btn-danger-solid" onClick={confirmDelete} disabled={pending}>
+            {pending ? "Siliniyor" : "Kalıcı olarak sil"}
           </Button>
         </div>
       </Modal>

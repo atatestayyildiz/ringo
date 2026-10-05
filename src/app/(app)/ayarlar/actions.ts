@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import {
   HEX_RE,
   PERM_KEYS,
+  permGroup,
   checkRule,
   DISTRIBUTION_MODES,
   RULE_LIMITS,
@@ -219,7 +220,8 @@ export async function setPermissionAction(memberId: string, key: PermKey, value:
   if (!target) return { ok: false, error: "Çalışan bulunamadı. Sayfayı yenileyin." };
 
   const current = (target.permissions ?? {}) as Record<string, unknown>;
-  const next = { ...current, [key]: value };
+  // Müşteri ekleme ve silme tek anahtardır; ikisi birlikte yazılır
+  const next = { ...current, ...Object.fromEntries(permGroup(key).map((k) => [k, value])) };
 
   const supabase = await createClient();
   const { data, error } = await supabase

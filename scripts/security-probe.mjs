@@ -383,6 +383,12 @@ async function main() {
   await check(G2, "reassign_customers: anon reddedilir", async () =>
     expectError(await anonClient.rpc("reassign_customers", { p_customers: [elifCust.id], p_member: M.ayse.id }), FN_DENIED),
   );
+  await check(G2, "delete_customers: anon reddedilir", async () =>
+    expectError(await anonClient.rpc("delete_customers", { p_customers: [elifCust.id] }), FN_DENIED),
+  );
+  await check(G2, "delete_customers: yetkisiz ajan (Ayşe) 42501", async () =>
+    expectError(await ayse.rpc("delete_customers", { p_customers: [elifCust.id] }), DENIED),
+  );
   await check(G2, "transfer_open_work: ajan (Ayşe) 42501", async () =>
     expectError(await ayse.rpc("transfer_open_work", { p_from: M.elif.id, p_to: M.ayse.id }), DENIED),
   );
