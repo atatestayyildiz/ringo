@@ -1,7 +1,7 @@
 import { execSync } from "node:child_process";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
-import { login, loginOk, PASSWORD, TEST_PIN, typePin, userMenuItem, USERS } from "./helpers";
+import { login, loginOk, openLogin, PASSWORD, TEST_PIN, typePin, userMenuItem, USERS } from "./helpers";
 
 // Panel kilidi (spec 2026-10-05 §1). İlk giriş testi kendi geçici kullanıcısını açar ve siler;
 // demo kullanıcıların kilit durumu her testten sonra temizlenir.
@@ -58,6 +58,7 @@ test.describe("ilk giriş: PIN belirleme zorunlu", () => {
 
   test("PIN'siz kullanıcı /pin-belirle'den geçemez; zayıf ve eşleşmeyen PIN reddedilir", async ({ page }) => {
     await page.goto("/giris");
+    await openLogin(page);
     await page.getByLabel("E-posta").fill(email);
     await page.getByLabel("Şifre").fill(PASSWORD);
     await page.getByRole("button", { name: "Giriş yap" }).click();
@@ -103,9 +104,10 @@ test.describe("kilit ve açma", () => {
     await typePin(page, "975318");
     await expect(page.getByRole("alert").filter({ hasText: "4 hakkın kaldı" })).toBeVisible();
 
-    // tuş takımı ile doğru PIN
-    const pad = page.getByRole("group", { name: "PIN tuş takımı" });
-    for (const d of TEST_PIN) await pad.getByRole("button", { name: d, exact: true }).click();
+    // ekranda tuş takımı yok: yanlış denemeden sonra daireler açık, gizli PIN alanı odakta kalır;
+    // doğru PIN yerel klavyeyle
+    await expect(page.getByLabel("PIN", { exact: true })).toBeFocused();
+    await page.getByLabel("PIN", { exact: true }).pressSequentially(TEST_PIN);
     await expect(page).toHaveURL(/\/bugun/);
     await page.goto("/kilit");
     await expect(page).toHaveURL(/\/bugun/);

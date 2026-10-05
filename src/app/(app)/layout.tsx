@@ -8,22 +8,17 @@ import { MobileMenu } from "@/components/shell/MobileMenu";
 import { UserMenu } from "@/components/shell/UserMenu";
 import { ToastProvider } from "@/components/ui";
 import { navKeys } from "@/lib/access";
+import { memberAccent } from "@/lib/accent";
 import { isAllowedLogoUrl } from "@/lib/brand-logo";
 import { getSessionContext } from "@/lib/session";
-import { createClient } from "@/lib/supabase/server";
 import { signOutAction } from "./actions";
-
-const HEX = /^#[0-9a-fA-F]{6}$/;
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, member, settings } = await getSessionContext();
   const isManager = member.role === "manager";
 
-  // Etkin vurgu: kişisel seçim ?? (yönetici: marka rengi, satışçı: nötr token)
-  const supabase = await createClient();
-  const { data: me } = await supabase.from("members").select("accent_color").eq("id", member.id).maybeSingle();
-  const personal = me?.accent_color && HEX.test(me.accent_color) ? me.accent_color : null;
-  const brandCss = personal ?? (isManager ? (HEX.test(settings.brand_color) ? settings.brand_color : null) : "var(--accent-neutral)");
+  // Etkin vurgu: kişisel seçim ?? (yönetici: marka rengi, satışçı: nötr token). Avatar, kapı ve kilit sahnesi de bunu kullanır.
+  const brandCss = await memberAccent({ member, settings });
 
   // Raporlar herkese (kapsam DB'de), Yönetim yönetici veya view_team, Ayarlar yönetici
   const visible: NavKey[] = navKeys(member);
@@ -34,7 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <ToastProvider>
-      <DoorProvider brandName={brandName} brandColor={HEX.test(settings.brand_color) ? settings.brand_color : null} logoUrl={logoUrl}>
+      <DoorProvider brandName={brandName} logoUrl={logoUrl}>
       {brandCss ? <style>{`:root{--brand:${brandCss}}`}</style> : null}
       <header className="top">
         <div className="top-in">

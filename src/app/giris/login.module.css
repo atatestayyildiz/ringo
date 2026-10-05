@@ -1,0 +1,105 @@
+/* Minimal giriş kartı (sahne alt bölmesi). Etiket alanın içinde, üstte küçük; vurgu sahnenin --c'si. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+.field {
+  position: relative;
+  display: block;
+}
+.label {
+  position: absolute;
+  left: 15px;
+  top: 7px;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--scene-ink-2, var(--ink-2));
+  pointer-events: none;
+}
+.input {
+  display: block;
+  width: 100%;
+  height: 48px;
+  padding: 18px 14px 4px;
+  border-radius: 14px;
+  border: 1px solid var(--scene-line, var(--line));
+  background: color-mix(in oklab, var(--scene-ink, var(--ink)) 5%, transparent);
+  color: var(--scene-ink, var(--ink));
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
+}
+.input:focus {
+  border-color: color-mix(in oklab, var(--c) 75%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--c) 18%, transparent), 0 0 18px -4px color-mix(in oklab, var(--c) 60%, transparent);
+  background: color-mix(in oklab, var(--scene-ink, var(--ink)) 3%, transparent);
+}
+.submit {
+  margin-top: 2px;
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--scene-ink, var(--ink));
+  color: var(--scene-bg, var(--bg));
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--c) 40%, transparent), 0 10px 26px -12px color-mix(in oklab, var(--c) 80%, transparent);
+  transition:
+    transform 0.12s,
+    opacity 0.2s;
+}
+.submit:active:not(:disabled) {
+  transform: scale(0.985);
+}
+.submit:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+.submit:focus-visible {
+  outline: 2px solid var(--c);
+  outline-offset: 2px;
+}
+.forgot {
+  align-self: center;
+  padding: 2px 6px;
+  font-size: 11.5px;
+  line-height: 16px;
+  letter-spacing: 0.03em;
+  color: var(--scene-ink-2, var(--ink-2));
+  text-decoration: none;
+  opacity: 0.55;
+  border-radius: 6px;
+  transition: opacity 0.2s;
+}
+.forgot:hover {
+  opacity: 0.8;
+}
+.forgot:focus-visible {
+  opacity: 0.9;
+  outline: 1.5px solid var(--c);
+  outline-offset: 2px;
+}
+.error:global(.form-error) {
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.notice {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--c-bad);
+  text-align: center;
+  max-width: 300px;
+}

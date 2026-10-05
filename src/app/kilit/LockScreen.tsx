@@ -3,18 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { onLockMessage, parseLockStatus } from "@/components/lock/activity";
-import { PinPad } from "@/components/lock/PinPad";
+import { PinField } from "@/components/lock/PinField";
 import { useLock } from "@/components/lock/useLock";
 import s from "@/components/lock/lock.module.css";
-import { sceneGlass, useScene } from "@/components/scene/Scene";
+import { useScene } from "@/components/scene/Scene";
 import { useDoorExit } from "@/components/scene/useDoorExit";
-import { Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { forgotPinAction, unlockAction } from "./actions";
 
 /**
- * Kilit ekranı (sahne içinde): tuşta halka nabzı, yanlışta halka kırmızı + noktalar sallanır ve kalan hak
- * yazılır, doğru PIN'de kapı açılışıyla panele; 5 yanlışta oturum kapanır, girişe dönülür.
+ * Kilit ekranı (sahnenin alt bölmesi): "PIN gir" → 6 daire çizilir, yerel klavye açılır. Hanede halka nabzı,
+ * yanlışta halka kırmızı + daireler sallanır ve kalan hak yazılır, doğru PIN'de klavye kapanır ve kapı
+ * açılışıyla panele; 5 yanlışta oturum kapanır, girişe dönülür.
  */
 export function LockScreen({ name }: { name: string }) {
   const router = useRouter();
@@ -22,6 +22,7 @@ export function LockScreen({ name }: { name: string }) {
   const { handle } = useScene();
   const { exit, door } = useDoorExit();
   const [error, setError] = useState<string | null>(null);
+  const [resetKey, setResetKey] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const leavingRef = useRef(false);
   const [pending, start] = useTransition();
@@ -47,6 +48,7 @@ export function LockScreen({ name }: { name: string }) {
         return;
       }
       setError(res.error);
+      setResetKey((k) => k + 1);
       handle.error();
       if (res.signedOut) router.replace("/giris?hata=pin");
     });
@@ -79,13 +81,20 @@ export function LockScreen({ name }: { name: string }) {
 
   return (
     <>
-      <Card className={`${sceneGlass} ${s.card}`}>
-        <div>
-          <h1>Panel kilitli</h1>
-          <p>{name ? `${name}, devam etmek için PIN'ini gir.` : "Devam etmek için PIN'ini gir."}</p>
-        </div>
-        <PinPad length={6} onComplete={submit} error={error} disabled={pending || leaving} onKey={() => handle.pulse()} />
-      </Card>
+      <div className="sr-only">
+        <h1>Panel kilitli</h1>
+        <p>{name ? `${name}, devam etmek için PIN'ini gir.` : "Devam etmek için PIN'ini gir."}</p>
+      </div>
+      <PinField
+        length={6}
+        label="PIN"
+        trigger="PIN gir"
+        onComplete={submit}
+        error={error}
+        resetKey={resetKey}
+        busy={pending || leaving}
+        onDigit={() => handle.pulse()}
+      />
       <form action={forgotPinAction} className={s.below}>
         <button type="submit" className={s.link} disabled={leaving}>
           PIN&apos;imi unuttum

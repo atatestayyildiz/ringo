@@ -13,6 +13,10 @@ export default defineConfig({
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3200",
     trace: "retain-on-failure",
+    // Akış testleri sahne animasyonunu (neon WebGL + kapı) oynatmaz: reduce modunda sahne 200 ms solmaya iner.
+    // Her girişte WebGL sahnesi açmak turu ~3 kat yavaşlatıyor ve tarayıcıyı çökertiyordu.
+    // Animasyonun kendisi e2e/acilis.spec.ts ve e2e/sahne.spec.ts'te reducedMotion "no-preference" ile sınanır.
+    reducedMotion: "reduce",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 });

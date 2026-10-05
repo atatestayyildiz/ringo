@@ -107,18 +107,21 @@ export function Avatar({
   size,
   radius,
   className,
+  color,
 }: {
   name: string;
   size?: number;
   radius?: number | string;
   className?: string;
+  /** Zemin rengi (CSS değeri); verilmezse addan türetilir. Oturum sahibinde: "var(--brand)" (kişisel vurgu). */
+  color?: string;
 }) {
   return (
     <span
       className={cx("avatar", className)}
       aria-hidden="true"
       style={{
-        background: avatarColor(name),
+        background: color ?? avatarColor(name),
         ...(size ? { width: size, height: size, fontSize: Math.round(size * 0.36) } : {}),
         ...(radius !== undefined ? { borderRadius: radius } : {}),
       }}

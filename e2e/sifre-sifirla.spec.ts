@@ -1,6 +1,7 @@
 import { execSync } from "node:child_process";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
+import { openLogin } from "./helpers";
 
 // Bu test kendi geçici kullanıcısını oluşturur ve siler; seed kullanıcılarının şifresine dokunmaz.
 const OLD_PASSWORD = "EskiSifre123!";
@@ -68,6 +69,7 @@ test.afterAll(async () => {
 
 test("giriş sayfasında şifremi unuttum bağlantısı var", async ({ page }) => {
   await page.goto("/giris");
+  await openLogin(page);
   await page.getByRole("link", { name: "Şifremi unuttum" }).click();
   await expect(page).toHaveURL(/\/sifre-sifirla$/);
 });
@@ -126,6 +128,7 @@ test("bağlantı iste, e-postadaki bağlantıdan yeni şifre belirle, yeni şifr
   await expect(p2.getByText("Şifren değişti")).toBeVisible();
 
   // Eski şifre artık çalışmaz, yenisi çalışır
+  await openLogin(p2);
   await p2.getByLabel("E-posta").fill(email);
   await p2.getByLabel("Şifre").fill(OLD_PASSWORD);
   await p2.getByRole("button", { name: "Giriş yap" }).click();

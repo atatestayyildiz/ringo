@@ -36,7 +36,7 @@ export default async function Page() {
         <div className={`${s.cell} ${s.who12}`}>
           <Card>
             <div className={s.who}>
-              <Avatar name={ctx.member.full_name} size={48} />
+              <Avatar name={ctx.member.full_name} size={48} color="var(--brand)" />
               <div>
                 <b>{ctx.member.full_name}</b>
                 <small>{ctx.user.email}</small>

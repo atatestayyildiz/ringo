@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Sahnenin yüzü: arka plan (ışık bulutları + taralı diskler) ve amblem (logo dairesi + halkalar).
+ * Sahnenin yüzü: durağan zemin ve amblem (logo dairesi + halkalar + parlama çerçevesi).
  * Scene ve Door aynı parçaları kullanır; döngüler duvar saatine kilitli olduğundan (motion.ambient)
  * kapı kopyası, altındaki sahneyle aynı karede birebir örtüşür.
  */
@@ -13,7 +13,7 @@ import s from "./scene.module.css";
 export type Face = {
   /** Mağaza adı; boşsa amblem işaretsiz kalır. */
   name: string;
-  /** #rrggbb; null ise --brand. */
+  /** Renk (#rrggbb ya da CSS değeri); null ise --brand. */
   color: string | null;
   logo: string | null;
 };
@@ -28,58 +28,13 @@ export function initialOf(name: string): string {
 
 /* ---------- arka plan ---------- */
 
-const BLOBS: { cls: string; dur: number; kf: Keyframe[] }[] = [
-  {
-    cls: "b1",
-    dur: 26000,
-    kf: [
-      { transform: "translate3d(0,0,0) scale(1)" },
-      { transform: "translate3d(7vw,5vh,0) scale(1.12)" },
-      { transform: "translate3d(-3vw,9vh,0) scale(.94)" },
-      { transform: "translate3d(0,0,0) scale(1)" },
-    ],
-  },
-  {
-    cls: "b2",
-    dur: 34000,
-    kf: [
-      { transform: "translate3d(0,0,0) scale(1)" },
-      { transform: "translate3d(-8vw,-4vh,0) scale(.9)" },
-      { transform: "translate3d(-2vw,-10vh,0) scale(1.1)" },
-      { transform: "translate3d(0,0,0) scale(1)" },
-    ],
-  },
-  {
-    cls: "b3",
-    dur: 22000,
-    kf: [
-      { transform: "translate3d(0,0,0) scale(1)" },
-      { transform: "translate3d(6vw,-6vh,0) scale(1.15)" },
-      { transform: "translate3d(0,0,0) scale(1)" },
-    ],
-  },
-];
-
-/** Tam ekran, sabit arka plan. aura/hatch katmanları paralaks için data-layer taşır. */
+/**
+ * Durağan zemin (sahne ve kapı yarıları ortak): taban, logonun arkasında vurgu renginde yumuşak ışık,
+ * kenarlarda vinyet. Hareketli ışık neon akıştan gelir (yalnız sahnede; kapı yarıları bu durağan zemindir).
+ */
 export function Backdrop() {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const root = ref.current;
-    if (!root) return;
-    const anims = BLOBS.map((b) => ambient(root.querySelector(`[data-blob="${b.cls}"]`), b.kf, b.dur, { easing: "ease-in-out" }));
-    return () => anims.forEach((a) => a?.cancel());
-  }, []);
   return (
-    <div ref={ref} className={s.backdrop} aria-hidden="true">
-      <div className={s.aura} data-layer="aura">
-        {BLOBS.map((b) => (
-          <i key={b.cls} className={`${s.blob} ${s[b.cls]}`} data-blob={b.cls} />
-        ))}
-      </div>
-      <div className={s.hatchLayer} data-layer="hatch">
-        <i className={`${s.disk} ${s.diskTr}`} />
-        <i className={`${s.disk} ${s.diskBl}`} />
-      </div>
+    <div className={s.backdrop} aria-hidden="true">
       <div className={s.vignette} />
     </div>
   );
@@ -96,8 +51,8 @@ type EmblemProps = {
 };
 
 /**
- * 200 birimlik viewBox: logo r=50, iç halka r=64, segmentli dış halka r=80, nefes halkası r=56.
- * Boyut dışarıdan (genişlik = yükseklik) verilir.
+ * 200 birimlik viewBox: logo r=50 (çerçeve + parlama r=51), iç halka r=64, segmentli dış halka r=80,
+ * nefes halkası r=56. Boyut dışarıdan (genişlik = yükseklik) verilir.
  */
 export const Emblem = forwardRef<HTMLDivElement, EmblemProps>(function Emblem({ face, intro = false, className, style }, fwd) {
   const own = useRef<HTMLDivElement | null>(null);
@@ -174,6 +129,10 @@ export const Emblem = forwardRef<HTMLDivElement, EmblemProps>(function Emblem({ 
           <span>{mark}</span>
         )}
       </div>
+      <svg className={`${s.ring} ${s.flare}`} data-a="flare" viewBox="0 0 200 200">
+        <circle className={s.flareWide} cx="100" cy="100" r="51" />
+        <circle className={s.flareCore} cx="100" cy="100" r="51" />
+      </svg>
     </div>
   );
 });

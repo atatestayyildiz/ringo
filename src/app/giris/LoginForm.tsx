@@ -2,22 +2,35 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import sc from "@/components/scene/scene.module.css";
+import { useDismiss } from "@/components/scene/useDismiss";
 import { useDoorExit } from "@/components/scene/useDoorExit";
-import { Button, Input } from "@/components/ui";
 import { signInAction, type LoginState } from "./actions";
+import s from "./login.module.css";
 
+/**
+ * Giriş (sahnenin alt bölmesi): "Giriş yap" metin düğmesi; basınca küçük giriş kartı parlayarak belirir ve
+ * e-posta alanına odaklanır (mobilde e-posta klavyesi). Enter ya da Giriş yap: yanlışsa kart kalır, hata
+ * yazılır; doğruysa klavye kapanır, kart söner, ardından kapı koreografisi başlar. Dışarı dokunmak ya da
+ * Escape kartı söndürüp kapatır, "Giriş yap" geri gelir.
+ */
 export function LoginForm({ notice }: { notice?: string }) {
   const router = useRouter();
   const { exit, door } = useDoorExit();
   const [state, action, pending] = useActionState<LoginState, FormData>(signInAction, { error: null });
+  const [open, setOpen] = useState(Boolean(notice));
+  const [closing, setClosing] = useState(false);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const handled = useRef<LoginState | null>(null);
   // Gönderim kilidi: istek sürerken ya da kapı oynarken ikinci gönderim yok.
   const busy = useRef(false);
   const leaving = Boolean(state.to);
   const message = state.error ?? (leaving ? null : notice) ?? null;
 
-  // Başarı: panel için sahne söner, kapı kapanıp çizgiler çizilir, panel arkada yüklenip kapı açılır.
+  // Başarı: panel için klavye kapanır, kart söner, logo parlar, kapı kapanıp ışınlar çizilir, panelde açılır.
   useEffect(() => {
     const to = state.to;
     if (!to) busy.current = false;
@@ -30,6 +43,35 @@ export function LoginForm({ notice }: { notice?: string }) {
     void exit(to);
   }, [state, router, exit]);
 
+  const reveal = () => {
+    // Aynı jestte odak: mobil klavye açılsın.
+    flushSync(() => setOpen(true));
+    emailRef.current?.focus({ preventScroll: true });
+  };
+
+  // Dışarı dokunma / Escape: klavye kapanır, kart söner, metin düğmesi geri gelir.
+  const dismiss = () => {
+    if (closing) return;
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    setClosing(true);
+    window.setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+    }, 240);
+  };
+  useDismiss(open && !closing, formRef, dismiss, pending || leaving);
+
+  if (!open) {
+    return (
+      <>
+        <button type="button" className={`${sc.trigger} ${sc.revealIn}`} onClick={reveal}>
+          Giriş yap
+        </button>
+        {door}
+      </>
+    );
+  }
+
   return (
     <form
       action={action}
@@ -37,18 +79,42 @@ export function LoginForm({ notice }: { notice?: string }) {
         if (busy.current) e.preventDefault();
         else busy.current = true;
       }}
-      style={{ display: "flex", flexDirection: "column", gap: 14 }} noValidate aria-busy={pending || leaving}>
+      ref={formRef}
+      className={`${sc.glass} ${s.card}`}
+      data-closing={closing ? "" : undefined}
+      noValidate
+      aria-busy={pending || leaving}
+      aria-label="Giriş"
+      data-dock-open=""
+    >
       {message ? (
-        <div className="form-error" role="alert">
+        <div className={`form-error ${s.error}`} role="alert">
           {message}
         </div>
       ) : null}
-      <Input label="E-posta" name="email" type="email" autoComplete="username" inputMode="email" required />
-      <Input label="Şifre" name="password" type="password" autoComplete="current-password" required />
-      <Button type="submit" variant="ink" block disabled={pending || leaving}>
+      <label className={s.field}>
+        <span className={s.label}>E-posta</span>
+        <input
+          ref={emailRef}
+          className={s.input}
+          name="email"
+          type="email"
+          autoComplete="username"
+          inputMode="email"
+          autoCapitalize="off"
+          spellCheck={false}
+          enterKeyHint="next"
+          required
+        />
+      </label>
+      <label className={s.field}>
+        <span className={s.label}>Şifre</span>
+        <input className={s.input} name="password" type="password" autoComplete="current-password" enterKeyHint="go" required />
+      </label>
+      <button type="submit" className={s.submit} disabled={pending || leaving}>
         {pending ? "Giriş yapılıyor" : leaving ? "Açılıyor" : "Giriş yap"}
-      </Button>
-      <Link href="/sifre-sifirla" style={{ textAlign: "center", fontSize: 14, color: "var(--ink-2)" }}>
+      </button>
+      <Link href="/sifre-sifirla" className={s.forgot}>
         Şifremi unuttum
       </Link>
       {door}

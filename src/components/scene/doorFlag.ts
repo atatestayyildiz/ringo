@@ -85,7 +85,6 @@ export function flagGeom(f: DoorFlag): EmblemSnapshot {
 /* ---------- kilit: kapı panelde kapanır, /kilit sahnesi aynı konumdan devralır ---------- */
 
 const ARRIVAL = "telefoncu-door-arrival";
-const LOCK_EMBLEM = "telefoncu-lock-emblem";
 
 type Frac = { t: number; fx: number; fy: number; fs: number };
 
@@ -132,32 +131,12 @@ export const readArrivalRaw = () => load(ARRIVAL);
 export const parseArrival = (raw: string | null) => fromFrac(raw, 15_000);
 export const clearArrival = () => store(ARRIVAL, null);
 
-/** /kilit amblemi gerçek konumu (oran); sonraki kapanış bu konuma kapanır. */
-export function saveLockEmblem(geom: EmblemSnapshot) {
-  store(LOCK_EMBLEM, JSON.stringify({ ...toFrac(geom), vw: innerWidth, vh: innerHeight }));
-}
-
-/** Kapanış için amblem konumu: kayıtlı /kilit ölçüsü (aynı pencere boyunda) ya da yerleşimden tahmin. */
-export function lockEmblemGuess(): EmblemSnapshot {
-  const raw = load(LOCK_EMBLEM);
-  try {
-    const f = raw ? (JSON.parse(raw) as { vw?: number; vh?: number }) : null;
-    if (f && f.vw === innerWidth && f.vh === innerHeight) {
-      const g = fromFrac(raw, Number.POSITIVE_INFINITY);
-      if (g) return g;
-    }
-  } catch {
-    // tahmine düş
-  }
-  return guessLockEmblem(innerWidth, innerHeight);
-}
-
-/** scene.module.css kilit yerleşiminin yaklaşık modeli (ölçü yoksa); küçük sapmayı varış FLIP'i kapatır. */
-export function guessLockEmblem(W: number, H: number): EmblemSnapshot {
+/**
+ * Sahne amblemi konumu (ölçü yoksa): logo her zaman ekranın tam ortasında; kenar
+ * scene.module.css .sceneEmblem ile aynı formül. Küçük sapmayı varış FLIP'i kapatır.
+ */
+export function sceneEmblemGuess(W = innerWidth, H = innerHeight): EmblemSnapshot {
   const vmin = Math.min(W, H);
-  const size = Math.max(124, Math.min(184, vmin * 0.16 + 64));
-  const content = W < 561 ? 516 : 548; // başlık + kart (noktalar, tuş takımı) + bağlantı
-  const total = size + 26 + 18 + content;
-  const top = Math.max(56, (H - total) / 2);
-  return { cx: W / 2, cy: top + size / 2, size };
+  const size = Math.max(150, Math.min(236, vmin * 0.2 + 70));
+  return { cx: W / 2, cy: H / 2, size };
 }

@@ -10,8 +10,17 @@ export const USERS = {
 export type UserKey = keyof typeof USERS;
 export const AGENTS: UserKey[] = ["elif", "ayse", "can"];
 
+/** Giriş sahnesinde kart kapalıysa alt ortadaki "Giriş yap" metin düğmesiyle açar. */
+export async function openLogin(page: Page) {
+  const email = page.getByLabel("E-posta");
+  if (await email.isVisible()) return;
+  await page.getByRole("button", { name: "Giriş yap" }).click();
+  await expect(email).toBeVisible();
+}
+
 export async function login(page: Page, who: UserKey, password = PASSWORD) {
   await page.goto("/giris");
+  await openLogin(page);
   await page.getByLabel("E-posta").fill(USERS[who]);
   await page.getByLabel("Şifre").fill(password);
   await page.getByRole("button", { name: "Giriş yap" }).click();
@@ -20,7 +29,7 @@ export async function login(page: Page, who: UserKey, password = PASSWORD) {
 /** Demo kullanıcıların panel kilidi PIN'i (seed ve yerel DB'de doğrudan hash; yalnız demo, set_my_pin kabul etmez). */
 export const TEST_PIN = "000000";
 
-/** Kilit/PIN ekranında PIN'i klavyeyle girer (tuş takımı klavye rakamlarını da alır). */
+/** Kilit/PIN ekranında PIN'i klavyeyle girer (rakam yazmak daireleri açar ve gizli PIN alanına odaklanır). */
 export async function typePin(page: Page, pin: string) {
   for (const d of pin) await page.keyboard.press(d);
 }
@@ -39,6 +48,8 @@ export async function loginOk(page: Page, who: UserKey) {
   await login(page, who);
   await setupPinIfAsked(page);
   await expect(page).toHaveURL(/\/bugun/);
+  // Kapı açılışı bitsin (panel arkadan hafif yakınlaşarak belirir; konum ölçen testler oynamasın).
+  await expect(page.getByTestId("door")).toHaveCount(0, { timeout: 15_000 });
 }
 
 /** Üst çubuktaki hesap menüsünü açar (Profil, tema, Paneli kilitle, Çıkış yap). */

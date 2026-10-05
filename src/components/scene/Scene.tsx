@@ -1,22 +1,21 @@
 "use client";
 
 /**
- * Açılış sahnesi: ışık bulutları, taralı diskler, ortada logo dairesi + dönen halkalar; altında içerik (form).
+ * Açılış sahnesi: en arkada neon akış, tam ortada (yatay + dikey) yuvarlak logo ve halkalar,
+ * alt ortada bölme (giriş kartı ya da PIN daireleri), en altta imza.
  *
  * Kullanım:
- *   <Scene ref={sceneRef} brandName={b.name} brandColor={b.color} logoUrl={b.logo} mode="lock">
- *     <div data-scene-shake>{noktalar}</div>  // error() bu öğeleri sallar
- *     <PinPad ... />
+ *   <Scene ref={sceneRef} brandName={b.name} brandColor={b.color} logoUrl={b.logo} mode="lock" footer={<MadeBy />}>
+ *     <PinField ... />          // alt bölme; [data-scene-shake] öğeleri error()'da sallanır
  *   </Scene>
- *   sceneRef.current.pulse()   // PIN tuşunda halka nabzı
+ *   sceneRef.current.pulse()   // tuşta halka nabzı
  *   sceneRef.current.error()   // yanlışta: halka kısa kırmızı + [data-scene-shake] sallanır
- *   await sceneRef.current.depart() // içerik söner, halka parlar (0.3 sn); kapı için amblem ölçüsünü döner
+ *   await sceneRef.current.depart() // klavye kapanır + bölme söner, sonra logo çerçevesi parlar, neon söner
  *   sceneRef.current.arrive()  // depart geri alınır (ör. gezinme başarısız)
  * Çocuklar useScene() ile aynı tutamağa ve marka yüzüne erişebilir.
- * Marka rengi brandColor (#rrggbb) yoksa --brand. Azaltılmış harekette yalnız solma.
- * Kapı panelde kapanıp buraya gelindiyse (armArrival) giriş koreografisi atlanır: amblem kapının
- * bıraktığı konumdan kendi yerine kayar, içerik belirir. mode="lock" amblem konumunu sonraki
- * kapanış için saklar (saveLockEmblem).
+ * Logo yerleşim görünür alanına sabittir: mobil tarayıcı çubukları ya da klavye onu kaydırmaz; klavye
+ * açıkken alt bölme klavyenin üstüne çıkar (--kb), logo soluklaşır. Azaltılmış harekette neon yok, yalnız solma.
+ * Kapı panelde kapanıp buraya gelindiyse (armArrival) giriş koreografisi atlanır: parlama söner, neon ve bölme belirir.
  */
 
 import {
@@ -32,12 +31,15 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
-import { clearArrival, docState, parseArrival, readArrivalRaw, saveLockEmblem } from "./doorFlag";
-import { EASE_OUT, play, prefersReducedMotion, shake } from "./motion";
+import { TubesBackground } from "@/components/ui/neon-flow";
+import { clearArrival, docState, parseArrival, readArrivalRaw } from "./doorFlag";
+import { closeKeyboard, trackKeyboard } from "./keyboard";
+import { hardwareGraphics, watchFrames } from "./neonGuard";
+import { EASE_OUT, play, prefersReducedMotion, shake, T_FADE, T_GLOW } from "./motion";
 import { Backdrop, Emblem, faceStyle, type Face } from "./parts";
 import s from "./scene.module.css";
 
-/** Sahne içeriği için cam kart sınıfı (ör. <Card className={sceneGlass}>). */
+/** Sahne içeriği için cam kart sınıfı. */
 export const sceneGlass = s.glass;
 
 export type EmblemSnapshot = {
@@ -73,11 +75,29 @@ export type SceneProps = {
   mode?: "login" | "lock";
   /** Amblem + mağaza adı bloğuna test kimliği. */
   brandTestId?: string;
+  /** En alttaki imza satırı (klavye açıkken gizlenir). */
+  footer?: ReactNode;
   children: ReactNode;
   ref?: Ref<SceneHandle>;
 };
 
 const noopSub = () => () => {};
+
+function subscribeMotion(cb: () => void) {
+  if (typeof matchMedia === "undefined") return () => {};
+  const mq = matchMedia("(prefers-reduced-motion: reduce)");
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+}
+
+/** Neon akış yalnız istemcide, hareket azaltılmamışsa ve grafik donanım hızlandırmalıysa. */
+function useNeon(): boolean {
+  return useSyncExternalStore(
+    subscribeMotion,
+    () => !prefersReducedMotion() && hardwareGraphics(),
+    () => false,
+  );
+}
 
 /** Ekran koordinatında amblem ölçüsü. */
 function measure(el: HTMLElement | null): EmblemSnapshot | null {
@@ -86,12 +106,36 @@ function measure(el: HTMLElement | null): EmblemSnapshot | null {
   return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, size: r.width };
 }
 
-export function Scene({ brandName, brandColor = null, logoUrl = null, mode = "login", brandTestId, children, ref }: SceneProps) {
+const fallbackGeom = (): EmblemSnapshot => ({ cx: innerWidth / 2, cy: innerHeight / 2, size: 180 });
+
+export function Scene({ brandName, brandColor = null, logoUrl = null, mode = "login", brandTestId, footer, children, ref }: SceneProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const emblemRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const footRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLParagraphElement>(null);
-  const par = useRef({ tx: 0, ty: 0, x: 0, y: 0, frozen: false });
+  const neonRef = useRef<HTMLDivElement>(null);
+  const neonAllowed = useNeon();
+  const [neonSlow, setNeonSlow] = useState(false);
+  const neon = neonAllowed && !neonSlow;
+
+  // Neon hazır olunca kare hızı ölçülür; cihaz kaldıramıyorsa efekt kapanır (WebGL bağlamı bırakılır).
+  useEffect(() => {
+    const host = neonRef.current;
+    if (!neon || !host) return;
+    let stopWatch: (() => void) | null = null;
+    const start = () => {
+      if (stopWatch || host.querySelector('[data-neon="ready"]') === null) return;
+      stopWatch = watchFrames(() => setNeonSlow(true));
+    };
+    const mo = new MutationObserver(start);
+    mo.observe(host, { subtree: true, attributes: true, attributeFilter: ["data-neon"] });
+    start();
+    return () => {
+      mo.disconnect();
+      stopWatch?.();
+    };
+  }, [neon]);
 
   // Varış bayrağı yalnız istemci gezinmesinde okunur (sunucu/hidrasyon: null); ilk değer sabitlenir.
   const arrivalRaw = useSyncExternalStore(noopSub, readArrivalRaw, () => null);
@@ -102,97 +146,32 @@ export function Scene({ brandName, brandColor = null, logoUrl = null, mode = "lo
   }, [arrivalFrom]);
   const arriving = arrivalFrom !== null;
 
+  // Kapının bıraktığı amblem konumundan (pencere boyu farkı ya da kaydırma çubuğu) gerçek yerine kısa kayış.
   useLayoutEffect(() => {
     const em = emblemRef.current;
-    if (!em) return;
-    const real = measure(em);
-    if (real && mode === "lock") saveLockEmblem(real);
-    if (!arrivalFrom) return;
+    if (!em || !arrivalFrom) return;
     clearArrival();
     const from = parseArrival(arrivalFrom);
+    const real = measure(em);
     if (!from || !real || prefersReducedMotion()) return;
     const dx = from.cx - real.cx;
     const dy = from.cy - real.cy;
     const k = from.size / real.size;
     if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(k - 1) < 0.005) return;
     void play(em, [{ transform: `translate(${dx}px,${dy}px) scale(${k})` }, { transform: "none" }], { duration: 650, easing: EASE_OUT });
-  }, [arrivalFrom, mode]);
+  }, [arrivalFrom]);
+
+  // Klavye payı: alt bölme klavyenin üstüne çıkar, logo yerinde kalır.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    return trackKeyboard(root);
+  }, []);
 
   const face = useMemo<Face>(() => ({ name: brandName, color: brandColor, logo: logoUrl }), [brandName, brandColor, logoUrl]);
 
-  /* ---- paralaks: imleç (fare) ya da dokunup sürükleme; yalnız transform ---- */
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || prefersReducedMotion()) return;
-    const layers: [HTMLElement | null, number][] = [
-      [root.querySelector<HTMLElement>('[data-layer="aura"]'), -26],
-      [root.querySelector<HTMLElement>('[data-layer="hatch"]'), 14],
-      [root.querySelector<HTMLElement>("[data-parallax]"), 9],
-    ];
-    const p = par.current;
-    let raf = 0;
-    let touch: { x: number; y: number; id: number } | null = null;
-    const tick = () => {
-      raf = 0;
-      p.x += (p.tx - p.x) * 0.09;
-      p.y += (p.ty - p.y) * 0.09;
-      for (const [el, k] of layers) if (el) el.style.transform = `translate3d(${(p.x * k).toFixed(2)}px,${(p.y * k).toFixed(2)}px,0)`;
-      if (Math.abs(p.tx - p.x) > 0.002 || Math.abs(p.ty - p.y) > 0.002) raf = requestAnimationFrame(tick);
-    };
-    const kick = () => {
-      if (!raf && document.visibilityState === "visible") raf = requestAnimationFrame(tick);
-    };
-    const clamp = (v: number) => Math.max(-1, Math.min(1, v));
-    const onMove = (e: PointerEvent) => {
-      if (p.frozen) return;
-      if (e.pointerType === "mouse") {
-        p.tx = clamp((e.clientX / innerWidth) * 2 - 1);
-        p.ty = clamp((e.clientY / innerHeight) * 2 - 1);
-      } else if (touch && e.pointerId === touch.id) {
-        p.tx = clamp((e.clientX - touch.x) / 160);
-        p.ty = clamp((e.clientY - touch.y) / 160);
-      } else return;
-      kick();
-    };
-    const onDown = (e: PointerEvent) => {
-      if (e.pointerType !== "mouse") touch = { x: e.clientX, y: e.clientY, id: e.pointerId };
-    };
-    const onUp = (e: PointerEvent) => {
-      if (touch && e.pointerId === touch.id) {
-        touch = null;
-        p.tx = 0;
-        p.ty = 0;
-        kick();
-      }
-    };
-    const onLeave = () => {
-      p.tx = 0;
-      p.ty = 0;
-      kick();
-    };
-    addEventListener("pointermove", onMove, { passive: true });
-    addEventListener("pointerdown", onDown, { passive: true });
-    addEventListener("pointerup", onUp, { passive: true });
-    addEventListener("pointercancel", onUp, { passive: true });
-    document.documentElement.addEventListener("mouseleave", onLeave);
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      removeEventListener("pointermove", onMove);
-      removeEventListener("pointerdown", onDown);
-      removeEventListener("pointerup", onUp);
-      removeEventListener("pointercancel", onUp);
-      document.documentElement.removeEventListener("mouseleave", onLeave);
-    };
-  }, []);
-
   const handle = useMemo<SceneHandle>(() => {
     const part = (k: string) => emblemRef.current?.querySelector(`[data-a="${k}"]`) ?? null;
-    const resetParallax = () => {
-      const p = par.current;
-      p.frozen = true;
-      p.tx = p.ty = p.x = p.y = 0;
-      rootRef.current?.querySelectorAll<HTMLElement>("[data-layer],[data-parallax]").forEach((el) => (el.style.transform = ""));
-    };
     return {
       pulse() {
         if (prefersReducedMotion()) return;
@@ -204,10 +183,6 @@ export function Scene({ brandName, brandColor = null, logoUrl = null, mode = "lo
           ],
           { duration: 520, easing: EASE_OUT },
         );
-        void play(part("mark"), [{ transform: "scale(1)" }, { transform: "scale(.965)" }, { transform: "scale(1)" }], {
-          duration: 220,
-          easing: "ease-out",
-        });
       },
       error() {
         const reduced = prefersReducedMotion();
@@ -220,39 +195,35 @@ export function Scene({ brandName, brandColor = null, logoUrl = null, mode = "lo
       async depart() {
         const content = contentRef.current;
         if (content) content.inert = true;
+        const keyboard = closeKeyboard(400);
         if (prefersReducedMotion()) {
-          resetParallax();
-          return measure(emblemRef.current) ?? { cx: innerWidth / 2, cy: innerHeight / 2, size: 180 };
+          await keyboard;
+          return measure(emblemRef.current) ?? fallbackGeom();
         }
-        // Paralaks sıfırlanırken amblem kayar; ölçüyü animasyon sonunda al.
-        const settle = rootRef.current?.querySelectorAll<HTMLElement>("[data-layer],[data-parallax]") ?? [];
-        settle.forEach((el) => {
-          if (el.style.transform) void play(el, [{ transform: el.style.transform }, { transform: "translate3d(0,0,0)" }], { duration: 300, easing: EASE_OUT });
-        });
-        resetParallax();
+        const out: KeyframeAnimationOptions = { duration: T_FADE, easing: "cubic-bezier(.4,0,1,1)", fill: "forwards" };
+        // 1) Önce bölme söner ve klavye kapanır.
         await Promise.all([
-          play(content, [{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: "translateY(18px) scale(.98)" }], {
-            duration: 300,
-            easing: "cubic-bezier(.4,0,1,1)",
-            fill: "forwards",
-          }),
-          play(nameRef.current, [{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: "ease-in", fill: "forwards" }),
-          play(part("halo"), [{ opacity: 0.5, transform: "scale(.9)" }, { opacity: 1, transform: "scale(1.08)" }], {
-            duration: 300,
-            easing: EASE_OUT,
-            fill: "forwards",
-          }),
+          keyboard,
+          play(content, [{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: "translateY(10px)" }], out),
+          play(footRef.current, [{ opacity: 1 }, { opacity: 0 }], out),
         ]);
-        return measure(emblemRef.current) ?? { cx: innerWidth / 2, cy: innerHeight / 2, size: 180 };
+        // 2) Logo çerçevesi kuvvetle parlar; neon ve mağaza adı söner (kapı yarıları durağan zemindir).
+        const glow: KeyframeAnimationOptions = { duration: T_GLOW, easing: "cubic-bezier(.3,0,.2,1)", fill: "forwards" };
+        await Promise.all([
+          play(part("flare"), [{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "scale(1.035)", offset: 0.7 }, { opacity: 1, transform: "scale(1)" }], glow),
+          play(part("halo"), [{ opacity: 0.5, transform: "scale(.9)" }, { opacity: 1, transform: "scale(1.08)" }], glow),
+          play(neonRef.current, [{ opacity: 1 }, { opacity: 0 }], { ...glow, easing: "ease-in" }),
+          play(nameRef.current, [{ opacity: 1 }, { opacity: 0 }], { duration: T_GLOW * 0.5, easing: "ease-in", fill: "forwards" }),
+        ]);
+        return measure(emblemRef.current) ?? fallbackGeom();
       },
       arrive() {
         const content = contentRef.current;
-        par.current.frozen = false;
         if (!content) return;
         content.inert = false;
-        content.getAnimations().forEach((a) => a.cancel());
-        nameRef.current?.getAnimations().forEach((a) => a.cancel());
-        part("halo")?.getAnimations().forEach((a) => a.cancel());
+        for (const el of [content, footRef.current, nameRef.current, neonRef.current, part("halo"), part("flare")]) {
+          el?.getAnimations().forEach((a) => a.cancel());
+        }
       },
       emblem: () => measure(emblemRef.current),
     };
@@ -265,19 +236,27 @@ export function Scene({ brandName, brandColor = null, logoUrl = null, mode = "lo
     <Ctx.Provider value={ctx}>
       <div ref={rootRef} className={s.scene} data-mode={mode} data-arrive={arriving ? "" : undefined} style={faceStyle(face)}>
         <Backdrop />
-        <div className={s.stage}>
-          <div className={s.top} data-parallax="" data-testid={brandTestId}>
-            <Emblem ref={emblemRef} face={face} intro={!arriving} className={s.sceneEmblem} />
-            {brandName.trim() ? (
-              <p ref={nameRef} className={s.brandName}>
-                {brandName}
-              </p>
-            ) : null}
+        {neon ? (
+          <div ref={neonRef} className={s.neon} data-testid="neon-flow">
+            <TubesBackground className={s.neonInner} />
           </div>
-          <div ref={contentRef} className={s.content}>
-            {children}
-          </div>
+        ) : null}
+        <div className={s.center} data-testid={brandTestId}>
+          <Emblem ref={emblemRef} face={face} intro={!arriving} className={s.sceneEmblem} />
+          {brandName.trim() ? (
+            <p ref={nameRef} className={s.brandName}>
+              {brandName}
+            </p>
+          ) : null}
         </div>
+        <div ref={contentRef} className={s.dock}>
+          {children}
+        </div>
+        {footer ? (
+          <div ref={footRef} className={s.foot}>
+            {footer}
+          </div>
+        ) : null}
       </div>
     </Ctx.Provider>
   );

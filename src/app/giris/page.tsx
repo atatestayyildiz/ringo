@@ -1,7 +1,7 @@
-import { Card, ToastProvider } from "@/components/ui";
+import { ToastProvider } from "@/components/ui";
 import { MadeBy } from "@/components/shell/MadeBy";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
-import { Scene, sceneGlass } from "@/components/scene/Scene";
+import { Scene } from "@/components/scene/Scene";
 import { isAllowedLogoUrl } from "@/lib/brand-logo";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "./LoginForm";
@@ -30,13 +30,14 @@ async function loadBranding(): Promise<Branding | null> {
 
 export const metadata = { title: "Giriş" };
 
+/** Giriş sahnesi: kimlik yok, renk mağaza renginden (login_branding). */
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ hata?: string; sifre?: string }> }) {
   const { hata, sifre } = await searchParams;
   const notice =
     hata === "uye"
       ? "Hesabın bir mağazaya bağlı değil ya da pasif. Yöneticinle görüş."
       : hata === "pin"
-        ? "Çok fazla yanlış PIN denemesi. E-posta ve şifrenle yeniden giriş yap."
+        ? "Çok fazla yanlış PIN denemesi. E-posta ve şifrenle giriş yap."
         : undefined;
   const brand = await loadBranding();
   return (
@@ -45,15 +46,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <div style={{ position: "fixed", top: 16, right: 16, zIndex: 5 }}>
         <ThemeToggle />
       </div>
-      <Scene brandName={brand?.name ?? ""} brandColor={brand?.color ?? null} logoUrl={brand?.logo ?? null} brandTestId={brand ? "login-brand" : undefined}>
-        <Card className={`login-card ${sceneGlass}`}>
-          <div>
-            <h1>Hoş geldin</h1>
-            <p style={{ color: "var(--ink-2)", marginTop: 6 }}>Devam etmek için giriş yap.</p>
-          </div>
-          <LoginForm notice={notice} />
-        </Card>
-        <MadeBy />
+      <Scene
+        brandName={brand?.name ?? ""}
+        brandColor={brand?.color ?? null}
+        logoUrl={brand?.logo ?? null}
+        brandTestId={brand ? "login-brand" : undefined}
+        footer={<MadeBy />}
+      >
+        <h1 className="sr-only">Giriş</h1>
+        <LoginForm notice={notice} />
       </Scene>
       <ResetFlash show={sifre === "yenilendi"} />
     </ToastProvider>

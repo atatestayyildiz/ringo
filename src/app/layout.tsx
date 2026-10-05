@@ -18,6 +18,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Klavye yerleşim alanını küçültmez (giriş/kilit sahnesinde logo sabit kalır; alt bölme --kb ile yukarı çıkar).
+  interactiveWidget: "resizes-visual",
 };
 
 // Kayıtlı tema tercihini ilk boyamadan önce uygular (yanıp sönmeyi önler).

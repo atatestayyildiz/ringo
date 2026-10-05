@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { login, loginOk, logout, userMenuItem } from "./helpers";
+import { login, loginOk, logout, openLogin, userMenuItem } from "./helpers";
 
 test.describe("giriş", () => {
   test("oturumsuz kullanıcı giriş sayfasına yönlenir", async ({ page }) => {
@@ -7,6 +7,7 @@ test.describe("giriş", () => {
       await page.goto(path);
       await expect(page).toHaveURL(/\/giris/);
     }
+    await openLogin(page);
     await expect(page.getByLabel("E-posta")).toBeVisible();
   });
 

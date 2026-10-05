@@ -86,3 +86,13 @@ export function shake(el: Element | null): Promise<void> {
 
 export const EASE_OUT = "cubic-bezier(.16,1,.3,1)";
 export const EASE_DOOR = "cubic-bezier(.76,0,.18,1)";
+
+/* Kapı koreografisi süreleri (ms). Açılış: kart söner (FADE) → logo çerçevesi parlar (GLOW) →
+   ışınlar köşelere (RAYS) → gezinme → pistonlu ayrılma (SPLIT). Toplam ~3.3 sn + gezinme. */
+export const T_FADE = 320;
+export const T_GLOW = 700;
+export const T_RAYS = 1000;
+export const T_SPLIT = 1350;
+export const T_MERGE = 1150;
+export const T_RETRACT = 800;
+export const T_REDUCED = 200;

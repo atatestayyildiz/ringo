@@ -142,7 +142,7 @@ export function UserMenu({
         }}
         onKeyDown={onTriggerKey}
       >
-        <Avatar name={name} />
+        <Avatar name={name} color="var(--brand)" />
         <div>
           <small>{roleLabel}</small>
           <b>{name}</b>

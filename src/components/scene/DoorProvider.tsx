@@ -6,13 +6,14 @@
  * - Girişten / kilit açılışından gelindiyse (armDoor bayrağı) kapı ilk karede kapalı çizilir,
  *   ilk boyamadan sonra açılır (<main> hafif yakınlaşır) ve kaldırılır.
  * - Kilit için (useLock.lockNow): await useDoor().close(); router.replace("/kilit");
- *   close(geom?) kapıyı köşelerden kapatır (~1.3 sn). geom verilmezse /kilit amblemiyle hizalanır
- *   (son ölçü ya da yerleşim tahmini); /kilit sahnesi kapının bıraktığı konumdan devralır.
+ *   close(geom?) kapıyı köşelerden kapatır (~2 sn). geom verilmezse ekran merkezi (sahne logosu her zaman
+ *   ortada); /kilit sahnesi kapının bıraktığı konumdan devralır.
+ * Renk: brandColor verilmezse kapı --brand'i (düzenin etkin vurgusu) kullanır.
  */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Door, type DoorHandle } from "./Door";
-import { armArrival, clearArrival, clearDoorFlag, docState, flagGeom, lockEmblemGuess, parseDoorFlag, readDoorFlagRaw } from "./doorFlag";
+import { armArrival, clearArrival, clearDoorFlag, docState, flagGeom, parseDoorFlag, readDoorFlagRaw, sceneEmblemGuess } from "./doorFlag";
 import type { EmblemSnapshot } from "./Scene";
 import type { Face } from "./parts";
 
@@ -116,7 +117,7 @@ export function DoorProvider({
           setClosing(true);
         });
       }
-      const g = geom ?? lockEmblemGuess();
+      const g = geom ?? sceneEmblemGuess();
       await closeRef.current?.close(g);
       armArrival(g);
       // Gezinme olmazsa (ağ hatası, yönlendirme) panel kapının arkasında kilitli kalmasın.

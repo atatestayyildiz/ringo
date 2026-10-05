@@ -1,5 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
-import { loginOk, PASSWORD, TEST_PIN, typePin, USERS, userMenuItem } from "./helpers";
+import { loginOk, openLogin, PASSWORD, TEST_PIN, typePin, USERS, userMenuItem } from "./helpers";
+
+// Bu dosya sahne animasyonunun kendisini sınar: genel "reduce" ayarını kapat.
+test.use({ reducedMotion: "no-preference" });
 
 // Açılış sahnesi + kapı: girişten sonra kapı katmanı görünür, panel arkada yüklenir, kapı kaldırılır.
 // FPS kaba ölçümdür (requestAnimationFrame sayacı); eşik test edilmez, yalnız raporlanır.
@@ -72,6 +75,7 @@ function report(label: string, p: Probe) {
 }
 
 async function submit(page: Page, who: keyof typeof USERS) {
+  await openLogin(page);
   await page.getByLabel("E-posta").fill(USERS[who]);
   await page.getByLabel("Şifre").fill(PASSWORD);
   await page.getByRole("button", { name: "Giriş yap" }).click();
@@ -149,6 +153,7 @@ test.describe("açılış sahnesi ve kapı", () => {
       if (r.method() === "POST" && r.headers()["next-action"]) posts.push(r.url());
     });
     await page.goto("/giris");
+    await openLogin(page);
     await page.getByLabel("E-posta").fill(USERS.yonetici);
     await page.getByLabel("Şifre").fill(PASSWORD);
     const btn = page.getByRole("button", { name: "Giriş yap" });
