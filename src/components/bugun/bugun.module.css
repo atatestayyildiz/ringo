@@ -1005,3 +1005,29 @@
   color: var(--ink-2);
   line-height: 1.45;
 }
+
+/* ---------- masaüstü: iki sütunun son kartı kalan boşluğu doldurur, alt kenarlar eşit ---------- */
+@media (min-width: 981px) {
+  .colMain > :last-child,
+  .colSide > :last-child {
+    flex: 1 1 auto;
+  }
+  .colMain > :last-child {
+    display: flex;
+    flex-direction: column;
+  }
+  .poolStack {
+    display: flex;
+    flex-direction: column;
+  }
+  .poolStack > :global(.card) {
+    flex: 1 1 auto;
+  }
+  /* "Tümünü göster" kartın dibine oturur */
+  .queueCard .more {
+    margin-top: auto;
+  }
+  .queueCard > .listWrap {
+    margin-bottom: 10px;
+  }
+}

@@ -479,7 +479,7 @@ export function BugunView(props: Props) {
               {queue.length === 0 ? (
                 <p className={styles.empty}>Bu durumda müşteri yok.</p>
               ) : null}
-              <div>
+              <div className={styles.listWrap}>
                 {(showAll ? queue : queue.slice(0, QUEUE_LIMIT)).map((x) => (
                   <button
                     key={x.id}

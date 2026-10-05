@@ -54,8 +54,17 @@
   .mu-pool-row.hv-row .hv-meta {
     padding-left: 52px;
   }
+  .mu-pool-row.hv-row .mu-days {
+    text-align: right;
+  }
+  /* düğme her satırda alt satırda tam genişlik: hiza hep aynı */
   .mu-pool-row.hv-row .hv-action {
-    align-self: center;
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    margin-top: 4px;
+  }
+  .mu-pool-row.hv-row .hv-action .btn {
+    width: 100%;
   }
 }
 
