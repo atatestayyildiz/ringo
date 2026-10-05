@@ -728,8 +728,9 @@
 }
 .teamGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 14px 28px;
+  /* Kişi başına tam genişlik satır: 3 kişide 2+1 boşluk kalmaz, çubuk uzun; kişi arttıkça kart aşağı uzar */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
 }
 .teamCell {
   display: grid;
