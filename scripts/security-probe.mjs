@@ -601,7 +601,7 @@ async function logoAndResetProbe() {
   }
   const otherTenant = randomUUID();
   const bucket = (c) => c.storage.from("brand-logos");
-  const mine = `${tenantId}/probe-${randomUUID()}.png`;
+  const mine = `${tenantId}/logo-${randomUUID()}.png`;
   const created = [];
   const mgr = await signIn(USERS.manager);
   const elifC = await signIn(USERS.elif);
@@ -625,8 +625,14 @@ async function logoAndResetProbe() {
   await check(G, "512 KB üstü dosya yüklenemez (bucket boyut sınırı)", () => {
     const big = Buffer.alloc(600 * 1024);
     PNG.copy(big);
-    return uploadFails(mgr, `${tenantId}/probe-${randomUUID()}.png`, big, "image/png");
+    return uploadFails(mgr, `${tenantId}/logo-${randomUUID()}.png`, big, "image/png");
   });
+  await check(G, "yönetici desene uymayan ad (poly.html) yükleyemez", () =>
+    uploadFails(mgr, `${tenantId}/poly.html`, PNG, "image/png"),
+  );
+  await check(G, "yönetici büyük harf uzantılı ad yükleyemez", () =>
+    uploadFails(mgr, `${tenantId}/logo-${randomUUID()}.PNG`, PNG, "image/png"),
+  );
   await check(G, "anon logo listeleyemez", async () => {
     const r = await bucket(anonClient).list(tenantId);
     return r.error || (r.data ?? []).length === 0 ? true : `${r.data.length} dosya listelendi`;
@@ -647,7 +653,7 @@ async function logoAndResetProbe() {
   });
 
   await check(G, "çalışan yöneticinin dosyasını silemez", async () => {
-    const p = `${tenantId}/probe-${randomUUID()}.png`;
+    const p = `${tenantId}/logo-${randomUUID()}.png`;
     const up = await bucket(mgr).upload(p, PNG, { contentType: "image/png" });
     if (up.error) return "hazırlık yüklemesi başarısız";
     created.push(p);

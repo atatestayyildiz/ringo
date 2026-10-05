@@ -12,6 +12,30 @@ describe("şifre sıfırlama isteği", () => {
     });
     for (const r of [ok, unknown, limited, thrown]) expect(r).toEqual({ ok: true, message: RESET_REQUEST_MESSAGE });
   });
+  it("yavaş gönderim yanıtı geciktirmez; yanıt bayt bayt aynıdır", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const slow = () => new Promise<{ error: null }>((r) => setTimeout(() => r({ error: null }), 500));
+    const tasks: Promise<void>[] = [];
+    const schedule = (t: () => Promise<void>) => void tasks.push(t());
+    const t0 = Date.now();
+    const a = await requestPasswordReset("var@demo.test", slow, { schedule, minMs: 50 });
+    const dtSlow = Date.now() - t0;
+    const t1 = Date.now();
+    const b = await requestPasswordReset("yok@demo.test", async () => ({ error: { code: "user_not_found" } }), { schedule, minMs: 50 });
+    const dtFast = Date.now() - t1;
+    expect(dtSlow).toBeLessThan(100);
+    expect(dtFast).toBeGreaterThanOrEqual(45);
+    expect(Math.abs(dtSlow - dtFast)).toBeLessThan(40);
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    await Promise.all(tasks);
+  });
+  it("gönderim zamanlayıcıya verilir, doğrudan beklenmez", async () => {
+    const schedule = vi.fn();
+    const send = vi.fn(async () => ({ error: null }));
+    await requestPasswordReset("var@demo.test", send, { schedule, minMs: 0 });
+    expect(schedule).toHaveBeenCalledTimes(1);
+    expect(send).not.toHaveBeenCalled();
+  });
   it("e-postayı küçük harfe çevirip kırpar", async () => {
     const send = vi.fn(async (email: string) => ({ error: null, email }));
     await requestPasswordReset("  Var@Demo.Test ", send);

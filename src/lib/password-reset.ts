@@ -12,20 +12,44 @@ type AuthError = { code?: string; message?: string } | null;
 
 export type RequestResult = { ok: true; message: string } | { ok: false; error: string };
 
+/** Yanıt süresi tabanı: kayıtlı/kayıtsız hesap arasındaki gönderim süresi farkı yanıttan okunamasın. */
+export const RESET_MIN_RESPONSE_MS = 400;
+
+export type RequestOptions = {
+  /** Gönderimi yanıttan ayırır (sunucuda Next `after`). Verilmezse arka planda başlatılır (fire-and-forget). */
+  schedule?: (task: () => Promise<void>) => void;
+  /** Toplam yanıt süresi tabanı (ms); test için ayarlanabilir. */
+  minMs?: number;
+};
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 export async function requestPasswordReset(
   email: unknown,
   send: (email: string) => Promise<{ error: AuthError }>,
+  opts: RequestOptions = {},
 ): Promise<RequestResult> {
+  const started = Date.now();
   const value = typeof email === "string" ? email.trim().toLowerCase() : "";
   // Biçim denetimi hesap varlığıyla ilgisizdir; sızıntı değildir.
   if (value.length > 254 || !EMAIL_RE.test(value)) return { ok: false, error: "Geçerli bir e-posta adresi girin." };
-  try {
-    const { error } = await send(value);
-    // Hız sınırı, bilinmeyen hesap vb. dahil hiçbir hata kullanıcıya yansıtılmaz (yalnız kod günlüğe).
-    if (error) console.error("[sifre-sifirla] gönderim:", error.code ?? "hata");
-  } catch {
-    console.error("[sifre-sifirla] gönderim: istisna");
-  }
+  const task = async () => {
+    try {
+      const { error } = await send(value);
+      // Hız sınırı, bilinmeyen hesap vb. dahil hiçbir hata kullanıcıya yansıtılmaz (yalnız kod günlüğe).
+      if (error) console.error("[sifre-sifirla] gönderim:", error.code ?? "hata");
+    } catch {
+      console.error("[sifre-sifirla] gönderim: istisna");
+    }
+  };
+  const schedule =
+    opts.schedule ??
+    ((t: () => Promise<void>) => {
+      void t();
+    });
+  schedule(task);
+  const wait = (opts.minMs ?? RESET_MIN_RESPONSE_MS) - (Date.now() - started);
+  if (wait > 0) await sleep(wait);
   return { ok: true, message: RESET_REQUEST_MESSAGE };
 }
 

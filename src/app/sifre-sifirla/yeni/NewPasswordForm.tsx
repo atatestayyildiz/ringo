@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { Button, Input } from "@/components/ui";
 import { newPasswordAction, type NewPasswordState } from "./actions";
 
 export function NewPasswordForm({ tokenHash, type }: { tokenHash: string; type: string }) {
   const [state, action, pending] = useActionState<NewPasswordState, FormData>(newPasswordAction, { error: null, linkDead: false });
+  // Kod gizli inputta kalır; adres çubuğundan ve tarayıcı geçmişinden kaldırılır (D3).
+  useEffect(() => {
+    window.history.replaceState(null, "", "/sifre-sifirla/yeni");
+  }, []);
   return (
     <form action={action} style={{ display: "flex", flexDirection: "column", gap: 14 }} noValidate>
       {state.error ? (

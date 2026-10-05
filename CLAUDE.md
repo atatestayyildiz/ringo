@@ -1,6 +1,6 @@
 # Telefoncu CRM
 
-White label müşteri takip sistemi (telefon mağazası, Meta lead arama akışı). Spec: `docs/spec-faz1.md`. Bu dosyadaki isimler sözleşmedir; değiştirme, Şef'e bildir.
+White label müşteri takip sistemi (telefon mağazası, Meta lead arama akışı). Spec: `docs/spec-faz1.md`, `docs/spec-faz2.md`. Durum ve kararlar: Beyin `🏰 300-Projects/telefoncu.md`. Bu dosyadaki isimler sözleşmedir; değiştirme, Şef'e bildir.
 
 ## Yığın
 Next.js App Router + TypeScript strict + Tailwind v4 + Supabase (`@supabase/ssr`). Yerel DB: `npx supabase start` (Docker). Testler: `npx supabase test db` (pgTAP), `npm test` (Vitest), `npm run e2e` (Playwright).
@@ -16,3 +16,10 @@ Next.js App Router + TypeScript strict + Tailwind v4 + Supabase (`@supabase/ssr`
 - Gerçek kişi verisi (isim, telefon) seed'e, teste, ekrana girmez; kurgusal veri kullan.
 - `.env*` okunmaz; anahtar adları `.env.example`'da.
 - `referans tasarımlar/` kullanıcının klasörü; dokunma.
+- Her mantıksal adımda commit; commit öncesi `npm run lint && npm run typecheck && npm test`.
+
+## Orkestrasyon (kota)
+- Aynı anda en fazla 2 yazan şerit.
+- Şerit = tek görev boyutu (bir ekran veya bir migration); faz ya da çok ekranlı şerit açılmaz.
+- Opus yalnız güvenlik/RLS incelemesi ve DB şeması şeridinde. Düzeltme, tasarım ve test şeritleri Sonnet.
+- İnceleme bulguları tek düzeltme turunda kapanır; ikinci tur gerekirse Sonnet ile, yalnız kalan maddeler için.

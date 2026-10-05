@@ -35,9 +35,20 @@ export function logoPublicPrefix(supabaseUrl: string): string {
   return `${supabaseUrl.replace(/\/+$/, "")}/storage/v1/object/public/${LOGO_BUCKET}/`;
 }
 
-/** Bu uygulamanın kendi logo deposundaki adres mi (yerelde http olabilir). */
+const LOGO_PATH_PREFIX = `/storage/v1/object/public/${LOGO_BUCKET}/`;
+
+/** Bu uygulamanın kendi logo deposundaki adres mi (yerelde http olabilir). URL ayrıştırılır; ham metin önekine güvenilmez. */
 export function isOwnLogoUrl(url: string, supabaseUrl: string): boolean {
-  return url.startsWith(logoPublicPrefix(supabaseUrl)) && !url.includes("?") && !url.includes("#");
+  try {
+    const u = new URL(url);
+    const base = new URL(supabaseUrl);
+    if (u.origin !== base.origin || u.username || u.password || u.search || u.hash) return false;
+    // `..` ve yüzde kodlu eşdeğerleri (normalleşme sonrası yol da önek içinde kalmalı)
+    if (url.includes("..") || /%2e/i.test(url)) return false;
+    return u.pathname.startsWith(LOGO_PATH_PREFIX) && !u.pathname.split("/").includes("..");
+  } catch {
+    return false;
+  }
 }
 
 /** Kaydedilebilir logo adresi: https ya da kendi depomuz. */
@@ -53,7 +64,12 @@ export function isAllowedLogoUrl(url: string, supabaseUrl: string | undefined): 
 /** Depo adresinden nesne yolunu çıkarır; yalnız verilen kiracının önekindeyse döner. */
 export function ownLogoPath(url: string | null | undefined, supabaseUrl: string, tenantId: string): string | null {
   if (!url || !isOwnLogoUrl(url, supabaseUrl)) return null;
-  const path = decodeURIComponent(url.slice(logoPublicPrefix(supabaseUrl).length));
+  let path: string;
+  try {
+    path = decodeURIComponent(new URL(url).pathname.slice(LOGO_PATH_PREFIX.length));
+  } catch {
+    return null;
+  }
   const [folder, file, ...rest] = path.split("/");
   if (folder !== tenantId || !file || rest.length > 0 || file.includes("..")) return null;
   return path;

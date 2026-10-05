@@ -140,3 +140,40 @@ test("mobil 375px: Ara butonu görünür, menü örtmez, yatay taşma yok", asyn
   expect(overflow).toBeLessThanOrEqual(0);
   await context.close();
 });
+
+test("durum filtresi hapları ve listeyi süzer, Daralt başlıkta erişilir", async ({ browser }) => {
+  const { context, page } = await freshPage(browser, { viewport: { width: 1280, height: 800 } });
+  await loginOk(page, "yonetici");
+
+  const filters = page.getByRole("group", { name: "Duruma göre filtrele" });
+  const pills = page.getByRole("group", { name: "Bugünün listesi" }).getByRole("button");
+  const total = await pills.count();
+  const sizeOf = () => pills.first().evaluate((el) => `${el.clientWidth}x${el.clientHeight}`);
+  const size = await sizeOf();
+
+  // Bekleyen müşteri her zaman vardır (c); tekrar ara çipi seçilince bekleyenler soluklaşır
+  const wait = filters.getByRole("button", { name: /^Bekliyor \d+$/ });
+  await expect(wait).toBeEnabled();
+  const n = Number((await wait.innerText()).replace(/\D/g, ""));
+  await wait.click();
+  await expect(wait).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('[data-dim="true"]')).toHaveCount(total - n);
+  expect(await sizeOf()).toBe(size);
+  expect(await pills.count()).toBe(total);
+
+  // Aynı çipe tekrar basınca Hepsi'ne döner
+  await wait.click();
+  await expect(filters.getByRole("button", { name: /^Hepsi/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('[data-dim="true"]')).toHaveCount(0);
+
+  // Sıra listesi genişleyince başlıktaki Daralt aşağı kaydırılmışken de erişilir
+  const card = page.locator("section.card", { has: page.getByRole("heading", { name: /Bugünün sırası/ }) });
+  await card.getByRole("button", { name: /^Tümünü göster/ }).first().click();
+  const daralt = card.getByRole("button", { name: "Daralt", exact: true });
+  await expect(daralt).toBeVisible();
+  await page.mouse.wheel(0, 600);
+  await expect(daralt).toBeInViewport();
+  await daralt.click();
+  await expect(card.getByRole("button", { name: /^Tümünü göster/ }).first()).toBeVisible();
+  await context.close();
+});

@@ -24,10 +24,14 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 /** Eski logo bizim depodaysa ve kendi kiracımıza aitse siler; hata kullanıcıyı durdurmaz. */
 async function removeOldLogo(supabase: Supabase, tenantId: string, oldUrl: string | null | undefined) {
-  const path = ownLogoPath(oldUrl, supabaseUrl(), tenantId);
-  if (!path) return;
-  const { error } = await supabase.storage.from(LOGO_BUCKET).remove([path]);
-  if (error) console.error("[logo] eski dosya silinemedi:", error.message);
+  try {
+    const path = ownLogoPath(oldUrl, supabaseUrl(), tenantId);
+    if (!path) return;
+    const { error } = await supabase.storage.from(LOGO_BUCKET).remove([path]);
+    if (error) console.error("[logo] eski dosya silinemedi:", error.message);
+  } catch {
+    console.error("[logo] eski dosya silinemedi: istisna");
+  }
 }
 
 export async function uploadLogoAction(formData: FormData): Promise<ActionResult<{ url: string }>> {

@@ -12,6 +12,12 @@
 - IP başına sınır Supabase Auth'ta yerleşiktir (Dashboard > Authentication > Rate Limits). Uygulama ek bir sayaç tutmaz.
 - Bu sınırlar aşılırsa kullanıcı yine aynı genel yanıtı görür; sınırı aşan istek e-posta üretmez.
 
+## Bilinen sınırlar
+- **Zamanlama:** e-posta gönderimi yanıttan ayrıdır (`after()`), toplam yanıt süresi en az 400 ms'e tamamlanır; kayıtlı ve kayıtsız hesap yanıt süresiyle ayırt edilemez.
+- **Kod yarışı (GoTrue):** "tek kullanımlık" garantisi sıralı kullanımda tutar. Aynı `token_hash` ile eşzamanlı birkaç gönderim GoTrue `/verify` tarafında birden çok kez başarılı olabilir (üst servis davranışı, uygulama hatası değil). Son yazılan şifre geçerli olur. Kodu ele geçirmiş birine ek yetki vermez; Supabase sürümü yükseltilince yeniden denenmeli.
+- **Eski access token:** şifre sıfırlandığında refresh token'lar ve uygulama oturumu hemen kapanır, ancak önceden verilmiş access JWT'si süresi bitene kadar (varsayılan `jwt_expiry = 3600`, en çok 1 saat) PostgREST/RPC'de geçerli kalır. Canlıda Dashboard > Authentication > JWT expiry değerini 900 sn'ye indirmeniz önerilir. Daha sıkı çözüm: `auth.sessions` kaydını `current_member()` içinde denetlemek.
+- **Kod URL'de:** sayfa açılınca adres çubuğundan `history.replaceState` ile temizlenir; `/sifre-sifirla/*` yanıtları `Referrer-Policy: no-referrer` ve `Cache-Control: no-store` taşır. Sunucu/proxy erişim günlüklerinde sorgu dizesi maskelenmeli.
+
 ## Canlı için gerekenler
 1. **SMTP**: Dashboard > Authentication > SMTP Settings (Resend, Postmark, SES vb.). Yerleşik SMTP yalnız takım üyelerine gönderir ve çok düşük kotalıdır; canlıda kendi SMTP'niz şart. Gönderen alan adı için SPF/DKIM/DMARC kaydı ekleyin.
 2. **Site URL ve yönlendirme**: Authentication > URL Configuration. `Site URL` = canlı uygulama adresi (şablondaki `{{ .SiteURL }}` buradan gelir). `Redirect URLs` içine `https://<alan-adı>/sifre-sifirla/yeni` ekleyin. Yerel `config.toml` yalnız `http://localhost:3200` içindir.
@@ -23,6 +29,6 @@
 
 ## Marka logosu depolama
 - Bucket `brand-logos` (migration `20261004001200_brand_logo_storage.sql`): herkese açık okunur, yalnız PNG/JPEG/WebP, en fazla 512 KB. SVG bilerek yok (XSS).
-- Yazma/silme/listeleme yalnız yönetici ve yalnız kendi kiracısının `<tenant_id>/` önekinde (storage.objects politikaları). Sunucu action'ı (`brand-logo-actions.ts`) ek olarak dosya içeriğini (magic bytes) doğrular, bildirilen türle uyuşmazsa reddeder.
+- Dosya adı `<tenant_id>/logo-<uuid>.(png|jpg|webp)` desenine (küçük harf) uymak zorundadır (insert/update politikası). `logo_url` yalnız `https://` ya da yerel `http://127.0.0.1|localhost` olabilir. Yazma/silme/listeleme yalnız yönetici ve yalnız kendi kiracısının `<tenant_id>/` önekinde (storage.objects politikaları). Sunucu action'ı (`brand-logo-actions.ts`) ek olarak dosya içeriğini (magic bytes) doğrular, bildirilen türle uyuşmazsa reddeder.
 - Canlıda bucket migration ile oluşur; ayrıca Dashboard'da Storage > global dosya boyutu sınırı 512 KB'ın üzerinde olmalıdır (bucket sınırı daha düşüktür ve geçerlidir).
 - Giriş sayfası ve kabuk logoyu `<img>` ile doğrudan Supabase kamu adresinden yükler; `next/image` kullanılmadığı için `next.config` uzak alan izni gerekmez.

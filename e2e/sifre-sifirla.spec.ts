@@ -98,8 +98,14 @@ test("bağlantı iste, e-postadaki bağlantıdan yeni şifre belirle, yeni şifr
   // Bağlantı başka bir tarayıcıda (oturumsuz, çerezsiz bağlam) açılır: PKCE çerezine bağlı değil.
   const ctx = await browser.newContext();
   const p2 = await ctx.newPage();
-  await p2.goto(link);
+  const resp = await p2.goto(link);
   await expect(p2).toHaveURL(/\/sifre-sifirla\/yeni/);
+  // D3: kod adres çubuğunda kalmaz (gizli inputta durur); yanıt başlıkları sızıntıyı kapatır
+  await expect.poll(() => p2.url()).not.toContain("token_hash");
+  expect(p2.url()).toMatch(/\/sifre-sifirla\/yeni$/);
+  expect(resp!.headers()["referrer-policy"]).toBe("no-referrer");
+  expect(resp!.headers()["cache-control"]).toContain("no-store");
+  await expect(p2.locator('input[name="token_hash"]')).toHaveCount(1);
 
   // Uyuşmayan tekrar reddedilir, kısa şifre reddedilir
   await p2.getByLabel("Yeni şifre", { exact: true }).fill(NEW_PASSWORD);

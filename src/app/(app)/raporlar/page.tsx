@@ -1,5 +1,6 @@
 import { Card, EmptyState } from "@/components/ui";
 import { TrendChart } from "@/components/raporlar/TrendChart";
+import { CountUp } from "@/components/raporlar/CountUp";
 import {
   activePreset,
   presetRange,
@@ -36,6 +37,15 @@ const PRESETS: { key: Exclude<Preset, "custom">; label: string }[] = [
 ];
 
 const day = (k: string) => formatDate(`${k}T12:00:00+03:00`);
+
+/** Oran çubuğu (süs; değer yanındaki metinde). */
+function Meter({ rate }: { rate: number }) {
+  return (
+    <span className={s.meter} aria-hidden="true">
+      <i style={{ width: `${Math.max(0, Math.min(1, rate)) * 100}%` }} />
+    </span>
+  );
+}
 
 export default async function Page({
   searchParams,
@@ -208,39 +218,64 @@ export default async function Page({
         <div className={s.bento}>
           <div className={`${s.kpi} ${s.kpiHero}`}>
             <small>Randevu</small>
-            <b>{t.appointments}</b>
-            <em>{pct(report.rates.appointment_rate)} ulaşılanlardan</em>
+            <b>
+              <CountUp value={t.appointments} />
+            </b>
+            <div>
+              <em>{pct(report.rates.appointment_rate)} ulaşılanlardan</em>
+              <Meter rate={report.rates.appointment_rate} />
+            </div>
           </div>
           <Card className={s.cTrend}>
             <h2>Günlük trend</h2>
-            <TrendChart days={report.by_day} />
+            <TrendChart days={report.by_day} from={from} to={to} />
           </Card>
 
           <div className={`${s.kpi} ${s.kpiA}`}>
             <small>Aranan müşteri</small>
-            <b>{t.customers_called}</b>
+            <b>
+              <CountUp value={t.customers_called} />
+            </b>
             <em>{t.assigned} atama</em>
           </div>
           <div className={`${s.kpi} ${s.kpiB}`}>
             <small>Deneme</small>
-            <b>{t.attempts}</b>
+            <b>
+              <CountUp value={t.attempts} />
+            </b>
+            <em>{t.reached} ulaşılan</em>
           </div>
           <div className={s.kpi}>
             <small>Ulaşma oranı</small>
-            <b>{pct(report.rates.reach_rate)}</b>
-            <em>
-              {t.reached} / {t.attempts} deneme
-            </em>
+            <b>
+              <CountUp value={report.rates.reach_rate} kind="pct" />
+            </b>
+            <div>
+              <em>
+                {t.reached} / {t.attempts} deneme
+              </em>
+              <Meter rate={report.rates.reach_rate} />
+            </div>
           </div>
           <div className={s.kpi}>
             <small>Geldi</small>
-            <b>{t.visited}</b>
-            <em>{pct(report.rates.visit_rate)} randevudan</em>
+            <b>
+              <CountUp value={t.visited} />
+            </b>
+            <div>
+              <em>{pct(report.rates.visit_rate)} randevudan</em>
+              <Meter rate={report.rates.visit_rate} />
+            </div>
           </div>
           <div className={`${s.kpi} ${s.kpiLast}`}>
             <small>İşlem tamam</small>
-            <b>{t.completed}</b>
-            <em>{pct(report.rates.close_rate)} randevudan</em>
+            <b>
+              <CountUp value={t.completed} />
+            </b>
+            <div>
+              <em>{pct(report.rates.close_rate)} randevudan</em>
+              <Meter rate={report.rates.close_rate} />
+            </div>
           </div>
           <Card className={s.cFunnel}>
             <h2>Huni</h2>
@@ -270,15 +305,17 @@ export default async function Page({
             {report.by_outcome.length === 0 ? (
               <p className={s.sub}>Bu aralıkta arama yok.</p>
             ) : (
-              report.by_outcome.map((o) => (
-                <div className={s.outcomeRow} key={o.outcome}>
-                  <span>{OUTCOME_NAME[o.outcome] ?? o.outcome}</span>
-                  <div className={s.track} aria-hidden="true">
-                    <i style={{ width: `${(o.count / outcomeMax) * 100}%` }} />
+              <div className={s.outcomes}>
+                {report.by_outcome.map((o) => (
+                  <div className={s.outcomeRow} key={o.outcome}>
+                    <span>{OUTCOME_NAME[o.outcome] ?? o.outcome}</span>
+                    <div className={s.track} aria-hidden="true">
+                      <i style={{ width: `${(o.count / outcomeMax) * 100}%` }} />
+                    </div>
+                    <b>{o.count}</b>
                   </div>
-                  <b>{o.count}</b>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </Card>
 

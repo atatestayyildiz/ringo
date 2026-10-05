@@ -117,7 +117,22 @@ export function BugunView(props: Props) {
   }
 
   const [showAll, setShowAll] = useState(false);
+  const [filter, setFilter] = useState<Tone | null>(null);
   const focusRef = useRef<HTMLElement>(null);
+  const queueTopRef = useRef<HTMLSpanElement>(null);
+
+  function toggleQueue() {
+    const collapsing = showAll;
+    setShowAll(!collapsing);
+    if (collapsing) {
+      const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      // Daralan listenin yüksekliği düşmeden önce kartın başına dön
+      queueTopRef.current?.scrollIntoView({
+        block: "start",
+        behavior: calm ? "auto" : "smooth",
+      });
+    }
+  }
 
   const cur = items.find((i) => i.id === curId) ?? null;
   const count = (t: Tone) => items.filter((i) => toneOf(i.status) === t).length;
@@ -221,8 +236,9 @@ export function BugunView(props: Props) {
     );
   }
 
+  const matches = (i: Item) => filter === null || toneOf(i.status) === filter;
   const retryItems = items.filter((i) => i.status === "retry");
-  const queue = [...items].sort((a, b) => {
+  const queue = items.filter(matches).sort((a, b) => {
     const r = (i: Item) =>
       i.status === "pending" ? 0 : i.status === "retry" ? 1 : 2;
     return r(a) - r(b);
@@ -276,6 +292,7 @@ export function BugunView(props: Props) {
                     type="button"
                     className={`${styles.slot}${c.id === curId ? ` ${styles.cur}` : ""}`}
                     data-s={t}
+                    data-dim={matches(c) ? undefined : "true"}
                     aria-current={c.id === curId ? "true" : undefined}
                     aria-label={`${i + 1}. ${c.name}, ${statusLabel(c.status)}`}
                     title={`${c.name} · ${statusLabel(c.status)}`}
@@ -286,13 +303,35 @@ export function BugunView(props: Props) {
                 );
               })}
             </div>
-            <div className={styles.legend}>
-              {LEGEND.map(([t, label]) => (
-                <span key={t}>
-                  <i style={{ background: `var(--c-${t})` }} />
-                  {label} <b>{count(t)}</b>
-                </span>
-              ))}
+            <div
+              className={styles.legend}
+              role="group"
+              aria-label="Duruma göre filtrele"
+            >
+              <button
+                type="button"
+                className={styles.chip}
+                aria-pressed={filter === null}
+                onClick={() => setFilter(null)}
+              >
+                Hepsi <b>{items.length}</b>
+              </button>
+              {LEGEND.map(([t, label]) => {
+                const n = count(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    className={styles.chip}
+                    aria-pressed={filter === t}
+                    disabled={n === 0 && filter !== t}
+                    onClick={() => setFilter((f) => (f === t ? null : t))}
+                  >
+                    <i style={{ background: `var(--c-${t})` }} />
+                    {label} <b>{n}</b>
+                  </button>
+                );
+              })}
             </div>
             {teamView ? <DayProgress items={items} count={count} /> : null}
           </div>
@@ -326,12 +365,28 @@ export function BugunView(props: Props) {
 
           {items.length > 0 ? (
             <Card className={styles.queueCard}>
-              <h2>
-                Bugünün sırası
-                <span className={styles.headNote}>
-                  {finished} / {items.length} bitti
-                </span>
-              </h2>
+              <span ref={queueTopRef} className={styles.queueTop} aria-hidden />
+              <div className={`${styles.qHead}${showAll ? ` ${styles.qHeadSticky}` : ""}`}>
+                <h2>
+                  Bugünün sırası
+                  <span className={styles.headNote}>
+                    {finished} / {items.length} bitti
+                  </span>
+                </h2>
+                {queue.length > QUEUE_LIMIT ? (
+                  <button
+                    type="button"
+                    className={styles.qToggle}
+                    aria-expanded={showAll}
+                    onClick={toggleQueue}
+                  >
+                    {showAll ? "Daralt" : `Tümünü göster (${queue.length})`}
+                  </button>
+                ) : null}
+              </div>
+              {queue.length === 0 ? (
+                <p className={styles.empty}>Bu durumda müşteri yok.</p>
+              ) : null}
               <div>
                 {(showAll ? queue : queue.slice(0, QUEUE_LIMIT)).map((x) => (
                   <button
@@ -369,7 +424,7 @@ export function BugunView(props: Props) {
                   type="button"
                   className={styles.more}
                   aria-expanded={showAll}
-                  onClick={() => setShowAll((v) => !v)}
+                  onClick={toggleQueue}
                 >
                   {showAll
                     ? "Daha az göster"

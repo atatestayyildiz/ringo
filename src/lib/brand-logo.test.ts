@@ -44,6 +44,19 @@ describe("logo adresi", () => {
     expect(isAllowedLogoUrl(`${SB}/storage/v1/object/public/baska/${T}/x.png`, SB)).toBe(false);
     expect(isAllowedLogoUrl("javascript:alert(1)", SB)).toBe(false);
   });
+  it("kaçamakları reddeder", () => {
+    const base = `${SB}/storage/v1/object/public/brand-logos/`;
+    expect(isAllowedLogoUrl("data:image/png;base64,AAAA", SB)).toBe(false);
+    expect(isAllowedLogoUrl("http://evil.test/a.png", SB)).toBe(false);
+    expect(isAllowedLogoUrl(`${base}../../../rest/v1/members`, SB)).toBe(false);
+    expect(isAllowedLogoUrl(`${base}%2e%2e/%2e%2e/rest/v1/members`, SB)).toBe(false);
+    expect(isAllowedLogoUrl("http://127.0.0.1:54321@evil.test/storage/v1/object/public/brand-logos/a.png", SB)).toBe(false);
+    expect(isAllowedLogoUrl(`${base}${T}/x.png?x=1`, SB)).toBe(false);
+    expect(isAllowedLogoUrl("http://127.0.0.1:54321.evil.test/storage/v1/object/public/brand-logos/a.png", SB)).toBe(false);
+  });
+  it("bozuk yüzde kodu null döner", () => {
+    expect(ownLogoPath(`${SB}/storage/v1/object/public/brand-logos/${T}/x%E0`, SB, T)).toBeNull();
+  });
   it("nesne yolu yalnız kendi kiracı önekinde çıkar", () => {
     const base = `${SB}/storage/v1/object/public/brand-logos/`;
     expect(ownLogoPath(`${base}${T}/logo.png`, SB, T)).toBe(`${T}/logo.png`);

@@ -29,11 +29,11 @@ select ok(not exists (select 1 from storage.buckets where id = 'brand-logos' and
 -- Yönetici 1
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000d1","role":"authenticated"}', true);
 set local role authenticated;
-select lives_ok($$insert into storage.objects (bucket_id, name) values ('brand-logos', '10000000-0000-4000-8000-0000000000d1/yeni.png')$$, 'yönetici kendi kiracı yoluna yazar');
-select throws_ok($$insert into storage.objects (bucket_id, name) values ('brand-logos', '10000000-0000-4000-8000-0000000000d2/kotu.png')$$, '42501', null, 'yönetici başka kiracı yoluna yazamaz');
-select throws_ok($$insert into storage.objects (bucket_id, name) values ('brand-logos', 'kokte.png')$$, '42501', null, 'yönetici kök yola yazamaz');
-select throws_ok($$insert into storage.objects (bucket_id, name) values ('brand-logos', '10000000-0000-4000-8000-0000000000d1x/kotu.png')$$, '42501', null, 'önek tam klasör eşleşmesidir');
-select throws_ok($$update storage.objects set name = '10000000-0000-4000-8000-0000000000d2/tasi.png' where name = '10000000-0000-4000-8000-0000000000d1/yeni.png'$$, '42501', null, 'yönetici dosyayı başka kiracıya taşıyamaz');
+select lives_ok($$insert into storage.objects (bucket_id, name) values ('brand-logos', '10000000-0000-4000-8000-0000000000d1/logo-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.png')$$, 'yönetici kendi kiracı yoluna yazar');
+select throws_ok($$insert into storage.objects (bucket_id, name) values ('brand-logos', '10000000-0000-4000-8000-0000000000d2/logo-bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb.png')$$, '42501', null, 'yönetici başka kiracı yoluna yazamaz');
+select throws_ok($$insert into storage.objects (bucket_id, name) values ('brand-logos', 'logo-cccccccc-cccc-4ccc-8ccc-cccccccccccc.png')$$, '42501', null, 'yönetici kök yola yazamaz');
+select throws_ok($$insert into storage.objects (bucket_id, name) values ('brand-logos', '10000000-0000-4000-8000-0000000000d1x/logo-bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb.png')$$, '42501', null, 'önek tam klasör eşleşmesidir');
+select throws_ok($$update storage.objects set name = '10000000-0000-4000-8000-0000000000d2/logo-dddddddd-dddd-4ddd-8ddd-dddddddddddd.png' where name = '10000000-0000-4000-8000-0000000000d1/logo-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.png'$$, '42501', null, 'yönetici dosyayı başka kiracıya taşıyamaz');
 select is((select count(*)::int from storage.objects where bucket_id = 'brand-logos'), 2, 'yönetici yalnız kendi kiracısının dosyalarını görür');
 
 -- Silme: storage.protect_delete SQL ile doğrudan silmeyi engeller; silme Storage API ile yapılır ve
