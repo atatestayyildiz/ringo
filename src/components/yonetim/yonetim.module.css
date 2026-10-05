@@ -42,17 +42,37 @@
 .kpiBrand b {
   color: var(--brand);
 }
+/* Bento: 12 sütun. Huni + Ekip solda (8), Son işlemler sağda iki satırı kaplar (4). */
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 18px;
-  align-items: start;
+  align-items: stretch;
 }
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+.cFunnel {
+  grid-column: 1 / span 8;
+  grid-row: 1;
   min-width: 0;
+}
+.cTeam {
+  grid-column: 1 / span 8;
+  grid-row: 2;
+  min-width: 0;
+}
+.cFeed {
+  grid-column: 9 / span 4;
+  grid-row: 1 / span 2;
+  min-width: 0;
+  position: relative;
+  min-height: 420px;
+}
+/* Liste kartın yüksekliğini belirlemez: sol sütunla eşitlenir, taşarsa kart içinde kayar. */
+.feedScroll {
+  position: absolute;
+  inset: 68px 0 22px 0;
+  padding: 0 26px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .funnel {
   display: flex;
@@ -94,23 +114,20 @@
   background: var(--brand);
 }
 .team {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  /* Kişi başına tam genişlik satır: 3 kişide 2+1 boşluk ve ad kırılması olmaz; kişi arttıkça kart uzar */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
 }
 .member {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 14px;
   align-items: center;
-  padding: 14px 0;
-  border-top: 1px solid var(--line);
-}
-.member:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
-.member:last-child {
-  padding-bottom: 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface-2);
+  min-width: 0;
 }
 .memberName {
   display: flex;
@@ -141,10 +158,16 @@
 }
 .right {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
+  align-items: center;
+  gap: 14px;
   font-size: 14px;
+}
+@media (max-width: 560px) {
+  .right {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
 }
 .absent {
   background: color-mix(in srgb, var(--c-bad) 14%, transparent);
@@ -197,7 +220,21 @@
 
 @media (max-width: 1000px) {
   .grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .cFunnel,
+  .cTeam,
+  .cFeed {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+  .cFeed {
+    min-height: 0;
+  }
+  .feedScroll {
+    position: static;
+    max-height: 440px;
+    padding: 0;
   }
 }
 @media (max-width: 700px) {

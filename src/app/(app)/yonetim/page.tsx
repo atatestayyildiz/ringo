@@ -170,8 +170,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ g
           </div>
 
           <div className={s.grid}>
-            <div className={s.stack}>
-              <Card>
+            <Card className={s.cFunnel}>
                 <h2>Günün hunisi</h2>
                 <div className={s.funnel}>
                   {steps.map(([label, sub, val]) => (
@@ -187,19 +186,19 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ g
                     </div>
                   ))}
                 </div>
-              </Card>
+            </Card>
 
-              <Card>
+            <Card className={s.cTeam}>
                 <h2>Ekip</h2>
                 <TeamList rows={rows} day={day} canMarkAbsent={isManager && day >= today} targets={targets} />
-              </Card>
-            </div>
+            </Card>
 
-            <Card>
+            <Card className={s.cFeed}>
               <h2>Son işlemler</h2>
               {feed.length === 0 ? (
                 <EmptyState title="Bu gün işlem yok">Çalışanlar arama sonucu girdikçe burada akar.</EmptyState>
               ) : (
+                <div className={s.feedScroll}>
                 <div className={s.feed}>
                   {feed.map((f) => (
                     <div className={s.row} key={f.id}>
@@ -212,6 +211,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ g
                       <time dateTime={f.at}>{formatTime(f.at)}</time>
                     </div>
                   ))}
+                </div>
                 </div>
               )}
             </Card>
