@@ -41,6 +41,8 @@ export async function ingestLead(
     p_phone: m.phone,
     p_note: m.note,
     p_operator: m.operator,
+    p_phone_alt: m.phoneAlt,
+    p_amount: m.amount,
     p_source_detail: formId ? `Meta form ${formId}` : "Meta form",
   });
   if (error) {

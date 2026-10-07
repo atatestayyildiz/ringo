@@ -8,7 +8,7 @@ import { Avatar, Button, EmptyState, Modal, Select, StatusBadge, useToast, type 
 import { IconUsers } from "@/components/icons";
 import { formatPhone } from "@/lib/format";
 import { CustomerSheet } from "./CustomerSheet";
-import { memberName, noteLines, STAGE_LABEL, type Customer, type MemberLite, type Viewer } from "./shared";
+import { formatAmount, memberName, noteLines, STAGE_LABEL, type Customer, type MemberLite, type Viewer } from "./shared";
 import "./musteri.css";
 
 export function CustomerList({
@@ -129,6 +129,7 @@ export function CustomerList({
       <div className={`mu-colhead${showSel ? " mu-colhead-sel" : ""}`} aria-hidden="true">
         <span>Müşteri</span>
         <span>Operatör</span>
+        <span>Tutar</span>
         <span>Durum</span>
         <span>Aşama</span>
         <span>Atanan</span>
@@ -160,6 +161,9 @@ export function CustomerList({
                   </span>
                 </span>
                 <span className="mu-cell mu-hide-m">{op ? <OperatorLogo operator={op} /> : "-"}</span>
+                <span className="mu-cell mu-hide-m">
+                  <Amount raw={c.amount} />
+                </span>
                 <span className="mu-st">
                   <StatusBadge status={c.call_status as CallStatus} />
                 </span>
@@ -177,6 +181,7 @@ export function CustomerList({
                 </span>
                 <span className="mu-meta-m">
                   {op ? <span><OperatorLogo operator={op} /></span> : null}
+                  {c.amount ? <span><Amount raw={c.amount} /></span> : null}
                   {stage ? <span>{stage}</span> : null}
                   {who ? <span>{who}</span> : null}
                 </span>
@@ -241,5 +246,17 @@ export function CustomerList({
       </Modal>
       <CustomerSheet customer={selected} members={members} viewer={viewer} onClose={() => setSelectedId(null)} />
     </>
+  );
+}
+
+/** Tutar rozeti: "100-200 bin ₺". Değer yoksa tire. */
+function Amount({ raw }: { raw: string | null }) {
+  const a = formatAmount(raw);
+  if (!a) return <>-</>;
+  return (
+    <span className="mu-amount">
+      {a.value}
+      {a.unit ? <small>{a.unit}</small> : null}
+    </span>
   );
 }

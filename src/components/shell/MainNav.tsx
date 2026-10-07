@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   IconChart,
   IconFunnel,
@@ -32,14 +32,26 @@ export const NAV_ITEMS: { key: NavKey; href: string; label: string; Icon: (p: Ic
   { key: "ayarlar", href: "/ayarlar", label: "Ayarlar", Icon: IconGear },
 ];
 
+/** Zaten açık olan menüye tekrar basınca sayfayı yeniler (aynı adres Link için işlem yapmaz). */
+export function useNavRefresh() {
+  const router = useRouter();
+  const path = usePathname();
+  return (href: string) => {
+    if (path !== href) return;
+    router.refresh();
+    window.scrollTo({ top: 0 });
+  };
+}
+
 export function MainNav({ visible }: { visible: NavKey[] }) {
   const path = usePathname();
+  const refreshIfCurrent = useNavRefresh();
   return (
     <nav className="nav" aria-label="Ana menü">
       {NAV_ITEMS.filter((i) => visible.includes(i.key)).map(({ key, href, label, Icon }) => {
         const active = path === href || path.startsWith(href + "/");
         return (
-          <Link key={key} href={href} aria-current={active ? "page" : undefined} aria-label={label}>
+          <Link key={key} href={href} aria-current={active ? "page" : undefined} aria-label={label} onClick={() => refreshIfCurrent(href)}>
             <Icon />
             <span>{label}</span>
           </Link>

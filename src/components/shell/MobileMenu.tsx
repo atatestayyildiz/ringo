@@ -6,7 +6,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { IconLogout, IconX } from "@/components/icons";
 import { useLock } from "@/components/lock/useLock";
 import { IconLock } from "./IconLock";
-import { NAV_ITEMS, type NavKey } from "./MainNav";
+import { NAV_ITEMS, useNavRefresh, type NavKey } from "./MainNav";
 import { SignOutDialog } from "./SignOutButton";
 
 const FOCUSABLE = "a[href],button:not([disabled])";
@@ -37,6 +37,7 @@ export function MobileMenu({
   signOutAction: () => void | Promise<void>;
 }) {
   const path = usePathname();
+  const refreshIfCurrent = useNavRefresh();
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -118,7 +119,15 @@ export function MobileMenu({
               {NAV_ITEMS.filter((i) => visible.includes(i.key)).map(({ key, href, label, Icon }) => {
                 const active = path === href || path.startsWith(href + "/");
                 return (
-                  <Link key={key} href={href} aria-current={active ? "page" : undefined} onClick={() => setOpen(false)}>
+                  <Link
+                    key={key}
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => {
+                      setOpen(false);
+                      refreshIfCurrent(href);
+                    }}
+                  >
                     <Icon />
                     <span>{label}</span>
                   </Link>

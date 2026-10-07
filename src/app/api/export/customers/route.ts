@@ -17,7 +17,7 @@ function cleanTerm(s: string): string {
 }
 
 const COLUMNS =
-  "id, full_name, phone, phone_alt, operator, birth_date, call_status, pipeline_stage, assigned_to, last_note, source, source_detail, applied_at, created_at";
+  "id, full_name, phone, phone_alt, operator, amount, birth_date, call_status, pipeline_stage, assigned_to, last_note, source, source_detail, applied_at, created_at";
 
 export async function GET(req: NextRequest) {
   const auth = await authorizeExport();
@@ -66,6 +66,7 @@ export async function GET(req: NextRequest) {
     phone: string;
     phone_alt: string | null;
     operator: string | null;
+    amount: string | null;
     birth_date: string | null;
     call_status: string;
     pipeline_stage: string | null;
@@ -103,6 +104,7 @@ export async function GET(req: NextRequest) {
     "Ad Soyad",
     "Telefon",
     "Operatör",
+    "Tutar",
     "Durum",
     "Aşama",
     "Atanan",
@@ -116,6 +118,7 @@ export async function GET(req: NextRequest) {
     c.full_name,
     formatPhone(c.phone),
     c.operator ? (OPERATOR_LABEL[c.operator] ?? c.operator) : "",
+    c.amount ?? "",
     STATUS_INFO[c.call_status as CallStatus]?.label ?? c.call_status,
     c.pipeline_stage ? (STAGE_LABEL[c.pipeline_stage] ?? c.pipeline_stage) : "",
     c.assigned_to ? (names.get(c.assigned_to) ?? "") : "",

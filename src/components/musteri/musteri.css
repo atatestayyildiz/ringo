@@ -59,7 +59,7 @@
 .mu-row {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) 0.9fr 1fr 1.2fr 1.1fr minmax(0, 1.6fr);
+  grid-template-columns: minmax(150px, 1.2fr) 118px 104px 92px 118px 104px minmax(0, 2.8fr);
   align-items: center;
   gap: 14px;
   padding: 12px 8px;
@@ -123,7 +123,7 @@
 }
 .mu-colhead {
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) 0.9fr 1fr 1.2fr 1.1fr minmax(0, 1.6fr);
+  grid-template-columns: minmax(150px, 1.2fr) 118px 104px 92px 118px 104px minmax(0, 2.8fr);
   gap: 14px;
   padding: 0 8px 10px;
   font-size: 12px;
@@ -1219,4 +1219,28 @@
   .mu-actmenu-list {
     animation: none;
   }
+}
+
+/* ---------- tutar rozeti ---------- */
+.mu-amount {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.mu-amount small {
+  display: inline;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.mu-hint {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  color: var(--ink-2);
 }

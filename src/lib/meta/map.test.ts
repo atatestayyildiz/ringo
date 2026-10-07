@@ -7,7 +7,7 @@ describe("mapLead", () => {
       { name: "full_name", values: ["Deniz Örnek"] },
       { name: "phone_number", values: ["p:+905550000000"] },
     ]);
-    expect(r).toEqual({ fullName: "Deniz Örnek", phone: "+905550000000", operator: null, note: null });
+    expect(r).toEqual({ fullName: "Deniz Örnek", phone: "+905550000000", phoneAlt: null, amount: null, operator: null, note: null });
   });
   it("ad ve soyadı birleştirir; phone yedeği çalışır", () => {
     const r = mapLead([
@@ -38,8 +38,8 @@ describe("mapLead", () => {
     expect(r.note).toBe("Hangi model: Model A · Butce: 10 bin, 15 bin");
   });
   it("eksik ya da bozuk veri hata vermez", () => {
-    expect(mapLead(undefined)).toEqual({ fullName: null, phone: null, operator: null, note: null });
-    expect(mapLead([{ name: "phone_number" }, {}, { name: "x", values: [] }] as never)).toEqual({ fullName: null, phone: null, operator: null, note: null });
+    expect(mapLead(undefined)).toEqual({ fullName: null, phone: null, phoneAlt: null, amount: null, operator: null, note: null });
+    expect(mapLead([{ name: "phone_number" }, {}, { name: "x", values: [] }] as never)).toEqual({ fullName: null, phone: null, phoneAlt: null, amount: null, operator: null, note: null });
   });
   it("stripPhonePrefix", () => {
     expect(stripPhonePrefix(" P:+90 555 ")).toBe("+90 555");
@@ -62,7 +62,9 @@ describe("mapLead soru türüne göre", () => {
     );
     expect(r.fullName).toBe("Deniz Örnek");
     expect(r.phone).toBe("+905550000000");
-    expect(r.note).toBe("Tutar: 10-30 Bin₺ · Telefon: 05550000001");
+    expect(r.note).toBeNull();
+    expect(r.amount).toBe("10-30 Bin₺");
+    expect(r.phoneAlt).toBe("05550000001");
   });
   it("tür bilinmiyorsa standart anahtarlara düşer", () => {
     expect(mapLead([{ name: "adi_soyadi", values: ["Deniz Örnek"] }], {}).fullName).toBeNull();
@@ -76,7 +78,8 @@ describe("mapLead operatör", () => {
       { name: "hangi_operatörü_kullanıyorsunuz", values: ["turkcell"] },
     ]);
     expect(r.operator).toBe("turkcell");
-    expect(r.note).toBe("Tutar: 50-100");
+    expect(r.note).toBeNull();
+    expect(r.amount).toBe("50-100");
   });
   it("operatör sorusu yoksa null", () => {
     expect(mapLead([{ name: "tutar", values: ["50-100"] }]).operator).toBeNull();

@@ -25,6 +25,7 @@ import { normalizeTrPhone } from "@/lib/import/phone";
 import { createClient } from "@/lib/supabase/client";
 import {
   ALL_STAGES,
+  formatAmount,
   memberName,
   noteLines,
   OPERATOR_LABEL,
@@ -78,8 +79,11 @@ function Body({
   const [version, setVersion] = useState(0);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmRelease, setConfirmRelease] = useState(false);
 
   const canStage = viewer.isManager || c.assigned_to === viewer.id;
+  // Serbest bırakma: açık müşteri, sahibi ya da yönetici
+  const canRelease = !!c.assigned_to && (c.assigned_to === viewer.id || viewer.isManager) && (c.call_status === "pending" || c.call_status === "retry");
   const activeMembers = members.filter((m) => m.is_active);
   const tel = telLink(c.phone);
   const wa = waLink(c.phone);
@@ -158,6 +162,17 @@ function Body({
               <dt>Operatör</dt>
               <dd>{c.operator ? <OperatorLogo operator={c.operator} /> : "-"}</dd>
             </div>
+            {c.amount ? (
+              <div>
+                <dt>Tutar</dt>
+                <dd>
+                  <span className="mu-amount">
+                    {formatAmount(c.amount)?.value}
+                    {formatAmount(c.amount)?.unit ? <small>{formatAmount(c.amount)?.unit}</small> : null}
+                  </span>
+                </dd>
+              </div>
+            ) : null}
             <div>
               <dt>Doğum tarihi</dt>
               <dd>
@@ -228,6 +243,16 @@ function Body({
         </section>
       ) : null}
 
+      {canRelease ? (
+        <section className="mu-sec">
+          <h3>Serbest bırak</h3>
+          <p className="mu-hint">Bu müşteriye bakamayacaksan havuza geri ver, herkes alabilir.</p>
+          <Button variant="soft" onClick={() => setConfirmRelease(true)}>
+            Serbest bırak
+          </Button>
+        </section>
+      ) : null}
+
       <section className="mu-sec">
         <h3>Geçmiş</h3>
         <Timeline key={version} customerId={c.id} members={members} />
@@ -240,6 +265,18 @@ function Body({
           </Button>
         </div>
       ) : null}
+
+      <ReleaseModal
+        open={confirmRelease}
+        customer={c}
+        onClose={() => setConfirmRelease(false)}
+        onDone={() => {
+          setConfirmRelease(false);
+          onClose();
+          router.refresh();
+          toast("Müşteri havuza geri verildi");
+        }}
+      />
 
       <DeleteModal
         open={confirmDelete}
@@ -541,6 +578,48 @@ function Timeline({ customerId, members }: { customerId: string; members: Member
 }
 
 /* ---------- silme (KVKK) ---------- */
+function ReleaseModal({
+  open,
+  customer: c,
+  onClose,
+  onDone,
+}: {
+  open: boolean;
+  customer: Customer;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+
+  const go = async () => {
+    setBusy(true);
+    const { error } = await createClient().rpc("release_customer", { p_customer: c.id });
+    setBusy(false);
+    if (error) {
+      toast("Serbest bırakılamadı. " + toUserMessage(error), "error");
+      return;
+    }
+    onDone();
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="Müşteri serbest bırakılsın mı?">
+      <p className="mu-confirm">
+        <b>{c.full_name}</b> havuza geri döner ve listenden çıkar. Havuzdan herkes alabilir.
+      </p>
+      <div className="modal-foot">
+        <Button variant="soft" onClick={onClose} disabled={busy}>
+          Vazgeç
+        </Button>
+        <Button variant="ink" onClick={go} disabled={busy}>
+          {busy ? "Bırakılıyor" : "Serbest bırak"}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 function DeleteModal({
   open,
   customer: c,

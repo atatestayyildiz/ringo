@@ -81,13 +81,13 @@ isOneToOne: false
                   ]
                 },"customers": {
                   Row: {
-                    "applied_at": string | null,"appointment_day": string | null,"appointment_time": string | null,"assigned_to": string | null,"attempts_in_round": number,"birth_date": string | null,"call_status": string,"consent": boolean,"created_at": string | null,"full_name": string,"id": string,"last_note": string | null,"last_outcome": string | null,"next_call_at": string,"operator": string | null,"phone": string,"phone_alt": string | null,"pipeline_stage": string | null,"pool_count": number,"source": string,"source_detail": string | null,"tenant_id": string,"updated_at": string | null
+                    "amount": string | null,"applied_at": string | null,"appointment_day": string | null,"appointment_time": string | null,"assigned_to": string | null,"attempts_in_round": number,"birth_date": string | null,"call_status": string,"consent": boolean,"created_at": string | null,"full_name": string,"id": string,"last_note": string | null,"last_outcome": string | null,"next_call_at": string,"operator": string | null,"phone": string,"phone_alt": string | null,"pipeline_stage": string | null,"pool_count": number,"source": string,"source_detail": string | null,"tenant_id": string,"updated_at": string | null
                   }
                   Insert: {
-                    "applied_at"?: string | null,"appointment_day"?: string | null,"appointment_time"?: string | null,"assigned_to"?: string | null,"attempts_in_round"?: number,"birth_date"?: string | null,"call_status"?: string,"consent"?: boolean,"created_at"?: string | null,"full_name": string,"id"?: string,"last_note"?: string | null,"last_outcome"?: string | null,"next_call_at"?: string,"operator"?: string | null,"phone": string,"phone_alt"?: string | null,"pipeline_stage"?: string | null,"pool_count"?: number,"source"?: string,"source_detail"?: string | null,"tenant_id": string,"updated_at"?: string | null
+                    "amount"?: string | null,"applied_at"?: string | null,"appointment_day"?: string | null,"appointment_time"?: string | null,"assigned_to"?: string | null,"attempts_in_round"?: number,"birth_date"?: string | null,"call_status"?: string,"consent"?: boolean,"created_at"?: string | null,"full_name": string,"id"?: string,"last_note"?: string | null,"last_outcome"?: string | null,"next_call_at"?: string,"operator"?: string | null,"phone": string,"phone_alt"?: string | null,"pipeline_stage"?: string | null,"pool_count"?: number,"source"?: string,"source_detail"?: string | null,"tenant_id": string,"updated_at"?: string | null
                   }
                   Update: {
-                    "applied_at"?: string | null,"appointment_day"?: string | null,"appointment_time"?: string | null,"assigned_to"?: string | null,"attempts_in_round"?: number,"birth_date"?: string | null,"call_status"?: string,"consent"?: boolean,"created_at"?: string | null,"full_name"?: string,"id"?: string,"last_note"?: string | null,"last_outcome"?: string | null,"next_call_at"?: string,"operator"?: string | null,"phone"?: string,"phone_alt"?: string | null,"pipeline_stage"?: string | null,"pool_count"?: number,"source"?: string,"source_detail"?: string | null,"tenant_id"?: string,"updated_at"?: string | null
+                    "amount"?: string | null,"applied_at"?: string | null,"appointment_day"?: string | null,"appointment_time"?: string | null,"assigned_to"?: string | null,"attempts_in_round"?: number,"birth_date"?: string | null,"call_status"?: string,"consent"?: boolean,"created_at"?: string | null,"full_name"?: string,"id"?: string,"last_note"?: string | null,"last_outcome"?: string | null,"next_call_at"?: string,"operator"?: string | null,"phone"?: string,"phone_alt"?: string | null,"pipeline_stage"?: string | null,"pool_count"?: number,"source"?: string,"source_detail"?: string | null,"tenant_id"?: string,"updated_at"?: string | null
                   }
                   Relationships: [
                     {
@@ -424,7 +424,7 @@ isOneToOne: true
 { Args: Record<PropertyKey, never>; Returns: { tenant_id: string; page_id: string; last_sync_at: string | null }[]
                            },
 "ingest_meta_lead":
-{ Args: { "p_tenant": string,"p_leadgen_id": string,"p_form_id": string | null,"p_created_time": string | null,"p_full_name": string | null,"p_phone": string | null,"p_note": string | null,"p_source_detail": string | null,"p_operator"?: string | null }; Returns: Json
+{ Args: { "p_tenant": string,"p_leadgen_id": string,"p_form_id": string | null,"p_created_time": string | null,"p_full_name": string | null,"p_phone": string | null,"p_note": string | null,"p_source_detail": string | null,"p_operator"?: string | null,"p_phone_alt"?: string | null,"p_amount"?: string | null }; Returns: Json
                            },
 "meta_record_status":
 { Args: { "p_tenant": string,"p_ok": boolean,"p_error"?: string | null,"p_synced"?: boolean }; Returns: undefined
@@ -566,6 +566,9 @@ isOneToOne: true
       } },
 "reassign_customers":
 { Args: { "p_customers": string[],"p_member": string }; Returns: number
+                           },
+"release_customer":
+{ Args: { "p_customer": string }; Returns: Database["public"]["Tables"]["customers"]["Row"]
                            },
 "report_intake":
 { Args: { "p_from": string,"p_to": string }; Returns: Json
