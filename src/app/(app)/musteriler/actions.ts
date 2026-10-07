@@ -24,6 +24,25 @@ export async function reassignCustomersAction(customerIds: string[], memberId: s
   return { ok: true, moved: data ?? 0 };
 }
 
+export type DeleteAllResult = { ok: true; deleted: number } | { ok: false; error: string };
+
+/** Yalnız yönetici. `expected` ekranda gösterilen toplam sayıdır; DB gerçek sayıyla karşılaştırır. */
+export async function deleteAllCustomersAction(expected: number): Promise<DeleteAllResult> {
+  const ctx = await getSessionContext();
+  if (ctx.member.role !== "manager") {
+    return { ok: false, error: "Tüm müşterileri yalnız yönetici silebilir." };
+  }
+  if (!Number.isInteger(expected) || expected < 1) {
+    return { ok: false, error: "Silinecek müşteri yok." };
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("delete_all_customers", { p_expected: expected });
+  if (error) return { ok: false, error: toUserMessage(error) };
+  revalidatePath("/musteriler");
+  revalidatePath("/bugun");
+  return { ok: true, deleted: data ?? 0 };
+}
+
 export type BulkDeleteResult = { ok: true; deleted: number } | { ok: false; error: string };
 
 export async function deleteCustomersAction(customerIds: string[]): Promise<BulkDeleteResult> {

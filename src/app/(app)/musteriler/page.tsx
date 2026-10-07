@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CustomerFilters } from "@/components/musteri/CustomerFilters";
 import { CustomerList } from "@/components/musteri/CustomerList";
 import { AddCustomerButton } from "@/components/musteri/AddCustomerButton";
+import { ListSummary } from "@/components/musteri/ListSummary";
 import { CUSTOMER_COLUMNS, type Customer, type MemberLite, type Viewer } from "@/components/musteri/shared";
 import { buttonClass, Card } from "@/components/ui";
 import { can, getSessionContext } from "@/lib/session";
@@ -9,7 +10,8 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Müşteriler" };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZES = [20, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 20;
 
 type SP = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
@@ -30,6 +32,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const operator = one(sp.operator);
   const atanan = one(sp.atanan);
   const page = Math.max(1, Number.parseInt(one(sp.sayfa), 10) || 1);
+  const adet = Number.parseInt(one(sp.adet), 10);
+  const pageSize = (PAGE_SIZES as readonly number[]).includes(adet) ? adet : DEFAULT_PAGE_SIZE;
 
   let query = supabase.from("customers").select(CUSTOMER_COLUMNS, { count: "exact" });
 
@@ -54,16 +58,22 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   if (atanan === "yok") query = query.is("assigned_to", null);
   else if (atanan) query = query.eq("assigned_to", atanan);
 
-  const from = (page - 1) * PAGE_SIZE;
-  const [{ data, count, error }, { data: memberRows }] = await Promise.all([
-    query.order("created_at", { ascending: false }).order("id").range(from, from + PAGE_SIZE - 1),
+  const filtered = Boolean(q || durum || asama || operator || atanan);
+  const from = (page - 1) * pageSize;
+  const [{ data, count, error }, { data: memberRows }, allCount] = await Promise.all([
+    query.order("created_at", { ascending: false }).order("id").range(from, from + pageSize - 1),
     supabase.from("members").select("id, full_name, is_active").order("full_name"),
+    // Filtresiz toplam: filtre yoksa ana sorgunun sayısı zaten odur
+    filtered
+      ? supabase.from("customers").select("id", { count: "exact", head: true })
+      : Promise.resolve({ count: null as number | null }),
   ]);
 
   const rows = (data ?? []) as Customer[];
   const members = (memberRows ?? []) as MemberLite[];
   const total = count ?? 0;
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const allTotal = filtered ? (allCount.count ?? total) : total;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
   const viewer: Viewer = {
     id: member.id,
@@ -76,6 +86,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const hrefFor = (p: number) => {
     const u = new URLSearchParams();
     for (const [k, v] of Object.entries({ q: one(sp.q), durum, asama, operator, atanan })) if (v) u.set(k, v);
+    if (pageSize !== DEFAULT_PAGE_SIZE) u.set("adet", String(pageSize));
     if (p > 1) u.set("sayfa", String(p));
     const s = u.toString();
     return s ? `/musteriler?${s}` : "/musteriler";
@@ -85,8 +96,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const exportParams = new URLSearchParams();
   for (const [k, v] of Object.entries({ q: one(sp.q), durum, asama, operator, atanan })) if (v) exportParams.set(k, v);
   const exportHref = `/api/export/customers${exportParams.size ? `?${exportParams}` : ""}`;
-
-  const filtered = Boolean(q || durum || asama || operator || atanan);
 
   return (
     <>
@@ -123,6 +132,19 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
 
       <CustomerFilters members={members} />
 
+      {error ? null : (
+        <ListSummary
+          total={total}
+          allTotal={allTotal}
+          from={from}
+          shown={rows.length}
+          filtered={filtered}
+          pageSize={pageSize}
+          pageSizes={[...PAGE_SIZES]}
+          canDeleteAll={viewer.isManager}
+        />
+      )}
+
       <Card>
         {error ? (
           <div className="form-error" role="alert">
@@ -133,7 +155,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
         )}
       </Card>
 
-      {total > PAGE_SIZE ? (
+      {total > pageSize ? (
         <nav className="mu-pager" aria-label="Sayfalama">
           <Link
             href={hrefFor(page - 1)}
