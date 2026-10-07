@@ -1,7 +1,7 @@
 -- Gelen başvuru özeti (migration 20261007000600_report_intake.sql)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(11);
 
 insert into auth.users (instance_id, id, aud, role, email) values
   ('00000000-0000-0000-0000-000000000000', '20000000-0000-4000-8000-0000000000f1', 'authenticated', 'authenticated', 'ri-mgr@test.test'),
@@ -41,6 +41,8 @@ select is((public.report_intake('2026-10-01', '2026-10-07')) ->> 'looked_at', '1
 select is((public.report_intake('2026-10-01', '2026-10-07')) ->> 'waiting', '2', '2 başvuru bekliyor');
 select is((public.report_intake('2026-10-01', '2026-10-07')) ->> 'waiting_now', '3', 'şu an bekleyen aralık dışını da sayar, başka kiracıyı saymaz');
 select is((public.report_intake('2026-10-01', '2026-10-07')) ->> 'waiting_now_unassigned', '3', 'atanmamış bekleyen sayılır');
+select is((public.report_intake('2026-10-01', '2026-10-07')) -> 'by_source' -> 0 ->> 'received', '3', 'kaynak kırılımı gelen başvuruyu sayar');
+select is((public.report_intake('2026-10-01', '2026-10-07')) -> 'by_operator' -> 0 ->> 'waiting', '2', 'operatör kırılımı bekleyeni sayar');
 select throws_ok($$select public.report_intake('2026-10-07', '2026-10-01')$$, '22023', 'Tarih aralığı geçersiz.', 'ters aralık reddedilir');
 reset role;
 

@@ -25,6 +25,8 @@ export type Intake = {
   waiting: number;
   waiting_now: number;
   waiting_now_unassigned: number;
+  by_source: { source_detail: string; received: number; waiting: number }[];
+  by_operator: { operator: string; received: number; waiting: number }[];
 };
 
 export function normalizeIntake(data: unknown): Intake | null {
@@ -37,6 +39,8 @@ export function normalizeIntake(data: unknown): Intake | null {
     waiting: n("waiting"),
     waiting_now: n("waiting_now"),
     waiting_now_unassigned: n("waiting_now_unassigned"),
+    by_source: Array.isArray(d.by_source) ? (d.by_source as Intake["by_source"]) : [],
+    by_operator: Array.isArray(d.by_operator) ? (d.by_operator as Intake["by_operator"]) : [],
   };
 }
 

@@ -86,6 +86,30 @@ export default async function Page({
     ? normalizeIntake((await supabase.rpc("report_intake", { p_from: from, p_to: to })).data)
     : null;
 
+  // Kaynak ve Operatör tabloları: aranmış müşteriler (rapor) + hiç aranmamış gelenler (özet) birleşir.
+  type Row = { key: string; received: number; waiting: number; customers: number; appointments: number; completed: number };
+  const mergeRows = (
+    base: { key: string; customers: number; appointments: number; completed: number }[],
+    extra: { key: string; received: number; waiting: number }[],
+  ): Row[] => {
+    const m = new Map<string, Row>();
+    for (const r of base) m.set(r.key, { ...r, received: 0, waiting: 0 });
+    for (const r of extra) {
+      const e = m.get(r.key) ?? { key: r.key, received: 0, waiting: 0, customers: 0, appointments: 0, completed: 0 };
+      m.set(r.key, { ...e, received: r.received, waiting: r.waiting });
+    }
+    return [...m.values()].sort((a, b) => b.received - a.received || b.customers - a.customers || a.key.localeCompare(b.key, "tr"));
+  };
+  const sourceRows = mergeRows(
+    (report?.by_source ?? []).map((r) => ({ key: r.source_detail, customers: r.customers, appointments: r.appointments, completed: r.completed })),
+    (intake?.by_source ?? []).map((r) => ({ key: r.source_detail, received: r.received, waiting: r.waiting })),
+  );
+  const operatorRows = mergeRows(
+    (report?.by_operator ?? []).map((r) => ({ key: r.operator, customers: r.customers, appointments: 0, completed: r.completed })),
+    (intake?.by_operator ?? []).map((r) => ({ key: r.operator, received: r.received, waiting: r.waiting })),
+  );
+  const showIntake = intake !== null;
+
   const funnel: [string, string, number][] = t
     ? [
         ["Randevu", "Dükkana gelecek", t.appointments],
@@ -421,8 +445,18 @@ export default async function Page({
                 <thead>
                   <tr>
                     <th scope="col">Kaynak</th>
+                    {showIntake ? (
+                      <>
+                        <th scope="col" className={s.num}>
+                          Gelen
+                        </th>
+                        <th scope="col" className={s.num}>
+                          Bekleyen
+                        </th>
+                      </>
+                    ) : null}
                     <th scope="col" className={s.num}>
-                      Müşteri
+                      Aranan
                     </th>
                     <th scope="col" className={s.num}>
                       Randevu
@@ -436,14 +470,20 @@ export default async function Page({
                   </tr>
                 </thead>
                 <tbody>
-                  {report.by_source.length === 0 ? (
+                  {sourceRows.length === 0 ? (
                     <tr>
-                      <td colSpan={5}>Kayıt yok.</td>
+                      <td colSpan={showIntake ? 7 : 5}>Kayıt yok.</td>
                     </tr>
                   ) : (
-                    report.by_source.map((r) => (
-                      <tr key={r.source_detail}>
-                        <th scope="row">{r.source_detail}</th>
+                    sourceRows.map((r) => (
+                      <tr key={r.key}>
+                        <th scope="row">{r.key}</th>
+                        {showIntake ? (
+                          <>
+                            <td className={s.num}>{r.received}</td>
+                            <td className={s.num}>{r.waiting}</td>
+                          </>
+                        ) : null}
                         <td className={s.num}>{r.customers}</td>
                         <td className={s.num}>{r.appointments}</td>
                         <td className={s.num}>{r.completed}</td>
@@ -468,8 +508,18 @@ export default async function Page({
                 <thead>
                   <tr>
                     <th scope="col">Operatör</th>
+                    {showIntake ? (
+                      <>
+                        <th scope="col" className={s.num}>
+                          Gelen
+                        </th>
+                        <th scope="col" className={s.num}>
+                          Bekleyen
+                        </th>
+                      </>
+                    ) : null}
                     <th scope="col" className={s.num}>
-                      Müşteri
+                      Aranan
                     </th>
                     <th scope="col" className={s.num}>
                       Tamam
@@ -480,16 +530,22 @@ export default async function Page({
                   </tr>
                 </thead>
                 <tbody>
-                  {report.by_operator.length === 0 ? (
+                  {operatorRows.length === 0 ? (
                     <tr>
-                      <td colSpan={4}>Kayıt yok.</td>
+                      <td colSpan={showIntake ? 6 : 4}>Kayıt yok.</td>
                     </tr>
                   ) : (
-                    report.by_operator.map((r) => (
-                      <tr key={r.operator}>
+                    operatorRows.map((r) => (
+                      <tr key={r.key}>
                         <th scope="row">
-                          <OperatorLogo operator={r.operator} />
+                          <OperatorLogo operator={r.key} />
                         </th>
+                        {showIntake ? (
+                          <>
+                            <td className={s.num}>{r.received}</td>
+                            <td className={s.num}>{r.waiting}</td>
+                          </>
+                        ) : null}
                         <td className={s.num}>{r.customers}</td>
                         <td className={s.num}>{r.completed}</td>
                         <td className={s.num}>
