@@ -71,6 +71,17 @@ describe("mapLead soru türüne göre", () => {
   });
 });
 
+describe("mapLead teknik alanlar", () => {
+  it("inbox_url notta ve alanlarda yer almaz", () => {
+    const r = mapLead([
+      { name: "full_name", values: ["Deniz Örnek"] },
+      { name: "inbox_url", values: ["https://business.facebook.com/latest/1?nav_ref=thread_view_by_psid"] },
+      { name: "hangi_model", values: ["Model A"] },
+    ]);
+    expect(r.note).toBe("Hangi model: Model A");
+  });
+});
+
 describe("mapLead operatör", () => {
   it("anahtarında operatör geçen soru Operatör alanına gider, notta tekrarlanmaz", () => {
     const r = mapLead([

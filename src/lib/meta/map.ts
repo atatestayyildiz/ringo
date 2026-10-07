@@ -44,6 +44,8 @@ export function mapLead(fieldData: FieldData | undefined | null, types: Question
     const name = clean(f?.name);
     if (!name) continue;
     const key = name.toLowerCase();
+    // Meta'nın teknik alanı (Business Suite konuşma bağlantısı): müşteriyle ilgisi yok, saklanmaz.
+    if (key.includes("inbox_url")) continue;
     // Anahtarlar forma göre özeldir (adi_soyadi, telefon_numarasi ...); asıl ayırt edici soru türüdür.
     const type = types[key];
     const slot = type === "FULL_NAME" ? "full_name" : type === "FIRST_NAME" ? "first_name" : type === "LAST_NAME" ? "last_name" : type === "PHONE" ? "phone_number" : null;
