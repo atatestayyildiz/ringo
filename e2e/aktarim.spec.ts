@@ -92,6 +92,7 @@ test("yönetici listeden iki müşteriyi seçip aktarır", async ({ browser }) =
   await page.goto(`/musteriler?q=${encodeURIComponent(tag)}`);
   const list = page.getByRole("list", { name: /Müşteri listesi/ });
   await expect(list.getByRole("button")).toHaveCount(3);
+  await page.getByRole("button", { name: "Seç", exact: true }).click();
   await page.getByRole("checkbox", { name: `${names.a} seç` }).check();
   await page.getByRole("checkbox", { name: `${names.b} seç` }).check();
   const bar = page.getByRole("region", { name: "Seçim işlemleri" });
@@ -116,6 +117,7 @@ test("tümünü seç görünen sayfayı seçer; yetkisiz çalışan seçim kutus
   const m = await freshPage(browser, { viewport: { width: 375, height: 812 } });
   await loginOk(m.page, "yonetici");
   await m.page.goto(`/musteriler?q=${encodeURIComponent(tag)}`);
+  await m.page.getByRole("button", { name: "Seç", exact: true }).click();
   await m.page.getByRole("checkbox", { name: /Sayfadakilerin tümünü seç/ }).check();
   const bar = m.page.getByRole("region", { name: "Seçim işlemleri" });
   await expect(bar.getByText("3 seçili")).toBeVisible();

@@ -24,6 +24,7 @@ test.beforeAll(async ({ browser }) => {
 
     // Müşteri kimde olursa olsun Elif'e aktarılır (bugünkü ataması da taşınır)
     await page.goto(`/musteriler?q=${encodeURIComponent(tag)}`);
+    await page.getByRole("button", { name: "Seç", exact: true }).click();
     await page.getByRole("checkbox", { name: `${name} seç` }).check();
     const bar = page.getByRole("region", { name: "Seçim işlemleri" });
     await bar.getByRole("button", { name: "Aktar", exact: true }).click();

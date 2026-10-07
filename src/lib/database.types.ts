@@ -567,6 +567,9 @@ isOneToOne: true
 "reassign_customers":
 { Args: { "p_customers": string[],"p_member": string }; Returns: number
                            },
+"report_intake":
+{ Args: { "p_from": string,"p_to": string }; Returns: Json
+                           },
 "report_range":
 { Args: { "p_from": string,"p_to": string }; Returns: Json
                            },

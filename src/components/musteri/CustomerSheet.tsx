@@ -26,6 +26,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   ALL_STAGES,
   memberName,
+  noteLines,
   OPERATOR_LABEL,
   OUTCOME_LABEL,
   STAGE_LABEL,
@@ -197,6 +198,14 @@ function Body({
             </div>
           </dl>
         )}
+        {!editing && c.last_note ? (
+          <div className="mu-notebox">
+            <span className="mu-notebox-title">Son not</span>
+            {noteLines(c.last_note).map((l, i) => (
+              <p key={i}>{l}</p>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <section className="mu-sec">

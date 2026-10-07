@@ -114,6 +114,7 @@
   display: none;
 }
 .mu-note {
+  display: block;
   font-size: 12.5px;
   color: var(--ink-3);
   white-space: nowrap;
@@ -145,7 +146,7 @@
     grid-row: 1;
   }
   .mu-row .mu-cell,
-  .mu-row .mu-note {
+  .mu-row .mu-note-wrap {
     grid-column: 1 / -1;
     padding-left: 52px;
   }
@@ -792,11 +793,18 @@
   accent-color: var(--brand);
   cursor: pointer;
 }
+.mu-selbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 0 8px;
+}
 .mu-selall {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 0 0 8px;
+  padding: 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--ink-2);
@@ -1012,31 +1020,6 @@
   font-size: 12.5px;
 }
 
-/* Mobil: Müşteriler üst düğmeleri düzenli: Müşteri ekle tam satır, Excel içe aktar | Dışa aktar yan yana */
-@media (max-width: 560px) {
-  .mu-head {
-    align-items: stretch;
-  }
-  .mu-head .mu-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    width: 100%;
-  }
-  .mu-head .mu-actions > :first-child {
-    grid-column: 1 / -1;
-  }
-  .mu-head .mu-actions .btn {
-    min-height: 46px;
-    justify-content: center;
-    white-space: nowrap;
-  }
-  .mu-head .mu-actions > span {
-    grid-column: 1 / -1;
-    text-align: center;
-  }
-}
-
 /* ---------- liste özeti: sayılar, sayfa başına adet, tümünü sil ---------- */
 .mu-count {
   display: flex;
@@ -1068,5 +1051,172 @@
   .mu-count-ctl {
     width: 100%;
     justify-content: space-between;
+  }
+}
+
+/* ---------- son not: liste hover kartı ve detay bloğu ---------- */
+.mu-note-wrap {
+  position: relative;
+  min-width: 0;
+  display: block;
+}
+.mu-note-pop {
+  display: none;
+  position: absolute;
+  z-index: 30;
+  right: 0;
+  top: calc(100% + 6px);
+  width: max-content;
+  max-width: min(380px, 70vw);
+  padding: 12px 14px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lift);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  white-space: normal;
+  text-align: left;
+  pointer-events: none;
+}
+.mu-note-pop span {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.mu-note-pop span + span {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.mu-row:hover .mu-note-pop,
+.mu-row:focus-visible .mu-note-pop {
+  display: block;
+}
+.mu-notebox {
+  margin-top: 10px;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border-radius: 18px;
+}
+.mu-notebox-title {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.mu-notebox p {
+  margin: 0;
+  padding: 7px 0;
+  font-size: 14px;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.mu-notebox p + p {
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- operatör seçici (logolu) ---------- */
+.mu-opfield-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.mu-ops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mu-op {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.mu-op:hover {
+  border-color: var(--line);
+}
+.mu-op.on {
+  border-color: var(--brand);
+  background: var(--surface);
+}
+.mu-op:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ---------- başlıktaki tek menü düğmesi ---------- */
+.mu-actmenu {
+  position: relative;
+  display: inline-flex;
+}
+.mu-actmenu-caret {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 18px;
+  line-height: 1;
+}
+.mu-actmenu-list {
+  position: absolute;
+  z-index: 35;
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: row-reverse; /* Müşteri ekle (ilk öğe) düğmeye en yakın, en sağda */
+  gap: 8px;
+  white-space: nowrap;
+  animation: mu-actmenu-in 0.16s ease-out;
+}
+@keyframes mu-actmenu-in {
+  from {
+    opacity: 0;
+    transform: translate(8px, -50%);
+  }
+}
+@media (max-width: 760px) {
+  .mu-head {
+    align-items: stretch;
+  }
+  .mu-actmenu {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .mu-actmenu > .btn {
+    justify-content: center;
+    min-height: 46px;
+  }
+  .mu-actmenu-list {
+    position: static;
+    transform: none;
+    flex-direction: column;
+    margin-top: 8px;
+    animation: none;
+  }
+  .mu-actmenu-list .btn {
+    justify-content: center;
+    min-height: 46px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mu-actmenu-list {
+    animation: none;
   }
 }

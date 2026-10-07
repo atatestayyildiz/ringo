@@ -18,6 +18,28 @@ export type ReportTotals = {
   assigned: number;
 };
 
+/** report_intake JSON yapısı (supabase/migrations/20261007000600_report_intake.sql). */
+export type Intake = {
+  received: number;
+  looked_at: number;
+  waiting: number;
+  waiting_now: number;
+  waiting_now_unassigned: number;
+};
+
+export function normalizeIntake(data: unknown): Intake | null {
+  if (!data || typeof data !== "object") return null;
+  const d = data as Record<string, unknown>;
+  const n = (k: string) => (typeof d[k] === "number" ? (d[k] as number) : 0);
+  return {
+    received: n("received"),
+    looked_at: n("looked_at"),
+    waiting: n("waiting"),
+    waiting_now: n("waiting_now"),
+    waiting_now_unassigned: n("waiting_now_unassigned"),
+  };
+}
+
 /** team: kiracı geneli (yönetici veya view_reports); member: tek çalışan. Kapsamı DB belirler. */
 export type ReportScope = "team" | "member";
 

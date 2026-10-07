@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CustomerFilters } from "@/components/musteri/CustomerFilters";
 import { CustomerList } from "@/components/musteri/CustomerList";
-import { AddCustomerButton } from "@/components/musteri/AddCustomerButton";
+import { CustomerActions } from "@/components/musteri/CustomerActions";
 import { ListSummary } from "@/components/musteri/ListSummary";
 import { CUSTOMER_COLUMNS, type Customer, type MemberLite, type Viewer } from "@/components/musteri/shared";
 import { buttonClass, Card } from "@/components/ui";
@@ -108,26 +108,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
               : "Bugün sana atanan müşteriler."}
           </p>
         </div>
-        {viewer.canImport || canExport ? (
-          <div className="mu-actions">
-            {viewer.canImport ? (
-              <>
-                <AddCustomerButton />
-                <Link href="/musteriler/ice-aktar" className={buttonClass("soft")}>
-                  Excel içe aktar
-                </Link>
-              </>
-            ) : null}
-            {canExport ? (
-              <>
-                <a href={exportHref} className={buttonClass("soft")} download>
-                  Dışa aktar
-                </a>
-                <span style={{ alignSelf: "center", fontSize: 12, color: "var(--ink-3)" }}>En fazla 10.000 satır</span>
-              </>
-            ) : null}
-          </div>
-        ) : null}
+        <CustomerActions canImport={viewer.canImport} exportHref={canExport ? exportHref : null} />
       </div>
 
       <CustomerFilters members={members} />

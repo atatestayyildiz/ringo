@@ -26,6 +26,7 @@ test("yönetici iki test müşterisini seçip toplu siler", async ({ page }) => 
   await page.goto(`/musteriler?q=${encodeURIComponent(tag)}`);
   const list = page.getByRole("list", { name: /Müşteri listesi/ });
   await expect(list.getByRole("button")).toHaveCount(2);
+  await page.getByRole("button", { name: "Seç", exact: true }).click();
   await page.getByRole("checkbox", { name: `${a} seç` }).check();
   await page.getByRole("checkbox", { name: `${b} seç` }).check();
 

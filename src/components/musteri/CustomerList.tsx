@@ -8,7 +8,7 @@ import { Avatar, Button, EmptyState, Modal, Select, StatusBadge, useToast, type 
 import { IconUsers } from "@/components/icons";
 import { formatPhone } from "@/lib/format";
 import { CustomerSheet } from "./CustomerSheet";
-import { memberName, STAGE_LABEL, type Customer, type MemberLite, type Viewer } from "./shared";
+import { memberName, noteLines, STAGE_LABEL, type Customer, type MemberLite, type Viewer } from "./shared";
 import "./musteri.css";
 
 export function CustomerList({
@@ -29,6 +29,8 @@ export function CustomerList({
   const toast = useToast();
   const router = useRouter();
   const [checked, setChecked] = useState<Set<string>>(new Set());
+  // Seçim kutuları varsayılan kapalı; "Seç" ile açılır, kapalıyken yer kaplamaz.
+  const [selecting, setSelecting] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [to, setTo] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -36,6 +38,7 @@ export function CustomerList({
   const allRef = useRef<HTMLInputElement>(null);
 
   const canSelect = viewer.canReassign || viewer.canDelete;
+  const showSel = canSelect && selecting;
   // Yalnız görünen sayfadaki satırlar sayılır; sayfa veya filtre değişince eski seçim düşer.
   const picked = rows.filter((r) => checked.has(r.id));
   const allPicked = rows.length > 0 && picked.length === rows.length;
@@ -103,12 +106,29 @@ export function CustomerList({
   return (
     <>
       {canSelect ? (
-        <label className="mu-selall">
-          <input type="checkbox" ref={allRef} checked={allPicked} onChange={toggleAll} />
-          <span>Sayfadakilerin tümünü seç ({rows.length})</span>
-        </label>
+        <div className="mu-selbar">
+          {showSel ? (
+            <label className="mu-selall">
+              <input type="checkbox" ref={allRef} checked={allPicked} onChange={toggleAll} />
+              <span>Sayfadakilerin tümünü seç ({rows.length})</span>
+            </label>
+          ) : (
+            <span />
+          )}
+          <Button
+            size="sm"
+            variant="soft"
+            onClick={() => {
+              setSelecting(!selecting);
+              setChecked(new Set());
+            }}
+            aria-pressed={selecting}
+          >
+            {selecting ? "Seçimi kapat" : "Seç"}
+          </Button>
+        </div>
       ) : null}
-      <div className={`mu-colhead${canSelect ? " mu-colhead-sel" : ""}`} aria-hidden="true">
+      <div className={`mu-colhead${showSel ? " mu-colhead-sel" : ""}`} aria-hidden="true">
         <span>Müşteri</span>
         <span>Operatör</span>
         <span>Durum</span>
@@ -122,8 +142,8 @@ export function CustomerList({
           const op = c.operator || "";
           const who = memberName(members, c.assigned_to);
           return (
-            <li key={c.id} className={canSelect ? "mu-sel-li" : undefined}>
-              {canSelect ? (
+            <li key={c.id} className={showSel ? "mu-sel-li" : undefined}>
+              {showSel ? (
                 <label className="mu-check">
                   <input
                     type="checkbox"
@@ -147,7 +167,16 @@ export function CustomerList({
                 </span>
                 <span className="mu-cell mu-hide-m">{stage || "-"}</span>
                 <span className="mu-cell mu-hide-m">{who || "-"}</span>
-                <span className="mu-note mu-hide-m">{c.last_note ?? ""}</span>
+                <span className="mu-note-wrap mu-hide-m">
+                  <span className="mu-note">{c.last_note ?? ""}</span>
+                  {c.last_note ? (
+                    <span className="mu-note-pop" role="tooltip">
+                      {noteLines(c.last_note).map((l, i) => (
+                        <span key={i}>{l}</span>
+                      ))}
+                    </span>
+                  ) : null}
+                </span>
                 <span className="mu-meta-m">
                   {op ? <span><OperatorLogo operator={op} /></span> : null}
                   {stage ? <span>{stage}</span> : null}
@@ -158,7 +187,7 @@ export function CustomerList({
           );
         })}
       </ul>
-      {canSelect && picked.length > 0 ? (
+      {showSel && picked.length > 0 ? (
         <div className="mu-bar" role="region" aria-label="Seçim işlemleri">
           <span className="mu-bar-count">{picked.length} seçili</span>
           <Button size="sm" variant="soft" onClick={() => setChecked(new Set())}>

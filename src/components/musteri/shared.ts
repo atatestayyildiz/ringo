@@ -52,6 +52,14 @@ export const MAIN_STAGES = ["appointment", "visited", "applied", "approved", "co
 export const SIDE_STAGES = ["rejected", "not_interested"] as const;
 export const ALL_STAGES = [...MAIN_STAGES, ...SIDE_STAGES] as const;
 
+/** Meta ve içe aktarma notları " · " ile birleşir; okunabilir satırlara böler. */
+export function noteLines(note: string | null | undefined): string[] {
+  return (note ?? "")
+    .split(" · ")
+    .map((l) => l.trim())
+    .filter(Boolean);
+}
+
 export const OPERATOR_LABEL: Record<string, string> = {
   VF: "Vodafone",
   TC: "Turkcell",

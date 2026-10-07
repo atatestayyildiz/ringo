@@ -616,3 +616,45 @@
     transform: none;
   }
 }
+
+.intake {
+  margin-bottom: 16px;
+}
+.intakeGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.intakeGrid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border-radius: 20px;
+}
+.intakeGrid small {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.intakeGrid b {
+  font-size: clamp(30px, 8vw, 44px);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.intakeGrid em {
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--ink-3);
+}
+@media (max-width: 720px) {
+  .intakeGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

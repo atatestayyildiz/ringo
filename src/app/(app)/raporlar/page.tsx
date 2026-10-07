@@ -12,6 +12,7 @@ import {
 import {
   OUTCOME_NAME,
   isEmptyReport,
+  normalizeIntake,
   normalizeReport,
   pct,
   ratio,
@@ -80,6 +81,10 @@ export default async function Page({
   const canExport = isTeam && canExportReport(member);
   const scopeQ = wantSelf ? "&kapsam=ben" : "";
   const t = report?.totals;
+  // Gelen başvuru özeti yalnız ekip kapsamında (yönetici ya da view_reports)
+  const intake = isTeam
+    ? normalizeIntake((await supabase.rpc("report_intake", { p_from: from, p_to: to })).data)
+    : null;
 
   const funnel: [string, string, number][] = t
     ? [
@@ -197,6 +202,46 @@ export default async function Page({
         <div className={`form-error ${s.notice}`} role="alert">
           {rangeError}
         </div>
+      ) : null}
+
+      {intake ? (
+        <Card className={s.intake}>
+          <h2>Gelen başvurular</h2>
+          <div className={s.intakeGrid}>
+            <div>
+              <small>Gelen</small>
+              <b>
+                <CountUp value={intake.received} />
+              </b>
+              <em>seçilen aralıkta</em>
+            </div>
+            <div>
+              <small>Bakılan</small>
+              <b>
+                <CountUp value={intake.looked_at} />
+              </b>
+              <em>en az bir kez arandı</em>
+            </div>
+            <div>
+              <small>Bekleyen</small>
+              <b>
+                <CountUp value={intake.waiting} />
+              </b>
+              <em>aralıktakilerden hiç aranmadı</em>
+            </div>
+            <div>
+              <small>Şu an bekleyen</small>
+              <b>
+                <CountUp value={intake.waiting_now} />
+              </b>
+              <em>
+                {intake.waiting_now_unassigned > 0
+                  ? `${intake.waiting_now_unassigned} tanesi kimseye atanmadı`
+                  : "tüm zamanlar, hepsi atandı"}
+              </em>
+            </div>
+          </div>
+        </Card>
       ) : null}
 
       {error || !report || !t ? (
