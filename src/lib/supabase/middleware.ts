@@ -5,7 +5,12 @@ import type { Database } from "@/lib/database.types";
 import { supabaseEnv } from "./env";
 
 /** Oturum gerektirmeyen tam yollar. */
-const PUBLIC_EXACT_PATHS = new Set(["/sifre-sifirla", "/sifre-sifirla/yeni"]);
+const PUBLIC_EXACT_PATHS = new Set(["/sifre-sifirla", "/sifre-sifirla/yeni", "/api/meta/webhook", "/gizlilik"]);
+
+/** Oturumsuz geçen yollar: `/api/cron/` öneki (kendi sırrıyla doğrulanır) ve tam eşleşmeler. */
+export function isPublicPath(p: string): boolean {
+  return p.startsWith("/api/cron/") || PUBLIC_EXACT_PATHS.has(p);
+}
 
 /**
  * Oturumu yeniler; oturumsuzu /giris'e, oturumluyu /giris'ten /bugun'a yönlendirir.
@@ -13,10 +18,8 @@ const PUBLIC_EXACT_PATHS = new Set(["/sifre-sifirla", "/sifre-sifirla/yeni"]);
  */
 export async function updateSession(request: NextRequest) {
   // Zamanlayıcı kendi sırrıyla doğrulanır; oturum yönlendirmesinden muaf.
-  const p = request.nextUrl.pathname;
-  if (p.startsWith("/api/cron/")) return NextResponse.next({ request });
-  // Şifre sıfırlama oturumsuz erişilir: yalnız TAM yol eşleşmesi (önek yok; /sifre-sifirla-x korunur).
-  if (PUBLIC_EXACT_PATHS.has(p)) return NextResponse.next({ request });
+  // Şifre sıfırlama, Meta webhook (kendi imzasıyla doğrulanır) ve gizlilik sayfası: yalnız TAM yol eşleşmesi.
+  if (isPublicPath(request.nextUrl.pathname)) return NextResponse.next({ request });
 
   let response = NextResponse.next({ request });
   const { url, anonKey } = supabaseEnv();

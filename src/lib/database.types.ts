@@ -154,6 +154,44 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"meta_connections": {
+                  Row: {
+                    "connected_at": string | null,"last_error": string | null,"last_error_at": string | null,"last_lead_at": string | null,"last_sync_at": string | null,"page_id": string,"tenant_id": string
+                  }
+                  Insert: {
+                    "connected_at"?: string | null,"last_error"?: string | null,"last_error_at"?: string | null,"last_lead_at"?: string | null,"last_sync_at"?: string | null,"page_id": string,"tenant_id": string
+                  }
+                  Update: {
+                    "connected_at"?: string | null,"last_error"?: string | null,"last_error_at"?: string | null,"last_lead_at"?: string | null,"last_sync_at"?: string | null,"page_id"?: string,"tenant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "meta_connections_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: true
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"meta_leads": {
+                  Row: {
+                    "created_time": string | null,"customer_id": string | null,"form_id": string | null,"id": string,"leadgen_id": string,"received_at": string | null,"result": string,"tenant_id": string
+                  }
+                  Insert: {
+                    "created_time"?: string | null,"customer_id"?: string | null,"form_id"?: string | null,"id"?: string,"leadgen_id": string,"received_at"?: string | null,"result": string,"tenant_id": string
+                  }
+                  Update: {
+                    "created_time"?: string | null,"customer_id"?: string | null,"form_id"?: string | null,"id"?: string,"leadgen_id"?: string,"received_at"?: string | null,"result"?: string,"tenant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "meta_leads_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"notification_log": {
                   Row: {
                     "attempts": number,"claimed_at": string,"created_at": string | null,"day": string,"error": string | null,"id": number,"kind": string,"member_id": string,"ref_id": string | null,"status": string,"tenant_id": string
@@ -372,6 +410,24 @@ isOneToOne: true
                            },
 "delete_all_customers":
 { Args: { "p_expected": number }; Returns: number
+                           },
+"meta_connect_for":
+{ Args: { "p_tenant": string,"p_page_id": string }; Returns: undefined
+                           },
+"meta_status":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"meta_tenant_for_page":
+{ Args: { "p_page_id": string }; Returns: string | null
+                           },
+"meta_connections_list":
+{ Args: Record<PropertyKey, never>; Returns: { tenant_id: string; page_id: string; last_sync_at: string | null }[]
+                           },
+"ingest_meta_lead":
+{ Args: { "p_tenant": string,"p_leadgen_id": string,"p_form_id": string | null,"p_created_time": string | null,"p_full_name": string | null,"p_phone": string | null,"p_note": string | null,"p_source_detail": string | null }; Returns: Json
+                           },
+"meta_record_status":
+{ Args: { "p_tenant": string,"p_ok": boolean,"p_error"?: string | null,"p_synced"?: boolean }; Returns: undefined
                            },
 "distribute_day":
 { Args: { "p_day"?: string }; Returns: number

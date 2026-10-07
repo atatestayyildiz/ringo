@@ -559,6 +559,45 @@ async function main() {
         return true;
       });
     }
+    // Meta webhook: imza zorunlu. META_APP_SECRET tanımsızsa 503 de "reddedildi" sayılır.
+    const rejected = (r) => (r.status === 401 || r.status === 503 ? true : `durum ${r.status}`);
+    await check(GH, "meta webhook: imzasız POST reddedilir (401)", async () => {
+      return rejected(await rawRequest("POST", "/api/meta/webhook", {}, { object: "page", entry: [] }));
+    });
+    await check(GH, "meta webhook: yanlış imzalı POST reddedilir (401)", async () => {
+      const sig = `sha256=${createHmac("sha256", randomBytes(16)).update("{}").digest("hex")}`;
+      return rejected(await rawRequest("POST", "/api/meta/webhook", { "x-hub-signature-256": sig }, "{}"));
+    });
+    await check(GH, "meta webhook: bozuk imza öneki reddedilir", async () => {
+      return rejected(await rawRequest("POST", "/api/meta/webhook", { "x-hub-signature-256": "sha1=abc" }, "{}"));
+    });
+    await check(GH, "meta webhook: yanlış verify token GET 403", async () => {
+      const r = await rawRequest("GET", `/api/meta/webhook?hub.mode=subscribe&hub.verify_token=${randomUUID()}&hub.challenge=1234`);
+      return r.status === 403 || r.status === 503 ? true : `durum ${r.status}`;
+    });
+    await check(GH, "meta webhook: verify token olmadan GET 403", async () => {
+      const r = await rawRequest("GET", "/api/meta/webhook");
+      return r.status === 403 || r.status === 503 ? true : `durum ${r.status}`;
+    });
+    await check(GH, "cron/meta-sync: Authorization yok 401", async () => {
+      const r = await rawRequest("GET", "/api/cron/meta-sync");
+      return r.status === 401 ? true : `durum ${r.status}`;
+    });
+    await check(GH, "cron/meta-sync: yanlış Bearer 401", async () => {
+      const r = await rawRequest("POST", "/api/cron/meta-sync?hours=168", { authorization: `Bearer ${randomUUID()}` });
+      return r.status === 401 ? true : `durum ${r.status}`;
+    });
+    await check(GH, "gizlilik: oturumsuz 200", async () => {
+      const r = await rawRequest("GET", "/gizlilik");
+      return r.status === 200 ? true : `durum ${r.status}`;
+    });
+    for (const p of ["/api/meta", "/api/meta/webhook/x", "/api/meta/webhookx", "/api/meta%2fwebhook", "/gizlilik-x", "/gizlilik/x", "/GIZLILIK"]) {
+      await check(GH, `meta/gizlilik muafiyeti kaçamağı yok: ${p}`, async () => {
+        const r = await rawRequest("GET", p);
+        if (isOkData(r)) return `200 döndü (${String(r.headers["content-type"] ?? "")})`;
+        return true;
+      });
+    }
     await check(GH, "export/customers: oturumsuz veri yok", async () => {
       const r = await rawRequest("GET", "/api/export/customers");
       return isOkData(r) ? "200 döndü" : true;
