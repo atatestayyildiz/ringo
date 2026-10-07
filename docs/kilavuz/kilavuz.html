@@ -250,9 +250,9 @@
   <li><b>Müşteriler</b> sayfasında <kbd>Excel içe aktar</kbd> düğmesine basın.</li>
   <li>Dosyayı (.xlsx veya .csv, ilk satır başlık, en fazla 10 MB) alana bırakın ya da <kbd>Dosya seç</kbd> ile seçin.</li>
   <li>Program sütunları tahmin eder (ad, soyad, telefon, operatör, doğum tarihi, tarih, not). Yanlışsa eşlemeyi düzeltin. Ad ve soyad ayrı sütundaysa birleştirilir.</li>
-  <li><b>Önizleme</b> her satırı <b>Geçerli</b>, <b>Geçersiz</b> veya <b>Mükerrer</b> diye işaretler. Mükerrer, o telefonun zaten kayıtlı olduğu demektir ve eklenmez.</li>
+  <li><b>Önizleme</b> her satırı <b>Geçerli</b>, <b>Geçersiz</b> veya <b>Mükerrer</b> diye işaretler. Mükerrer, o telefonun zaten kayıtlı olduğu demektir ve eklenmez. İstisna: işi kapanmış (tamamlandı, ulaşılamadı, uygun değil) bir müşteri, son işleminden sonraki başvuru tarihiyle tekrar gelirse <b>yeniden açılır</b> ve ilk dağıtımda yeniden aranacaklara girer. Bunun için dosyada başvuru tarihi sütunu olmalıdır; tarih yoksa kayıt mükerrer sayılır. Randevusu bugün veya ileride olan müşteri yeniden açılmaz.</li>
   <li>Kaynak açıklaması olarak form adını yazın (örneğin reklam adı). Raporlarda kaynak bu adla görünür.</li>
-  <li>Onaylayın ve işlem bitene kadar sayfayı kapatmayın. Sonunda kaç kayıt eklendiği, kaçının mükerrer veya geçersiz olduğu gösterilir.</li>
+  <li>Onaylayın ve işlem bitene kadar sayfayı kapatmayın. Sonunda kaç kayıt eklendiği, kaçının yeniden açıldığı, kaçının mükerrer veya geçersiz olduğu gösterilir.</li>
 </ol>
 
 <h2>3.3 Havuz</h2>

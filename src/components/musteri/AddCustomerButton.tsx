@@ -10,7 +10,7 @@ import { OPERATOR_LABEL } from "./shared";
 import "./musteri.css";
 import { toUserMessage } from "@/lib/errors";
 
-type Result = { inserted: number; duplicates: number; invalid: number; invalid_rows: { index: number; reason: string }[] };
+type Result = { inserted: number; duplicates: number; reopened?: number; invalid: number; invalid_rows: { index: number; reason: string }[] };
 
 export function AddCustomerButton() {
   const [open, setOpen] = useState(false);

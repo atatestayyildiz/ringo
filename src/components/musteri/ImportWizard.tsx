@@ -14,8 +14,8 @@ import { toUserMessage } from "@/lib/errors";
 const CHUNK = 500;
 const FIELD_ORDER: FieldKey[] = ["full_name", "first_name", "last_name", "phone", "phone_alt", "operator", "birth_date", "applied_at", "note"];
 
-type RpcResult = { inserted: number; duplicates: number; invalid: number; invalid_rows: { index: number; reason: string }[] };
-type Summary = { inserted: number; duplicates: number; invalid: { sheetRow: number; name: string; phone: string; reason: string }[]; stoppedAt?: string };
+type RpcResult = { inserted: number; duplicates: number; reopened: number; invalid: number; invalid_rows: { index: number; reason: string }[] };
+type Summary = { inserted: number; duplicates: number; reopened: number; invalid: { sheetRow: number; name: string; phone: string; reason: string }[]; stoppedAt?: string };
 
 type Step = "upload" | "map" | "preview" | "running" | "done";
 
@@ -90,7 +90,7 @@ export function ImportWizard() {
   const run = async () => {
     const rows = prepared;
     const parts = chunk(rows, CHUNK);
-    const sum: Summary = { inserted: 0, duplicates: 0, invalid: [] };
+    const sum: Summary = { inserted: 0, duplicates: 0, reopened: 0, invalid: [] };
     setSummary(null);
     setStep("running");
     setProgress({ done: 0, total: rows.length });
@@ -109,6 +109,7 @@ export function ImportWizard() {
       const r = data as unknown as RpcResult;
       sum.inserted += r.inserted;
       sum.duplicates += r.duplicates;
+      sum.reopened += r.reopened ?? 0;
       for (const bad of r.invalid_rows ?? []) {
         const src = part[bad.index];
         if (src) {
@@ -315,7 +316,8 @@ export function ImportWizard() {
           </div>
           <p style={{ color: "var(--ink-3)", fontSize: 12.5, marginTop: 8 }}>
             İlk {Math.min(20, prepared.length)} satır gösteriliyor, toplam {prepared.length}. Sistemde zaten kayıtlı numaralar
-            aktarım sırasında mükerrer sayılır ve eklenmez.
+            mükerrer sayılır ve eklenmez. İşi kapanmış bir müşteri, son işleminden sonraki tarihli bir formla tekrar gelirse
+            yeniden aranacaklara alınır (başvuru tarihi sütunu gerekir).
           </p>
           <div style={{ marginTop: 16, maxWidth: 420 }}>
             <Input
@@ -360,6 +362,10 @@ export function ImportWizard() {
             <div className="mu-stat">
               <b>{summary.inserted}</b>
               <span>Eklendi</span>
+            </div>
+            <div className="mu-stat">
+              <b>{summary.reopened}</b>
+              <span>Yeniden açıldı</span>
             </div>
             <div className="mu-stat">
               <b>{summary.duplicates}</b>
