@@ -37,12 +37,14 @@ describe("graph", () => {
   });
   it("formlar imleçle sayfalanır; paging.next adresi kullanılmaz", async () => {
     const { f, calls } = fakeFetch(
+      ok({ access_token: "PT" }),
       ok({ data: [{ id: "f1" }], paging: { cursors: { after: "C1" }, next: `https://graph.facebook.com/x?access_token=${TOKEN}` } }),
       ok({ data: [{ id: "f2" }], paging: { cursors: { after: "C2" } } }),
     );
     expect(await createGraph(TOKEN, f).forms("77")).toEqual(["f1", "f2"]);
-    expect(calls[1].url).toContain("after=C1");
+    expect(calls[2].url).toContain("after=C1");
     expect(calls.every((c) => !c.url.includes(TOKEN))).toBe(true);
+    expect((calls[1].init.headers as Record<string, string>).authorization).toBe("Bearer PT");
   });
   it("başvurular zaman filtresiyle istenir", async () => {
     const { f, calls } = fakeFetch(ok({ data: [{ id: "L1" }] }));

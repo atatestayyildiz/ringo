@@ -49,7 +49,7 @@ describe("syncConnections", () => {
     const g = mkGraph();
     const sum = await syncConnections(f.admin, g, [{ tenant_id: "t1", page_id: "111", last_sync_at: null }], { now });
     expect(sum).toMatchObject({ connections: 1, failed: 0, leads: 3, inserted: 2, seen: 1 });
-    expect(g.leads).toHaveBeenCalledWith("F1", nowSec - 24 * 3600);
+    expect(g.leads).toHaveBeenCalledWith("F1", nowSec - 24 * 3600, "111");
     const ing = f.calls.filter((c) => c.fn === "ingest_meta_lead");
     expect(ing.map((c) => c.args.p_leadgen_id)).toEqual(["L1", "L2", "L3"]);
     expect(ing[0].args).toMatchObject({ p_phone: "+905551112233", p_form_id: "F1" });
@@ -92,6 +92,6 @@ describe("processSyncRequest", () => {
     const res = await processSyncRequest(r("Bearer s", "?hours=9999"), { secret: "s", graph: g, getAdmin: f.getAdmin, now });
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ ok: true, leads: 3 });
-    expect(g.leads).toHaveBeenCalledWith("F1", nowSec - 168 * 3600);
+    expect(g.leads).toHaveBeenCalledWith("F1", nowSec - 168 * 3600, "111");
   });
 });

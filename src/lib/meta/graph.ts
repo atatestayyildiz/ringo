@@ -36,9 +36,9 @@ export function isPermanentGraphError(e: unknown): boolean {
 }
 
 export type Graph = {
-  lead(leadgenId: string): Promise<GraphLead>;
+  lead(leadgenId: string, pageId?: string): Promise<GraphLead>;
   forms(pageId: string): Promise<string[]>;
-  leads(formId: string, sinceSec: number): Promise<GraphLead[]>;
+  leads(formId: string, sinceSec: number, pageId?: string): Promise<GraphLead[]>;
   pageToken(pageId: string): Promise<string>;
   subscribe(pageId: string, pageToken: string): Promise<void>;
 };
@@ -81,12 +81,25 @@ export function createGraph(token: string, fetchImpl: typeof fetch = fetch, vers
     return json as T;
   }
 
-  async function paged<T>(path: string, params: Record<string, string>): Promise<T[]> {
+  // Meta, form ve başvuru okumada sistem kullanıcısı anahtarını değil sayfa anahtarını ister.
+  const pageTokens = new Map<string, string>();
+  async function tokenFor(pageId?: string): Promise<string | undefined> {
+    if (!pageId) return undefined;
+    const hit = pageTokens.get(pageId);
+    if (hit) return hit;
+    const r = await call<{ access_token?: string }>(encodeURIComponent(pageId), { params: { fields: "access_token" } });
+    if (!r.access_token) throw new GraphError(403, null);
+    pageTokens.set(pageId, r.access_token);
+    return r.access_token;
+  }
+
+  async function paged<T>(path: string, params: Record<string, string>, tok?: string): Promise<T[]> {
     const out: T[] = [];
     let after: string | undefined;
     for (let i = 0; i < MAX_PAGES; i++) {
       const page = await call<{ data?: T[]; paging?: { cursors?: { after?: string }; next?: string } }>(path, {
         params: { ...params, limit: "100", ...(after ? { after } : {}) },
+        token: tok,
       });
       out.push(...(page.data ?? []));
       // `paging.next` adresi kullanılmaz (anahtar taşıyabilir); yalnız imleç.
@@ -97,13 +110,17 @@ export function createGraph(token: string, fetchImpl: typeof fetch = fetch, vers
   }
 
   return {
-    lead: (id) => call<GraphLead>(encodeURIComponent(id), { params: { fields: LEAD_FIELDS } }),
-    forms: async (pageId) => (await paged<{ id: string }>(`${encodeURIComponent(pageId)}/leadgen_forms`, { fields: "id" })).map((f) => f.id),
-    leads: (formId, sinceSec) =>
-      paged<GraphLead>(`${encodeURIComponent(formId)}/leads`, {
-        fields: LEAD_FIELDS,
-        filtering: JSON.stringify([{ field: "time_created", operator: "GREATER_THAN", value: Math.max(0, Math.floor(sinceSec)) }]),
-      }),
+    lead: async (id, pageId) => call<GraphLead>(encodeURIComponent(id), { params: { fields: LEAD_FIELDS }, token: await tokenFor(pageId) }),
+    forms: async (pageId) => (await paged<{ id: string }>(`${encodeURIComponent(pageId)}/leadgen_forms`, { fields: "id" }, await tokenFor(pageId))).map((f) => f.id),
+    leads: async (formId, sinceSec, pageId) =>
+      paged<GraphLead>(
+        `${encodeURIComponent(formId)}/leads`,
+        {
+          fields: LEAD_FIELDS,
+          filtering: JSON.stringify([{ field: "time_created", operator: "GREATER_THAN", value: Math.max(0, Math.floor(sinceSec)) }]),
+        },
+        await tokenFor(pageId),
+      ),
     pageToken: async (pageId) => {
       const r = await call<{ access_token?: string }>(encodeURIComponent(pageId), { params: { fields: "access_token" } });
       if (!r.access_token) throw new GraphError(403, null);

@@ -49,7 +49,7 @@ export async function syncConnections(
       const since = sinceFor(c, now, opts.hours);
       const forms = await graph.forms(c.page_id);
       for (const formId of forms) {
-        const leads = await graph.leads(formId, since);
+        const leads = await graph.leads(formId, since, c.page_id);
         for (const lead of leads) {
           const r = await ingestLead(admin, c.tenant_id, lead, { formId });
           sum.leads++;

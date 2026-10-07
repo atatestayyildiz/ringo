@@ -86,7 +86,7 @@ export async function processWebhookRequest(req: Request, deps: MetaDeps): Promi
       }
       const tenantId = tenant.data;
       try {
-        const lead = await deps.graph.lead(leadgenId);
+        const lead = await deps.graph.lead(leadgenId, pageId);
         const result = await ingestLead(admin, tenantId, lead, { leadgenId, formId });
         bump(result);
         await recordStatus(admin, tenantId, true, null);
