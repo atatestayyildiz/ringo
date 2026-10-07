@@ -113,7 +113,7 @@ test.describe("kilit ve açma", () => {
     await expect(page).toHaveURL(/\/bugun/);
   });
 
-  test("5 yanlış PIN oturumu kapatır; e-posta + şifre ile giriş kilidi kaldırır", async ({ page }) => {
+  test("5 yanlış PIN oturumu kapatır; şifreyle giriş kilidi açmaz, yönetici PIN'i sıfırlayınca açılır", async ({ page }) => {
     await loginOk(page, "can");
     await lockViaButton(page);
     for (let i = 4; i >= 1; i--) {
@@ -123,18 +123,29 @@ test.describe("kilit ve açma", () => {
     await typePin(page, "975318");
     await expect(page).toHaveURL(/\/giris\?hata=pin/);
     await page.goto("/bugun");
-    await expect(page).toHaveURL(/\/giris$/);
+    await expect(page).toHaveURL(/\/giris(\?.*)?$/);
 
+    // Şifreyle giriş kilidi kaldırmaz: panel kilitli kalır
     await login(page, "can");
+    await expect(page).toHaveURL(/\/kilit$/);
+
+    // Yönetici kilidi sıfırlayınca (burada doğrudan DB) panel açılır
+    await resetDemoLocks();
+    await page.goto("/bugun");
     await expect(page).toHaveURL(/\/bugun/);
   });
 
-  test("PIN'imi unuttum: girişe döner, şifreyle giriş kilidi kaldırır", async ({ page }) => {
+  test("PIN'imi unuttum: girişe döner, şifreyle giriş kilidi açmaz, yönetici sıfırlayınca açılır", async ({ page }) => {
     await loginOk(page, "can");
     await lockViaButton(page);
     await page.getByRole("button", { name: "PIN'imi unuttum" }).click();
-    await expect(page).toHaveURL(/\/giris$/);
-    await loginOk(page, "can");
+    await expect(page).toHaveURL(/\/giris(\?.*)?$/);
+    await login(page, "can");
+    await expect(page).toHaveURL(/\/kilit$/);
+
+    await resetDemoLocks();
+    await page.goto("/bugun");
+    await expect(page).toHaveURL(/\/bugun/);
   });
 });
 
