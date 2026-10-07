@@ -424,7 +424,7 @@ isOneToOne: true
 { Args: Record<PropertyKey, never>; Returns: { tenant_id: string; page_id: string; last_sync_at: string | null }[]
                            },
 "ingest_meta_lead":
-{ Args: { "p_tenant": string,"p_leadgen_id": string,"p_form_id": string | null,"p_created_time": string | null,"p_full_name": string | null,"p_phone": string | null,"p_note": string | null,"p_source_detail": string | null }; Returns: Json
+{ Args: { "p_tenant": string,"p_leadgen_id": string,"p_form_id": string | null,"p_created_time": string | null,"p_full_name": string | null,"p_phone": string | null,"p_note": string | null,"p_source_detail": string | null,"p_operator"?: string | null }; Returns: Json
                            },
 "meta_record_status":
 { Args: { "p_tenant": string,"p_ok": boolean,"p_error"?: string | null,"p_synced"?: boolean }; Returns: undefined

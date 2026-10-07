@@ -1,7 +1,7 @@
 -- Meta Lead Ads (migration 20261007000300_meta_leads.sql)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(66);
+select plan(68);
 
 insert into auth.users (instance_id, id, aud, role, email) values
   ('00000000-0000-0000-0000-000000000000', '20000000-0000-4000-8000-0000000000e1', 'authenticated', 'authenticated', 'ml-mgr1@test.test'),
@@ -52,9 +52,9 @@ select ok(not has_function_privilege('anon', 'public.meta_connections_list()', '
 select ok(not has_function_privilege('authenticated', 'public.meta_connections_list()', 'EXECUTE'), 'authenticated meta_connections_list çağıramaz');
 select ok(has_function_privilege('service_role', 'public.meta_connections_list()', 'EXECUTE'), 'service_role meta_connections_list çağırır');
 
-select ok(not has_function_privilege('anon', 'public.ingest_meta_lead(uuid, text, text, timestamptz, text, text, text, text)', 'EXECUTE'), 'anon ingest_meta_lead çağıramaz');
-select ok(not has_function_privilege('authenticated', 'public.ingest_meta_lead(uuid, text, text, timestamptz, text, text, text, text)', 'EXECUTE'), 'authenticated ingest_meta_lead çağıramaz');
-select ok(has_function_privilege('service_role', 'public.ingest_meta_lead(uuid, text, text, timestamptz, text, text, text, text)', 'EXECUTE'), 'service_role ingest_meta_lead çağırır');
+select ok(not has_function_privilege('anon', 'public.ingest_meta_lead(uuid, text, text, timestamptz, text, text, text, text, text)', 'EXECUTE'), 'anon ingest_meta_lead çağıramaz');
+select ok(not has_function_privilege('authenticated', 'public.ingest_meta_lead(uuid, text, text, timestamptz, text, text, text, text, text)', 'EXECUTE'), 'authenticated ingest_meta_lead çağıramaz');
+select ok(has_function_privilege('service_role', 'public.ingest_meta_lead(uuid, text, text, timestamptz, text, text, text, text, text)', 'EXECUTE'), 'service_role ingest_meta_lead çağırır');
 
 select ok(not has_function_privilege('anon', 'public.meta_record_status(uuid, boolean, text, boolean)', 'EXECUTE'), 'anon meta_record_status çağıramaz');
 select ok(not has_function_privilege('authenticated', 'public.meta_record_status(uuid, boolean, text, boolean)', 'EXECUTE'), 'authenticated meta_record_status çağıramaz');
@@ -140,6 +140,12 @@ select is((select applied_at from public.customers where phone = '05327770010'),
 select is((select (r ->> 'customer_id')::uuid from ml_r1),
           (select id from public.customers where phone = '05327770010'), 'customer_id döner');
 
+-- operatör sorusu Operatör alanına yazılır
+select is(public.ingest_meta_lead('10000000-0000-4000-8000-0000000000e1', 'LG-OP', 'F-1',
+  now() - interval '1 hour', 'Kurgu Operatör', '05327770077', 'tutar: 50-100', 'Meta formu A', 'turkcell') ->> 'result', 'inserted', 'operatörlü başvuru inserted');
+select is((select operator || '|' || last_note from public.customers where phone = '05327770077'),
+          'TC|tutar: 50-100', 'operatör normalize edilip müşteriye yazıldı');
+
 -- idempotens
 select is(public.ingest_meta_lead('10000000-0000-4000-8000-0000000000e1', 'LG-1', 'F-1',
   '2026-10-06 10:00+03', 'Kurgu Yeni', '05327770010', null, 'Meta formu A'), '{"result": "seen"}'::jsonb, 'aynı başvuru ikinci kez seen');
@@ -163,7 +169,7 @@ select is(public.ingest_meta_lead('10000000-0000-4000-8000-0000000000e1', 'LG-4'
   now(), 'Kurgu Geçersiz', '12345', null, null), '{"result": "invalid", "customer_id": null}'::jsonb, 'geçersiz telefon invalid');
 select is((select string_agg(leadgen_id || ':' || result, ',' order by leadgen_id) from public.meta_leads
            where tenant_id = '10000000-0000-4000-8000-0000000000e1'),
-          'LG-1:inserted,LG-2:duplicate,LG-3:reopened,LG-4:invalid', 'meta_leads sonuçları');
+          'LG-1:inserted,LG-2:duplicate,LG-3:reopened,LG-4:invalid,LG-OP:inserted', 'meta_leads sonuçları');
 select ok(not exists (select 1 from public.audit_log where action = 'meta_lead' and data::text ~ '0532777'),
           'audit kaydında telefon yok');
 select isnt((select last_lead_at from public.meta_connections where tenant_id = '10000000-0000-4000-8000-0000000000e1'),

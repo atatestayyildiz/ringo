@@ -7,7 +7,7 @@ describe("mapLead", () => {
       { name: "full_name", values: ["Deniz Örnek"] },
       { name: "phone_number", values: ["p:+905550000000"] },
     ]);
-    expect(r).toEqual({ fullName: "Deniz Örnek", phone: "+905550000000", note: null });
+    expect(r).toEqual({ fullName: "Deniz Örnek", phone: "+905550000000", operator: null, note: null });
   });
   it("ad ve soyadı birleştirir; phone yedeği çalışır", () => {
     const r = mapLead([
@@ -38,8 +38,8 @@ describe("mapLead", () => {
     expect(r.note).toBe("hangi_model: Model A · butce: 10 bin, 15 bin");
   });
   it("eksik ya da bozuk veri hata vermez", () => {
-    expect(mapLead(undefined)).toEqual({ fullName: null, phone: null, note: null });
-    expect(mapLead([{ name: "phone_number" }, {}, { name: "x", values: [] }] as never)).toEqual({ fullName: null, phone: null, note: null });
+    expect(mapLead(undefined)).toEqual({ fullName: null, phone: null, operator: null, note: null });
+    expect(mapLead([{ name: "phone_number" }, {}, { name: "x", values: [] }] as never)).toEqual({ fullName: null, phone: null, operator: null, note: null });
   });
   it("stripPhonePrefix", () => {
     expect(stripPhonePrefix(" P:+90 555 ")).toBe("+90 555");
@@ -66,5 +66,19 @@ describe("mapLead soru türüne göre", () => {
   });
   it("tür bilinmiyorsa standart anahtarlara düşer", () => {
     expect(mapLead([{ name: "adi_soyadi", values: ["Deniz Örnek"] }], {}).fullName).toBeNull();
+  });
+});
+
+describe("mapLead operatör", () => {
+  it("anahtarında operatör geçen soru Operatör alanına gider, notta tekrarlanmaz", () => {
+    const r = mapLead([
+      { name: "tutar", values: ["50-100"] },
+      { name: "hangi_operatörü_kullanıyorsunuz", values: ["turkcell"] },
+    ]);
+    expect(r.operator).toBe("turkcell");
+    expect(r.note).toBe("tutar: 50-100");
+  });
+  it("operatör sorusu yoksa null", () => {
+    expect(mapLead([{ name: "tutar", values: ["50-100"] }]).operator).toBeNull();
   });
 });

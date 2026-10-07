@@ -40,6 +40,7 @@ export async function ingestLead(
     p_full_name: m.fullName,
     p_phone: m.phone,
     p_note: m.note,
+    p_operator: m.operator,
     p_source_detail: formId ? `Meta form ${formId}` : "Meta form",
   });
   if (error) {
