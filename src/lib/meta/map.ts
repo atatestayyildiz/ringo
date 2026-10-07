@@ -16,6 +16,15 @@ export function stripPhonePrefix(v: string): string {
   return v.trim().replace(/^p:/i, "").trim();
 }
 
+/** Form sorusunun iç anahtarını (tutar, telefonno, hangi_model) okunaklı etikete çevirir. */
+export function prettyLabel(name: string): string {
+  const k = name.toLowerCase();
+  if (k.includes("tutar")) return "Tutar";
+  if (k.includes("telefon") || /^tel(_|\s|$|no)/.test(k)) return "Telefon";
+  const plain = name.replace(/[_\s]+/g, " ").trim();
+  return plain.charAt(0).toLocaleUpperCase("tr-TR") + plain.slice(1);
+}
+
 /** Graph `field_data` -> müşteri alanları. Diğer sorular notta `soru: cevap` biçiminde ` · ` ile birleşir. */
 export function mapLead(fieldData: FieldData | undefined | null, types: QuestionTypes = {}): MappedLead {
   const fields = Array.isArray(fieldData) ? fieldData : [];
@@ -40,7 +49,7 @@ export function mapLead(fieldData: FieldData | undefined | null, types: Question
       operator = answer;
       continue;
     }
-    if (answer) extras.push(`${name}: ${answer}`);
+    if (answer) extras.push(`${prettyLabel(name)}: ${answer}`);
   }
   const full = byName.get("full_name") ?? "";
   const joined = [byName.get("first_name"), byName.get("last_name")].filter(Boolean).join(" ");

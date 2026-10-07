@@ -35,7 +35,7 @@ describe("mapLead", () => {
       { name: "butce", values: ["10 bin", "15 bin"] },
       { name: "bos", values: [""] },
     ]);
-    expect(r.note).toBe("hangi_model: Model A · butce: 10 bin, 15 bin");
+    expect(r.note).toBe("Hangi model: Model A · Butce: 10 bin, 15 bin");
   });
   it("eksik ya da bozuk veri hata vermez", () => {
     expect(mapLead(undefined)).toEqual({ fullName: null, phone: null, operator: null, note: null });
@@ -62,7 +62,7 @@ describe("mapLead soru türüne göre", () => {
     );
     expect(r.fullName).toBe("Deniz Örnek");
     expect(r.phone).toBe("+905550000000");
-    expect(r.note).toBe("tutar: 10-30 Bin₺ · telefonno: 05550000001");
+    expect(r.note).toBe("Tutar: 10-30 Bin₺ · Telefon: 05550000001");
   });
   it("tür bilinmiyorsa standart anahtarlara düşer", () => {
     expect(mapLead([{ name: "adi_soyadi", values: ["Deniz Örnek"] }], {}).fullName).toBeNull();
@@ -76,7 +76,7 @@ describe("mapLead operatör", () => {
       { name: "hangi_operatörü_kullanıyorsunuz", values: ["turkcell"] },
     ]);
     expect(r.operator).toBe("turkcell");
-    expect(r.note).toBe("tutar: 50-100");
+    expect(r.note).toBe("Tutar: 50-100");
   });
   it("operatör sorusu yoksa null", () => {
     expect(mapLead([{ name: "tutar", values: ["50-100"] }]).operator).toBeNull();

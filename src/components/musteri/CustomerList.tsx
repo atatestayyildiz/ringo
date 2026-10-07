@@ -107,14 +107,6 @@ export function CustomerList({
     <>
       {canSelect ? (
         <div className="mu-selbar">
-          {showSel ? (
-            <label className="mu-selall">
-              <input type="checkbox" ref={allRef} checked={allPicked} onChange={toggleAll} />
-              <span>Sayfadakilerin tümünü seç ({rows.length})</span>
-            </label>
-          ) : (
-            <span />
-          )}
           <Button
             size="sm"
             variant="soft"
@@ -126,6 +118,12 @@ export function CustomerList({
           >
             {selecting ? "Seçimi kapat" : "Seç"}
           </Button>
+          {showSel ? (
+            <label className="mu-selall">
+              <input type="checkbox" ref={allRef} checked={allPicked} onChange={toggleAll} />
+              <span>Sayfadakilerin tümünü seç ({rows.length})</span>
+            </label>
+          ) : null}
         </div>
       ) : null}
       <div className={`mu-colhead${showSel ? " mu-colhead-sel" : ""}`} aria-hidden="true">
