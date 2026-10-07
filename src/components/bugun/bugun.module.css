@@ -859,8 +859,18 @@
   .date {
     display: none;
   }
+  /* filtre hapları: eşit genişlikte 2 sütun, etiket solda sayı sağda; satırlar şeritle aynı sol/sağ kenara oturur */
   .legend {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+  }
+  .chip {
+    width: 100%;
+    padding: 0 14px;
+  }
+  .chip b {
+    margin-left: auto;
   }
 }
 
