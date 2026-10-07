@@ -30,9 +30,9 @@ export async function changePinAction(current: string, pin: string, again: strin
 }
 
 /** Profil > Güvenlik: otomatik kilit süresi (0 = kapalı). İzin verilen değerler DB'de. */
-export async function setAutoLockAction(minutes: number): Promise<Result> {
+export async function setAutoLockAction(minutes: number, mobile = false): Promise<Result> {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("set_my_auto_lock", { p_minutes: minutes });
+  const { error } = await supabase.rpc(mobile ? "set_my_auto_lock_mobile" : "set_my_auto_lock", { p_minutes: minutes });
   if (error) return { ok: false, error: toUserMessage(error) };
   revalidatePath("/profil");
   return { ok: true };

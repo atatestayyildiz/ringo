@@ -1,7 +1,7 @@
 -- Panel kilidi (migration 20261005001200_panel_lock.sql)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(72);
+select plan(75);
 
 insert into auth.users (instance_id, id, aud, role, email) values
   ('00000000-0000-0000-0000-000000000000', '20000000-0000-4000-8000-0000000000e1', 'authenticated', 'authenticated', 'lk-yonetici@test.test'),
@@ -60,7 +60,7 @@ select ok(not has_column_privilege('authenticated', 'public.members', 'locked_at
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000e2","role":"authenticated"}', true);
 set local role authenticated;
 
-select is(public.lock_status(), '{"locked": false, "has_pin": false, "auto_lock_minutes": 10}'::jsonb, 'ilk durum: PIN yok, açık, 10 dk');
+select is(public.lock_status(), '{"locked": false, "has_pin": false, "auto_lock_minutes": 10, "auto_lock_minutes_mobile": 0}'::jsonb, 'ilk durum: PIN yok, açık, bilgisayarda 10 dk, telefonda kapalı');
 select throws_ok($$select public.lock_me()$$, '22023', null, 'PIN yokken kilitlenemez');
 select throws_ok($$select public.set_my_pin('111111')$$, '22023', null, '111111 zayıf');
 select throws_ok($$select public.set_my_pin('000000')$$, '22023', null, '000000 (demo PIN) zayıf, RPC kabul etmez');
@@ -89,6 +89,9 @@ select lives_ok($$select public.set_my_pin('135790', '246810')$$, 'doğru mevcut
 select lives_ok($$select public.set_my_auto_lock(5)$$, 'otomatik kilit 5 dk');
 select throws_ok($$select public.set_my_auto_lock(7)$$, '22023', null, 'izin verilmeyen süre reddedilir');
 select is((public.lock_status() ->> 'auto_lock_minutes')::int, 5, 'süre kaydedildi');
+select lives_ok($$select public.set_my_auto_lock_mobile(15)$$, 'telefon otomatik kilit 15 dk');
+select throws_ok($$select public.set_my_auto_lock_mobile(7)$$, '22023', null, 'telefon için izin verilmeyen süre reddedilir');
+select is((public.lock_status() ->> 'auto_lock_minutes_mobile')::int, 15, 'telefon süresi kaydedildi, bilgisayar süresi ayrı kalır');
 
 -- ---------------------------------------------------------------------------
 -- Kilitliyken veri ve iş RPC reddi

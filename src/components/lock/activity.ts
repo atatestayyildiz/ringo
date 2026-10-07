@@ -12,7 +12,7 @@ export type Activity = { sid: string; t: number };
 export type LockMessage =
   | { type: "locked"; from: string }
   | { type: "unlocked"; from: string }
-  | { type: "minutes"; from: string; minutes: number };
+  | { type: "minutes"; from: string; minutes: number; mobile: boolean };
 
 /** Bu sekmenin kimliği: kendi gönderdiği mesajı yok saymak için. */
 export const TAB_ID = Math.random().toString(36).slice(2);
@@ -72,14 +72,23 @@ export function onLockMessage(cb: (msg: LockMessage) => void): () => void {
 
 export const AUTO_LOCK_EVENT = "telefoncu-autolock-change";
 
-/** Otomatik kilit süresi değişti: bu sekmeye (olay) ve diğer sekmelere (kanal) bildirir. */
-export function notifyAutoLockChanged(minutes: number) {
-  window.dispatchEvent(new CustomEvent<number>(AUTO_LOCK_EVENT, { detail: minutes }));
-  postLockMessage({ type: "minutes", from: TAB_ID, minutes });
+/** Telefon/tablet gibi dokunmatik birincil işaretçili cihaz: otomatik kilit için ayrı süre kullanılır. */
+export function isTouchDevice(): boolean {
+  try {
+    return window.matchMedia("(pointer: coarse)").matches;
+  } catch {
+    return false;
+  }
+}
+
+/** Otomatik kilit süresi değişti: bu sekmeye (olay) ve diğer sekmelere (kanal) bildirir. mobile: telefon ayarı mı. */
+export function notifyAutoLockChanged(minutes: number, mobile = false) {
+  window.dispatchEvent(new CustomEvent<{ minutes: number; mobile: boolean }>(AUTO_LOCK_EVENT, { detail: { minutes, mobile } }));
+  postLockMessage({ type: "minutes", from: TAB_ID, minutes, mobile });
 }
 
 /** lock_status() jsonb sonucunu güvenle çözer; üyelik yoksa null. */
-export type LockStatus = { locked: boolean; has_pin: boolean; auto_lock_minutes: number };
+export type LockStatus = { locked: boolean; has_pin: boolean; auto_lock_minutes: number; auto_lock_minutes_mobile: number };
 export function parseLockStatus(v: unknown): LockStatus | null {
   if (!v || typeof v !== "object" || Array.isArray(v)) return null;
   const o = v as Record<string, unknown>;
@@ -87,5 +96,6 @@ export function parseLockStatus(v: unknown): LockStatus | null {
     locked: o.locked === true,
     has_pin: o.has_pin === true,
     auto_lock_minutes: typeof o.auto_lock_minutes === "number" ? o.auto_lock_minutes : 0,
+    auto_lock_minutes_mobile: typeof o.auto_lock_minutes_mobile === "number" ? o.auto_lock_minutes_mobile : 0,
   };
 }

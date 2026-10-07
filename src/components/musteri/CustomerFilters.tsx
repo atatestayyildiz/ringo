@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SelectBase, STATUS_INFO } from "@/components/ui";
-import { ALL_STAGES, OPERATOR_LABEL, STAGE_LABEL, type MemberLite } from "./shared";
+import { ALL_STAGES, DELETED_MEMBER_NAME, OPERATOR_LABEL, STAGE_LABEL, type MemberLite } from "./shared";
 import "./musteri.css";
 
 export function CustomerFilters({ members }: { members: MemberLite[] }) {
@@ -79,7 +79,7 @@ export function CustomerFilters({ members }: { members: MemberLite[] }) {
       <SelectBase aria-label="Atanan çalışan" className={sel("atanan") ? "is-set" : undefined} value={sel("atanan")} onChange={(e) => push({ atanan: e.target.value })}>
         <option value="">Tüm çalışanlar</option>
         <option value="yok">Atanmamış</option>
-        {members.map((m) => (
+        {members.filter((m) => m.full_name !== DELETED_MEMBER_NAME).map((m) => (
           <option key={m.id} value={m.id}>
             {m.full_name}
           </option>

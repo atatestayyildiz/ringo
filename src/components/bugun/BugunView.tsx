@@ -16,6 +16,9 @@ import {
   useToast,
 } from "@/components/ui";
 import { formatDayMonth, formatTime, relativeTime } from "@/lib/format";
+import { createClient } from "@/lib/supabase/client";
+import { CustomerSheet } from "@/components/musteri/CustomerSheet";
+import { CUSTOMER_COLUMNS, type Customer, type MemberLite, type Viewer } from "@/components/musteri/shared";
 import { AppointmentDialog, type AppointmentValue } from "@/components/musteri/AppointmentDialog";
 import { CallbackDialog, ReasonDialog } from "./Dialogs";
 import { FocusCard } from "./FocusCard";
@@ -56,7 +59,51 @@ type Props = {
   team: TeamRow[] | null;
   /** Hatırlatma kartından gelen müşteri: odak kartında açılır */
   focusId?: string | null;
+  /** Müşteri kartı (sağ panel) için */
+  viewer: Viewer;
+  sheetMembers: MemberLite[];
 };
+
+/** Müşteri adı ya da baş harfine tıklayınca kart açılır. inButton: bir düğmenin içindeyse iç içe düğme olmasın diye düz span. */
+function CardLink({ onOpen, children, inButton = false }: { onOpen: () => void; children: React.ReactNode; inButton?: boolean }) {
+  const label = "Müşteri kartını aç";
+  if (inButton) {
+    return (
+      <span
+        className={styles.cardLink}
+        title={label}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpen();
+        }}
+      >
+        {children}
+      </span>
+    );
+  }
+  return (
+    <span
+      className={styles.cardLink}
+      role="button"
+      tabIndex={0}
+      title={label}
+      aria-label={label}
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+          onOpen();
+        }
+      }}
+    >
+      {children}
+    </span>
+  );
+}
 
 const QUEUE_LIMIT = 6;
 
@@ -107,6 +154,13 @@ export function BugunView(props: Props) {
   const { isManager, teamView, rules, pool, birthday, team, mode, claim } = props;
   const toast = useToast();
   const router = useRouter();
+  const [sheetCustomer, setSheetCustomer] = useState<Customer | null>(null);
+
+  async function openCard(id: string) {
+    const { data, error } = await createClient().from("customers").select(CUSTOMER_COLUMNS).eq("id", id).maybeSingle();
+    if (error || !data) return toast("Müşteri kartı açılamadı.", "error");
+    setSheetCustomer(data as Customer);
+  }
 
   const { todayKey } = props;
   const activeOf = (l: Item[]) => l.filter((i) => !isDeferred(i, todayKey));
@@ -306,7 +360,7 @@ export function BugunView(props: Props) {
     router.replace(`/bugun?m=${res.id}`, { scroll: false });
   }
 
-  const showClaim = mode === "free_pool" && !isManager && !teamView && claim !== null;
+  const showClaim = mode === "free_pool" && claim !== null;
   const atLimit = claim !== null && claim.open >= claim.limit;
 
   const matches = (i: Item) => filter === null || toneOf(i.status) === filter;
@@ -507,6 +561,7 @@ export function BugunView(props: Props) {
                 item={cur}
                 busy={busy}
                 onPick={pick}
+                onOpenCard={() => void openCard(cur.id)}
               />
             </section>
           ) : null}
@@ -556,9 +611,13 @@ export function BugunView(props: Props) {
                       });
                     }}
                   >
-                    <Avatar name={x.name} size={42} radius={15} />
+                    <CardLink inButton onOpen={() => void openCard(x.id)}>
+                      <Avatar name={x.name} size={42} radius={15} />
+                    </CardLink>
                     <div className={styles.qT}>
-                      <b>{x.name}</b>
+                      <CardLink inButton onOpen={() => void openCard(x.id)}>
+                        <b>{x.name}</b>
+                      </CardLink>
                       <span>
                         {x.operator ? <OperatorLogo operator={x.operator} /> : null}
                         {x.operator && (x.owner ?? x.appliedLabel) ? " · " : null}
@@ -603,9 +662,13 @@ export function BugunView(props: Props) {
                 <div id="ertelendi-liste" className={styles.deferredList}>
                   {deferredItems.map((x) => (
                     <div className={styles.row} key={x.id}>
-                      <Avatar name={x.name} size={40} radius={14} />
+                      <CardLink onOpen={() => void openCard(x.id)}>
+                        <Avatar name={x.name} size={40} radius={14} />
+                      </CardLink>
                       <div className={styles.rowT}>
-                        <b>{x.name}</b>
+                        <CardLink onOpen={() => void openCard(x.id)}>
+                          <b>{x.name}</b>
+                        </CardLink>
                         <span>
                           Geri arama{" "}
                           {relativeTime(x.nextCallAt).startsWith("yarın")
@@ -641,9 +704,13 @@ export function BugunView(props: Props) {
                     const future = last?.outcome === "callback";
                     return (
                       <div className={styles.row} key={x.id}>
-                        <Avatar name={x.name} size={40} radius={14} />
+                        <CardLink onOpen={() => void openCard(x.id)}>
+                          <Avatar name={x.name} size={40} radius={14} />
+                        </CardLink>
                         <div className={styles.rowT}>
-                          <b>{x.name}</b>
+                          <CardLink onOpen={() => void openCard(x.id)}>
+                            <b>{x.name}</b>
+                          </CardLink>
                           <span>
                             {future
                               ? `Geri arama ${relativeTime(x.nextCallAt)}`
@@ -796,6 +863,7 @@ export function BugunView(props: Props) {
           if (cur) void submit(cur, "disqualified", reason);
         }}
       />
+      <CustomerSheet customer={sheetCustomer} members={props.sheetMembers} viewer={props.viewer} onClose={() => setSheetCustomer(null)} />
     </>
   );
 }

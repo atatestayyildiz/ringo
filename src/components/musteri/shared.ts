@@ -74,6 +74,9 @@ export function formatAmount(raw: string | null | undefined): { value: string; u
   return { value: v, unit: v.includes("₺") ? "" : "₺" };
 }
 
+/** Silinen çalışanın geçmiş kayıtlarda kalan adı (anonymize_member). Seçim listelerinde gösterilmez. */
+export const DELETED_MEMBER_NAME = "Silinmiş kullanıcı";
+
 export const OPERATOR_LABEL: Record<string, string> = {
   VF: "Vodafone",
   TC: "Turkcell",

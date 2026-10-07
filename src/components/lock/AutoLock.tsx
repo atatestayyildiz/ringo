@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   AUTO_LOCK_EVENT,
+  isTouchDevice,
   onLockMessage,
   parseLockStatus,
   readActivity,
@@ -67,7 +68,7 @@ export function AutoLock({ sessionKey }: { sessionKey: string }) {
         const { data } = await createClient().rpc("lock_status");
         const st = parseLockStatus(data);
         if (!alive || !st) return;
-        minutesRef.current = st.auto_lock_minutes;
+        minutesRef.current = isTouchDevice() ? st.auto_lock_minutes_mobile : st.auto_lock_minutes;
         if (st.locked) lock(true);
         else check();
       } catch {
@@ -79,8 +80,8 @@ export function AutoLock({ sessionKey }: { sessionKey: string }) {
       if (document.visibilityState === "visible") void status();
     };
     const onMinutes = (e: Event) => {
-      const m = (e as CustomEvent<number>).detail;
-      if (typeof m === "number") minutesRef.current = m;
+      const d = (e as CustomEvent<{ minutes: number; mobile: boolean }>).detail;
+      if (d && typeof d.minutes === "number" && d.mobile === isTouchDevice()) minutesRef.current = d.minutes;
     };
 
     void status();
@@ -90,7 +91,7 @@ export function AutoLock({ sessionKey }: { sessionKey: string }) {
     window.addEventListener(AUTO_LOCK_EVENT, onMinutes);
     const off = onLockMessage((m) => {
       if (m.type === "locked") lock(true);
-      else if (m.type === "minutes") minutesRef.current = m.minutes;
+      else if (m.type === "minutes" && m.mobile === isTouchDevice()) minutesRef.current = m.minutes;
     });
 
     return () => {

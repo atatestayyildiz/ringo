@@ -84,10 +84,13 @@ export function FocusCard({
   item,
   busy,
   onPick,
+  onOpenCard,
 }: {
   item: Item;
   busy: boolean;
   onPick: (outcome: Outcome, note: string) => void;
+  /** Ad ya da baş harfe tıklayınca müşteri kartı (sağ panel) */
+  onOpenCard?: () => void;
 }) {
   const [note, setNote] = useState("");
   const open = isCallOpen(item.status);
@@ -103,9 +106,28 @@ export function FocusCard({
     <>
       <div className={styles.focusTop}>
         <div className={styles.who}>
-          <Avatar name={item.name} size={64} radius={22} />
+          <span
+            className={styles.cardLink}
+            role="button"
+            tabIndex={0}
+            title="Müşteri kartını aç"
+            aria-label="Müşteri kartını aç"
+            onClick={onOpenCard}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onOpenCard?.();
+              }
+            }}
+          >
+            <Avatar name={item.name} size={64} radius={22} />
+          </span>
           <div style={{ minWidth: 0 }}>
-            <h3>{item.name}</h3>
+            <h3>
+              <span className={styles.cardLink} onClick={onOpenCard} title="Müşteri kartını aç">
+                {item.name}
+              </span>
+            </h3>
             <div className={styles.num}>{formatPhone(item.phone)}</div>
             {item.owner ? (
               <div className={styles.owner}>{item.owner} listesinde</div>

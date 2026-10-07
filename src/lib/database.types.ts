@@ -495,6 +495,9 @@ isOneToOne: true
 "set_my_pin":
 { Args: { "p_new": string,"p_current_pin"?: string }; Returns: undefined
                            },
+"set_my_auto_lock_mobile":
+{ Args: { "p_minutes": number }; Returns: undefined
+                           },
 "set_my_auto_lock":
 { Args: { "p_minutes": number }; Returns: undefined
                            },

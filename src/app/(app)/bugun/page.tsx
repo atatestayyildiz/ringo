@@ -10,6 +10,8 @@ import {
   type TeamRow,
 } from "@/components/bugun/model";
 import type { CallStatus } from "@/components/ui";
+import type { MemberLite, Viewer } from "@/components/musteri/shared";
+import { can } from "@/lib/access";
 import { dayDiff, dayKey, formatDayMonth, formatWeekday, relativeTime, waLink } from "@/lib/format";
 import { getSessionContext } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -83,7 +85,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
     // Ortak havuz: kiracının tüm havuzu (Havuz sayfasıyla aynı kaynak, telefon yok)
     supabase.rpc("list_pool"),
     isManager ? supabase.rpc("day_summary", { p_day: today }) : Promise.resolve({ data: null }),
-    teamView ? supabase.from("members").select("id, full_name") : Promise.resolve({ data: [] }),
+    supabase.from("members").select("id, full_name, is_active"),
     mode === "free_pool" ? supabase.rpc("claim_queue_status") : Promise.resolve({ data: null }),
   ]);
 
@@ -152,8 +154,18 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
       }))
     : null;
 
+  const viewer: Viewer = {
+    id: member.id,
+    isManager,
+    canImport: can(member, "import_customers"),
+    canReassign: can(member, "reassign"),
+    canDelete: can(member, "delete_customers"),
+  };
+
   return (
     <BugunView
+      viewer={viewer}
+      sheetMembers={(membersRes.data ?? []) as MemberLite[]}
       greeting={greeting(now)}
       firstName={firstName(member.full_name)}
       dateLabel={formatWeekday(now)}

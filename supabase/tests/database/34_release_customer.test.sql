@@ -1,7 +1,7 @@
 -- Müşteriyi serbest bırakma (migration 20261007000800_release_customer.sql)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(16);
 
 insert into auth.users (instance_id, id, aud, role, email) values
   ('00000000-0000-0000-0000-000000000000', '20000000-0000-4000-8000-0000000000c1', 'authenticated', 'authenticated', 'rc-mgr@test.test'),
@@ -20,7 +20,9 @@ insert into public.customers (id, tenant_id, full_name, phone, call_status, assi
   ('40000000-0000-4000-8000-0000000000d2', '10000000-0000-4000-8000-0000000000c1', 'Kurgu Başkasının', '05327772002', 'pending', '30000000-0000-4000-8000-0000000000c3', 0),
   ('40000000-0000-4000-8000-0000000000d3', '10000000-0000-4000-8000-0000000000c1', 'Kurgu Kapalı', '05327772003', 'done', '30000000-0000-4000-8000-0000000000c2', 0),
   ('40000000-0000-4000-8000-0000000000d4', '10000000-0000-4000-8000-0000000000c1', 'Kurgu Yönetici', '05327772004', 'retry', '30000000-0000-4000-8000-0000000000c3', 0),
-  ('40000000-0000-4000-8000-0000000000d5', '10000000-0000-4000-8000-0000000000c1', 'Kurgu Sahipsiz', '05327772005', 'pending', null, 0);
+  ('40000000-0000-4000-8000-0000000000d5', '10000000-0000-4000-8000-0000000000c1', 'Kurgu Sahipsiz', '05327772005', 'pending', null, 0),
+  ('40000000-0000-4000-8000-0000000000d6', '10000000-0000-4000-8000-0000000000c1', 'Kurgu Serbest', '05327772006', 'pending', '30000000-0000-4000-8000-0000000000c2', 1),
+  ('40000000-0000-4000-8000-0000000000d7', '10000000-0000-4000-8000-0000000000c1', 'Kurgu Elle', '05327772007', 'retry', '30000000-0000-4000-8000-0000000000c2', 1);
 
 insert into public.daily_assignments (tenant_id, day, customer_id, member_id, position) values
   ('10000000-0000-4000-8000-0000000000c1', public.tr_today(), '40000000-0000-4000-8000-0000000000d1', '30000000-0000-4000-8000-0000000000c2', 1),
@@ -58,6 +60,20 @@ reset role;
 
 select is((select count(*)::int from public.daily_assignments where customer_id = '40000000-0000-4000-8000-0000000000d4'),
           0, 'yöneticinin bıraktığı müşterinin günlük satırı da silinir');
+
+-- Serbest havuz ve elle dağıtımda müşteri havuza (bekleme) değil, sahipsiz bekleyen olarak sıraya döner
+update public.tenant_settings set distribution_mode = 'free_pool' where tenant_id = '10000000-0000-4000-8000-0000000000c1';
+select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000c2","role":"authenticated"}', true);
+set local role authenticated;
+select is((public.release_customer('40000000-0000-4000-8000-0000000000d6')).call_status, 'pending', 'serbest havuz modunda bırakılan müşteri sıraya (pending) döner');
+reset role;
+select is((select assigned_to is null and next_call_at <= now() from public.customers where id = '40000000-0000-4000-8000-0000000000d6'),
+          true, 'sıradaki müşteri sahipsiz ve vakti gelmiş');
+update public.tenant_settings set distribution_mode = 'manual' where tenant_id = '10000000-0000-4000-8000-0000000000c1';
+select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000c2","role":"authenticated"}', true);
+set local role authenticated;
+select is((public.release_customer('40000000-0000-4000-8000-0000000000d7')).call_status, 'pending', 'elle dağıtımda da sahipsiz pending olur');
+reset role;
 
 select * from finish();
 rollback;

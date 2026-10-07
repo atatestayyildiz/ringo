@@ -1120,3 +1120,18 @@
     max-height: 60vh;
   }
 }
+
+/* ad ve baş harf: müşteri kartını açar */
+.cardLink {
+  display: inline-flex;
+  cursor: pointer;
+  border-radius: 12px;
+}
+.cardLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.cardLink:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}

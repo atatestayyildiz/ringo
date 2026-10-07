@@ -22,7 +22,9 @@ export default async function Page() {
     .maybeSingle();
   const { data: pushData } = await supabase.rpc("push_status");
   const { data: lockData } = await supabase.rpc("lock_status");
-  const autoLockMinutes = parseLockStatus(lockData)?.auto_lock_minutes ?? 10;
+  const lockSt = parseLockStatus(lockData);
+  const autoLockMinutes = lockSt?.auto_lock_minutes ?? 10;
+  const autoLockMinutesMobile = lockSt?.auto_lock_minutes_mobile ?? 0;
 
   const isManager = ctx.member.role === "manager";
 
@@ -55,7 +57,7 @@ export default async function Page() {
           <PasswordCard />
         </div>
         <div className={`${s.cell} ${s.pw}`}>
-          <SecurityCard autoLockMinutes={autoLockMinutes} />
+          <SecurityCard autoLockMinutes={autoLockMinutes} autoLockMinutesMobile={autoLockMinutesMobile} />
         </div>
       </div>
     </>

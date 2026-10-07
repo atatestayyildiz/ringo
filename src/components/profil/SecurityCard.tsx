@@ -17,10 +17,11 @@ const OPTIONS = [
 const digitsOnly = (v: string) => v.replace(/\D/g, "").slice(0, 6);
 
 /** Profil > Güvenlik: panel PIN'i değiştirme ve otomatik kilit süresi. */
-export function SecurityCard({ autoLockMinutes }: { autoLockMinutes: number }) {
+export function SecurityCard({ autoLockMinutes, autoLockMinutesMobile }: { autoLockMinutes: number; autoLockMinutesMobile: number }) {
   const toast = useToast();
   const [pending, start] = useTransition();
   const [minutes, setMinutes] = useState(autoLockMinutes);
+  const [minutesMobile, setMinutesMobile] = useState(autoLockMinutesMobile);
   const [current, setCurrent] = useState("");
   const [pin, setPin] = useState("");
   const [again, setAgain] = useState("");
@@ -49,16 +50,18 @@ export function SecurityCard({ autoLockMinutes }: { autoLockMinutes: number }) {
     });
   };
 
-  const changeMinutes = (v: number) => {
-    const prev = minutes;
-    setMinutes(v);
+  const changeMinutes = (v: number, mobile = false) => {
+    const prev = mobile ? minutesMobile : minutes;
+    const set = mobile ? setMinutesMobile : setMinutes;
+    const where = mobile ? "Telefonda" : "Bilgisayarda";
+    set(v);
     start(async () => {
-      const res = await setAutoLockAction(v);
+      const res = await setAutoLockAction(v, mobile);
       if (res.ok) {
-        notifyAutoLockChanged(v);
-        toast(v === 0 ? "Otomatik kilit kapatıldı." : `Panel ${v} dakika hareketsizlikte kilitlenir.`);
+        notifyAutoLockChanged(v, mobile);
+        toast(v === 0 ? `${where} otomatik kilit kapatıldı.` : `${where} panel ${v} dakika hareketsizlikte kilitlenir.`);
       } else {
-        setMinutes(prev);
+        set(prev);
         toast(res.error, "error");
       }
     });
@@ -70,10 +73,22 @@ export function SecurityCard({ autoLockMinutes }: { autoLockMinutes: number }) {
       <p className={s.sub}>Panel kilidi PIN&apos;i ve hareketsizlikte otomatik kilit.</p>
       <div className={s.formStack}>
         <Select
-          label="Otomatik kilit"
+          label="Otomatik kilit, bilgisayar"
           value={String(minutes)}
           disabled={pending}
           onChange={(e) => changeMinutes(Number(e.target.value))}
+        >
+          {OPTIONS.map((o) => (
+            <option key={o.v} value={String(o.v)}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+        <Select
+          label="Otomatik kilit, telefon"
+          value={String(minutesMobile)}
+          disabled={pending}
+          onChange={(e) => changeMinutes(Number(e.target.value), true)}
         >
           {OPTIONS.map((o) => (
             <option key={o.v} value={String(o.v)}>

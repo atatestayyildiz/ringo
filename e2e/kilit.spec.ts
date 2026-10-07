@@ -198,10 +198,10 @@ test.describe("profil güvenlik kartı", () => {
     await card.getByRole("button", { name: "PIN'i değiştir" }).click();
     await expect(page.getByText("Mevcut PIN hatalı.")).toBeVisible();
 
-    await card.getByRole("combobox", { name: "Otomatik kilit" }).click();
+    await card.getByRole("combobox", { name: "Otomatik kilit, bilgisayar" }).click();
     await page.getByRole("option", { name: "15 dakika" }).click();
     await expect(page.getByText("Panel 15 dakika hareketsizlikte kilitlenir.")).toBeVisible();
     await page.reload();
-    await expect(page.locator(".card", { has: page.getByRole("heading", { name: "Güvenlik" }) }).getByRole("combobox", { name: "Otomatik kilit" })).toContainText("15 dakika");
+    await expect(page.locator(".card", { has: page.getByRole("heading", { name: "Güvenlik" }) }).getByRole("combobox", { name: "Otomatik kilit, bilgisayar" })).toContainText("15 dakika");
   });
 });

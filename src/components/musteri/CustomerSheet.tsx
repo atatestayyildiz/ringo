@@ -246,7 +246,7 @@ function Body({
       {canRelease ? (
         <section className="mu-sec">
           <h3>Serbest bırak</h3>
-          <p className="mu-hint">Bu müşteriye bakamayacaksan havuza geri ver, herkes alabilir.</p>
+          <p className="mu-hint">Bu müşteriye bakamayacaksan serbest bırak, sıraya geri döner ve herkes alabilir.</p>
           <Button variant="soft" onClick={() => setConfirmRelease(true)}>
             Serbest bırak
           </Button>
@@ -274,7 +274,7 @@ function Body({
           setConfirmRelease(false);
           onClose();
           router.refresh();
-          toast("Müşteri havuza geri verildi");
+          toast("Müşteri serbest bırakıldı, sıraya geri döndü.");
         }}
       />
 
@@ -606,7 +606,7 @@ function ReleaseModal({
   return (
     <Modal open={open} onClose={onClose} title="Müşteri serbest bırakılsın mı?">
       <p className="mu-confirm">
-        <b>{c.full_name}</b> havuza geri döner ve listenden çıkar. Havuzdan herkes alabilir.
+        <b>{c.full_name}</b> listenden çıkar ve sıraya geri döner. Herkes alabilir.
       </p>
       <div className="modal-foot">
         <Button variant="soft" onClick={onClose} disabled={busy}>
