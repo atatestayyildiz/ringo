@@ -19,6 +19,19 @@ type Summary = { inserted: number; duplicates: number; reopened: number; invalid
 
 type Step = "upload" | "map" | "preview" | "running" | "done";
 
+const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+
+/** Sütundaki ilk dolu, birbirinden farklı değerler (kullanıcı hangi sütun olduğunu veriden anlasın). */
+function sampleValues(rows: ParsedSheet["rows"], idx: number, max = 2): string[] {
+  const out: string[] = [];
+  for (const r of rows.slice(0, 60)) {
+    const v = cellToString(r[idx]);
+    if (v && !out.includes(v)) out.push(v);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
 export function ImportWizard() {
   const [step, setStep] = useState<Step>("upload");
   const [sheet, setSheet] = useState<ParsedSheet | null>(null);
@@ -185,9 +198,35 @@ export function ImportWizard() {
           <p style={{ color: "var(--ink-2)", marginBottom: 14, fontSize: 14 }}>
             <b>{fileName}</b>, {sheet.rows.length} satır. Sütunları kontrol edin; yanlış tahmin varsa değiştirin.
           </p>
-          <label className="mu-check">
+          <div className="mu-peek">
+            <h3>Dosyanızdaki ilk satırlar</h3>
+            <div className="mu-table-wrap">
+              <table className="mu-table">
+                <thead>
+                  <tr>
+                    {sheet.headers.map((h, i) => (
+                      <th key={i}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sheet.rows.slice(0, 3).map((r, ri) => (
+                    <tr key={ri}>
+                      {sheet.headers.map((_, i) => (
+                        <td key={i}>{clip(cellToString(r[i]), 26) || "-"}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <label className="mu-opt mu-opt-head">
             <input type="checkbox" checked={sheet.headerless} onChange={(e) => toggleHeaderless(e.target.checked)} />
-            <span>İlk satır başlık değil, müşteri bilgisi</span>
+            <span>
+              Dosyanın ilk satırı başlık değil, müşteri bilgisi
+              <em> (üstteki tabloda ilk satır müşteri gibi görünüyorsa işaretli olmalı)</em>
+            </span>
           </label>
           <div className="mu-map">
             {FIELD_ORDER.map((f) => (
@@ -195,7 +234,11 @@ export function ImportWizard() {
                 key={f}
                 label={FIELD_LABELS[f] + (f === "phone" ? " *" : "")}
                 value={map[f] == null ? "" : String(map[f])}
-                hint={map[f] != null ? `Örnek: ${cellToString(sheet.rows[0]?.[map[f]!]) || "boş"}` : undefined}
+                hint={
+                  map[f] != null
+                    ? `Seçilen sütun: ${sheet.headers[map[f]!]}. Örnek: ${sampleValues(sheet.rows, map[f]!).join(", ") || "boş"}`
+                    : undefined
+                }
                 onChange={(e) => {
                   const v = e.target.value;
                   setMap((m) => {
@@ -207,11 +250,14 @@ export function ImportWizard() {
                 }}
               >
                 <option value="">Eşleme yok</option>
-                {sheet.headers.map((h, i) => (
-                  <option key={i} value={i}>
-                    {h}
-                  </option>
-                ))}
+                {sheet.headers.map((h, i) => {
+                  const s = sampleValues(sheet.rows, i);
+                  return (
+                    <option key={i} value={i}>
+                      {s.length ? `${h}: ${s.map((v) => clip(v, 18)).join(", ")}` : `${h} (boş)`}
+                    </option>
+                  );
+                })}
               </Select>
             ))}
           </div>
@@ -224,11 +270,11 @@ export function ImportWizard() {
                   if (taken) return null;
                   const sample = cellToString(sheet.rows.find((r) => cellToString(r[i]) !== "")?.[i]);
                   return (
-                    <label key={i} className="mu-check">
+                    <label key={i} className="mu-opt">
                       <input type="checkbox" checked={(map.extraNotes ?? []).includes(i)} onChange={(e) => toggleExtraNote(i, e.target.checked)} />
                       <span>
-                        {h}
-                        {sample ? <em> ({sample.length > 24 ? `${sample.slice(0, 24)}...` : sample})</em> : null}
+                        <b>{h}</b>
+                        {sample ? <em>{clip(sample, 28)}</em> : <em>boş</em>}
                       </span>
                     </label>
                   );

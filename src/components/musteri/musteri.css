@@ -935,26 +935,49 @@
   }
 }
 
-.mu-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+/* içe aktarma sihirbazı: seçenek satırları (liste satırı .mu-check'ten bağımsız) */
+.mu-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   font-size: 14px;
-  margin-bottom: 12px;
+  line-height: 1.4;
   cursor: pointer;
 }
-.mu-check input {
+.mu-opt input {
+  flex: none;
   width: 18px;
   height: 18px;
+  margin: 1px 0 0;
   accent-color: var(--ink);
+  cursor: pointer;
 }
-.mu-check em {
+.mu-opt em {
   color: var(--ink-3);
   font-style: normal;
 }
-.mu-extra {
-  margin: 14px 0 0;
+.mu-opt-head {
+  margin: 16px 0 18px;
   padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+.mu-peek {
+  margin-bottom: 4px;
+}
+.mu-peek h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+.mu-peek .mu-table th,
+.mu-peek .mu-table td {
+  white-space: nowrap;
+}
+.mu-extra {
+  margin: 16px 0 0;
+  padding: 12px 14px 14px;
   border: 1px solid var(--line, color-mix(in srgb, var(--ink) 12%, transparent));
   border-radius: 14px;
 }
@@ -965,14 +988,28 @@
   color: var(--ink-2);
 }
 .mu-extra-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 18px;
-  max-height: 160px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+  max-height: 220px;
   overflow: auto;
 }
-.mu-extra-list .mu-check {
-  margin-bottom: 4px;
+.mu-extra-list .mu-opt {
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.mu-extra-list .mu-opt span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mu-extra-list .mu-opt b {
+  font-weight: 650;
+}
+.mu-extra-list .mu-opt em {
+  font-size: 12.5px;
 }
 
 /* Mobil: Müşteriler üst düğmeleri düzenli: Müşteri ekle tam satır, Excel içe aktar | Dışa aktar yan yana */
