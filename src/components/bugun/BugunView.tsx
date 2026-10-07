@@ -3,7 +3,7 @@
 import { OperatorLogo } from "@/components/ui/OperatorLogo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { claimNextAction, distributeDayAction, logCallAction } from "@/app/(app)/bugun/actions";
 import { IconArrow, IconChat, IconClock, IconInfo } from "@/components/icons";
 import {
@@ -129,6 +129,7 @@ export function BugunView(props: Props) {
   const [nonce, setNonce] = useState(0);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
+  const slotsRef = useRef<HTMLDivElement>(null);
   const [distributing, setDistributing] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [dialog, setDialog] = useState<{
@@ -158,6 +159,14 @@ export function BugunView(props: Props) {
   const anchorRef = useRef<{ el: HTMLElement; top: number } | null>(null);
   // Genişleyince kart yüksekliği kapalı haldeki değerde kalır, liste kart içinde kayar
   const [queueH, setQueueH] = useState<number | null>(null);
+
+  // Mobilde gün şeridi tek satır kayar: seçili hap görünür alanın ortasına gelir (yalnız yatay, sayfa kaymaz)
+  useEffect(() => {
+    const box = slotsRef.current;
+    const el = box?.querySelector<HTMLElement>('[aria-current="true"]');
+    if (!box || !el || box.scrollWidth <= box.clientWidth) return;
+    box.scrollTo({ left: el.offsetLeft - (box.clientWidth - el.offsetWidth) / 2, behavior: "smooth" });
+  }, [curId]);
 
   function toggleQueue(e: React.MouseEvent<HTMLButtonElement>) {
     const card = e.currentTarget.closest<HTMLElement>("[data-queue-card]");
@@ -385,6 +394,7 @@ export function BugunView(props: Props) {
         {items.length > 0 ? (
           <div className={styles.slotsWrap}>
             <div
+              ref={slotsRef}
               className={styles.slots}
               role="group"
               aria-label="Bugünün listesi"

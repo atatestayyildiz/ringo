@@ -804,15 +804,28 @@
   .slotsWrap {
     padding: 16px 12px 16px;
   }
+  /* tek satır, yana kaydırmalı: yüzlerce müşteri ekranı doldurmaz; sonraki hap yarım görünüp kaydırılabilirliği belli eder */
   .slots {
-    grid-template-columns: repeat(auto-fill, 48px);
-    grid-auto-rows: 44px;
-    gap: 6px;
+    display: flex;
+    grid-template-columns: none;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    margin: 0 -12px;
+    padding: 8px 12px 10px;
+    scroll-padding: 0 12px;
+  }
+  .slots::-webkit-scrollbar {
+    display: none;
   }
   .slot {
-    width: 48px;
+    flex: none;
+    width: 60px;
     height: 44px;
     min-height: 44px;
+    scroll-snap-align: center;
   }
   .quick button {
     min-height: 44px;
