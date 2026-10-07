@@ -113,7 +113,11 @@ export function createGraph(token: string, fetchImpl: typeof fetch = fetch, vers
 
   return {
     lead: async (id, pageId) => call<GraphLead>(encodeURIComponent(id), { params: { fields: LEAD_FIELDS }, token: await tokenFor(pageId) }),
-    forms: async (pageId) => (await paged<{ id: string }>(`${encodeURIComponent(pageId)}/leadgen_forms`, { fields: "id" }, await tokenFor(pageId))).map((f) => f.id),
+    // Arşivlenmiş ve silinmiş formlar taranmaz: istek sayısını düşürür, yeni başvuru almazlar.
+    forms: async (pageId) =>
+      (await paged<{ id: string; status?: string }>(`${encodeURIComponent(pageId)}/leadgen_forms`, { fields: "id,status" }, await tokenFor(pageId)))
+        .filter((f) => f.status !== "ARCHIVED" && f.status !== "DELETED")
+        .map((f) => f.id),
     leads: async (formId, sinceSec, pageId) =>
       paged<GraphLead>(
         `${encodeURIComponent(formId)}/leads`,

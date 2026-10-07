@@ -46,6 +46,13 @@ describe("graph", () => {
     expect(calls.every((c) => !c.url.includes(TOKEN))).toBe(true);
     expect((calls[1].init.headers as Record<string, string>).authorization).toBe("Bearer PT");
   });
+  it("arşivli ve silinmiş formlar listeden çıkar, durumu olmayan kalır", async () => {
+    const { f } = fakeFetch(
+      ok({ access_token: "PT" }),
+      ok({ data: [{ id: "a", status: "ACTIVE" }, { id: "b", status: "ARCHIVED" }, { id: "c", status: "DELETED" }, { id: "d" }] }),
+    );
+    expect(await createGraph(TOKEN, f).forms("77")).toEqual(["a", "d"]);
+  });
   it("başvurular zaman filtresiyle istenir", async () => {
     const { f, calls } = fakeFetch(ok({ data: [{ id: "L1" }] }));
     expect(await createGraph(TOKEN, f).leads("f1", 1000.7)).toEqual([{ id: "L1" }]);
