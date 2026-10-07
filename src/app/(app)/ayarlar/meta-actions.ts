@@ -51,8 +51,8 @@ export async function loadMetaAction(): Promise<Result<{ data: MetaData }>> {
 export async function connectMetaAction(): Promise<Result> {
   const ctx = await requireManager();
   if (!ctx) return { ok: false, error: NOT_MANAGER };
-  const token = process.env.META_ACCESS_TOKEN;
-  const pageId = process.env.META_PAGE_ID;
+  const token = process.env.META_ACCESS_TOKEN?.trim();
+  const pageId = process.env.META_PAGE_ID?.trim();
   if (!token || !pageId) return { ok: false, error: "Sunucuda Meta ayarları eksik. Kurulum rehberine bakın." };
   const supabase = await createClient();
   const gate = await supabase.rpc("meta_status");
@@ -75,7 +75,7 @@ export async function connectMetaAction(): Promise<Result> {
 export async function syncMetaAction(): Promise<Result<{ message: string }>> {
   const ctx = await requireManager();
   if (!ctx) return { ok: false, error: NOT_MANAGER };
-  const token = process.env.META_ACCESS_TOKEN;
+  const token = process.env.META_ACCESS_TOKEN?.trim();
   if (!token) return { ok: false, error: "Sunucuda Meta ayarları eksik. Kurulum rehberine bakın." };
   const supabase = await createClient();
   const st = await supabase.rpc("meta_status");
