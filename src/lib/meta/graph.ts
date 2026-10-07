@@ -39,6 +39,7 @@ export type Graph = {
   lead(leadgenId: string, pageId?: string): Promise<GraphLead>;
   forms(pageId: string): Promise<string[]>;
   leads(formId: string, sinceSec: number, pageId?: string): Promise<GraphLead[]>;
+  formTypes(formId: string, pageId?: string): Promise<Record<string, string>>;
   pageToken(pageId: string): Promise<string>;
   subscribe(pageId: string, pageToken: string): Promise<void>;
 };
@@ -83,6 +84,7 @@ export function createGraph(token: string, fetchImpl: typeof fetch = fetch, vers
 
   // Meta, form ve başvuru okumada sistem kullanıcısı anahtarını değil sayfa anahtarını ister.
   const pageTokens = new Map<string, string>();
+  const formTypesCache = new Map<string, Record<string, string>>();
   async function tokenFor(pageId?: string): Promise<string | undefined> {
     if (!pageId) return undefined;
     const hit = pageTokens.get(pageId);
@@ -121,6 +123,15 @@ export function createGraph(token: string, fetchImpl: typeof fetch = fetch, vers
         },
         await tokenFor(pageId),
       ),
+    formTypes: async (formId, pageId) => {
+      const hit = formTypesCache.get(formId);
+      if (hit) return hit;
+      const r = await call<{ questions?: { key?: string; type?: string }[] }>(encodeURIComponent(formId), { params: { fields: "questions" }, token: await tokenFor(pageId) });
+      const out: Record<string, string> = {};
+      for (const item of r.questions ?? []) if (item.key && item.type) out[item.key.toLowerCase()] = item.type;
+      formTypesCache.set(formId, out);
+      return out;
+    },
     pageToken: async (pageId) => {
       const r = await call<{ access_token?: string }>(encodeURIComponent(pageId), { params: { fields: "access_token" } });
       if (!r.access_token) throw new GraphError(403, null);

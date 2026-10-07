@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { bearerToken, safeEqual } from "@/lib/push/auth";
 import { describeError, type Graph } from "./graph";
-import { DB_ERROR_TEXT, DbError, ingestLead, recordStatus } from "./ingest";
+import { DB_ERROR_TEXT, DbError, ingestLead, questionTypes, recordStatus } from "./ingest";
 
 export type Connection = { tenant_id: string; page_id: string; last_sync_at: string | null };
 
@@ -50,8 +50,9 @@ export async function syncConnections(
       const forms = await graph.forms(c.page_id);
       for (const formId of forms) {
         const leads = await graph.leads(formId, since, c.page_id);
+        const types = await questionTypes(graph, formId, c.page_id);
         for (const lead of leads) {
-          const r = await ingestLead(admin, c.tenant_id, lead, { formId });
+          const r = await ingestLead(admin, c.tenant_id, lead, { formId }, types);
           sum.leads++;
           sum[r]++;
         }

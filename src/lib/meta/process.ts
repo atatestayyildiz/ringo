@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { safeEqual } from "@/lib/push/auth";
 import { describeError, isPermanentGraphError, type Graph } from "./graph";
-import { DB_ERROR_TEXT, DbError, ingestLead, recordStatus } from "./ingest";
+import { DB_ERROR_TEXT, DbError, ingestLead, questionTypes, recordStatus } from "./ingest";
 import { verifySignature } from "./signature";
 
 export type MetaDeps = {
@@ -87,7 +87,8 @@ export async function processWebhookRequest(req: Request, deps: MetaDeps): Promi
       const tenantId = tenant.data;
       try {
         const lead = await deps.graph.lead(leadgenId, pageId);
-        const result = await ingestLead(admin, tenantId, lead, { leadgenId, formId });
+        const types = await questionTypes(deps.graph, lead.form_id || formId, pageId);
+        const result = await ingestLead(admin, tenantId, lead, { leadgenId, formId }, types);
         bump(result);
         await recordStatus(admin, tenantId, true, null);
       } catch (e) {

@@ -46,3 +46,25 @@ describe("mapLead", () => {
     expect(stripPhonePrefix("0555")).toBe("0555");
   });
 });
+
+describe("mapLead soru türüne göre", () => {
+  it("özel anahtarlı formda FULL_NAME ve PHONE türlerinden eşler, kalan sorular notta kalır", () => {
+    const types = { adi_soyadi: "FULL_NAME", telefon_numarasi: "PHONE", telefonno: "CUSTOM", tutar: "CUSTOM" };
+    const r = mapLead(
+      [
+        { name: "tutar", values: ["10-30 Bin₺"] },
+        { name: "telefonno", values: ["05550000001"] },
+        { name: "adi_soyadi", values: ["Deniz Örnek"] },
+        { name: "telefon_numarasi", values: ["p:+905550000000"] },
+        { name: "inbox_url", values: [""] },
+      ],
+      types,
+    );
+    expect(r.fullName).toBe("Deniz Örnek");
+    expect(r.phone).toBe("+905550000000");
+    expect(r.note).toBe("tutar: 10-30 Bin₺ · telefonno: 05550000001");
+  });
+  it("tür bilinmiyorsa standart anahtarlara düşer", () => {
+    expect(mapLead([{ name: "adi_soyadi", values: ["Deniz Örnek"] }], {}).fullName).toBeNull();
+  });
+});

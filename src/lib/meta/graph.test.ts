@@ -76,3 +76,17 @@ describe("graph", () => {
     expect(describeError(e1)).toContain("erişim anahtarı");
   });
 });
+
+describe("formTypes", () => {
+  it("soru anahtarını türe eşler, sayfa anahtarıyla ister ve önbelleğe alır", async () => {
+    const { f, calls } = fakeFetch(
+      ok({ access_token: "PT" }),
+      ok({ questions: [{ key: "Adi_Soyadi", type: "FULL_NAME" }, { key: "telefon_numarasi", type: "PHONE" }, { type: "CUSTOM" }] }),
+    );
+    const g = createGraph(TOKEN, f);
+    expect(await g.formTypes("F1", "77")).toEqual({ adi_soyadi: "FULL_NAME", telefon_numarasi: "PHONE" });
+    expect(await g.formTypes("F1", "77")).toEqual({ adi_soyadi: "FULL_NAME", telefon_numarasi: "PHONE" });
+    expect(calls).toHaveLength(2);
+    expect((calls[1].init.headers as Record<string, string>).authorization).toBe("Bearer PT");
+  });
+});

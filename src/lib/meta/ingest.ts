@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
-import type { GraphLead } from "./graph";
-import { mapLead } from "./map";
+import type { Graph, GraphLead } from "./graph";
+import { mapLead, type QuestionTypes } from "./map";
 
 export type IngestResult = "inserted" | "reopened" | "duplicate" | "invalid" | "seen";
 
@@ -26,11 +26,12 @@ export async function ingestLead(
   tenantId: string,
   lead: GraphLead,
   fallback: { leadgenId?: string; formId?: string } = {},
+  types: QuestionTypes = {},
 ): Promise<IngestResult> {
   const leadgenId = lead.id || fallback.leadgenId;
   if (!leadgenId) throw new DbError();
   const formId = lead.form_id || fallback.formId || null;
-  const m = mapLead(lead.field_data);
+  const m = mapLead(lead.field_data, types);
   const { data, error } = await admin.rpc("ingest_meta_lead", {
     p_tenant: tenantId,
     p_leadgen_id: leadgenId,
@@ -47,6 +48,16 @@ export async function ingestLead(
   }
   const r = (data as { result?: string } | null)?.result;
   return r === "inserted" || r === "reopened" || r === "duplicate" || r === "invalid" || r === "seen" ? r : "invalid";
+}
+
+/** Form soru türleri; alınamazsa boş döner (eşleme standart anahtarlara düşer), akışı bozmaz. */
+export async function questionTypes(graph: Pick<Graph, "formTypes">, formId: string | null | undefined, pageId: string): Promise<QuestionTypes> {
+  if (!formId) return {};
+  try {
+    return await graph.formTypes(formId, pageId);
+  } catch {
+    return {};
+  }
 }
 
 /** Durum kaydı; başarısız olması akışı bozmaz. */

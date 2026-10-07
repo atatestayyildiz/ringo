@@ -1,5 +1,8 @@
 export type FieldData = { name?: string; values?: string[] }[];
 
+/** Form sorusu anahtarı (küçük harf) -> Meta soru türü (FULL_NAME, PHONE, ...). */
+export type QuestionTypes = Record<string, string>;
+
 export type MappedLead = { fullName: string | null; phone: string | null; note: string | null };
 
 const NAME_KEYS = new Set(["full_name", "first_name", "last_name"]);
@@ -14,7 +17,7 @@ export function stripPhonePrefix(v: string): string {
 }
 
 /** Graph `field_data` -> müşteri alanları. Diğer sorular notta `soru: cevap` biçiminde ` · ` ile birleşir. */
-export function mapLead(fieldData: FieldData | undefined | null): MappedLead {
+export function mapLead(fieldData: FieldData | undefined | null, types: QuestionTypes = {}): MappedLead {
   const fields = Array.isArray(fieldData) ? fieldData : [];
   const byName = new Map<string, string>();
   const extras: string[] = [];
@@ -22,8 +25,12 @@ export function mapLead(fieldData: FieldData | undefined | null): MappedLead {
     const name = clean(f?.name);
     if (!name) continue;
     const key = name.toLowerCase();
-    if (NAME_KEYS.has(key) || PHONE_KEYS.has(key)) {
-      if (!byName.has(key)) byName.set(key, first(f));
+    // Anahtarlar forma göre özeldir (adi_soyadi, telefon_numarasi ...); asıl ayırt edici soru türüdür.
+    const type = types[key];
+    const slot = type === "FULL_NAME" ? "full_name" : type === "FIRST_NAME" ? "first_name" : type === "LAST_NAME" ? "last_name" : type === "PHONE" ? "phone_number" : null;
+    const canon = slot ?? (NAME_KEYS.has(key) || PHONE_KEYS.has(key) ? key : null);
+    if (canon) {
+      if (!byName.get(canon)) byName.set(canon, first(f));
       continue;
     }
     const answer = (f.values ?? []).map(clean).filter(Boolean).join(", ");
