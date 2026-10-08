@@ -598,6 +598,15 @@ isOneToOne: true
 "release_customer":
 { Args: { "p_customer": string }; Returns: Database["public"]["Tables"]["customers"]["Row"]
                            },
+"deactivate_member":
+{ Args: { "p_member": string }; Returns: number
+                           },
+"lost_customers":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"rescue_lost_customers":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "report_intake":
 { Args: { "p_from": string,"p_to": string }; Returns: Json
                            },
