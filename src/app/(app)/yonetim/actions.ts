@@ -45,3 +45,19 @@ export async function transferOpenWorkAction(fromId: string, toId: string | null
   revalidatePath("/bugun");
   return { ok: true, moved: data ?? 0 };
 }
+
+export type RescueResult = { ok: true; moved: number } | { ok: false; error: string };
+
+/** Sahibi pasif ya da sahipsiz tekrar müşterilerini sıraya bırakır. */
+export async function rescueLostAction(): Promise<RescueResult> {
+  const ctx = await getSessionContext();
+  if (ctx.member.role !== "manager") {
+    return { ok: false, error: "Bu işlemi yalnız yönetici yapabilir." };
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("rescue_lost_customers");
+  if (error) return { ok: false, error: toUserMessage(error) };
+  revalidatePath("/yonetim");
+  revalidatePath("/bugun");
+  return { ok: true, moved: data ?? 0 };
+}

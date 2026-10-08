@@ -1,5 +1,6 @@
 import { Card, EmptyState } from "@/components/ui";
 import { DateBar } from "@/components/yonetim/DateBar";
+import { LostCustomers, type LostCounts } from "@/components/yonetim/LostCustomers";
 import { TeamList, type TeamRow } from "@/components/yonetim/TeamList";
 import { OUTCOME_LABEL, STAGE_LABEL, firstName, shortName } from "@/components/yonetim/labels";
 import s from "@/components/yonetim/yonetim.module.css";
@@ -54,6 +55,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ g
       .order("created_at", { ascending: false })
       .limit(30),
   ]);
+
+  // Kayıp kontrolü yalnız bugün için anlamlı
+  let lost: LostCounts | null = null;
+  if (day === today) {
+    const lostRes = await supabase.rpc("lost_customers");
+    if (lostRes.error) console.error("[yonetim] kayıp kontrolü okunamadı:", lostRes.error.code ?? lostRes.error.message);
+    else if ((lostRes.data as LostCounts | null)?.total) lost = lostRes.data as LostCounts;
+  }
 
   if (summaryRes.error) console.error("[yonetim] özet okunamadı:", summaryRes.error.code ?? summaryRes.error.message);
   const loadError = summaryRes.error ? loadErrorText(summaryRes.error) : null;
@@ -168,6 +177,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ g
               <b>{totals.retries}</b>
             </div>
           </div>
+
+          {lost ? <LostCustomers counts={lost} canRescue={isManager} /> : null}
 
           <div className={s.grid}>
             <Card className={s.cFunnel}>

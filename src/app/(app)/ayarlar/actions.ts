@@ -175,6 +175,15 @@ export async function setMemberActiveAction(memberId: string, active: boolean): 
   }
 
   const supabase = await createClient();
+  if (!active) {
+    // Pasifleştirme açık müşterileri sıraya bırakır; müşteri sahipsiz askıda kalmaz
+    const { error: deactivateError } = await supabase.rpc("deactivate_member", { p_member: memberId });
+    if (deactivateError) return { ok: false, error: toUserMessage(deactivateError) };
+    revalidatePath("/ayarlar");
+    revalidatePath("/yonetim");
+    revalidatePath("/bugun");
+    return { ok: true };
+  }
   const { data, error } = await supabase
     .from("members")
     .update({ is_active: active })

@@ -276,3 +276,34 @@
     align-items: center;
   }
 }
+
+/* Görünmeyen müşteriler: yalnız sorun varsa, KPI satırının altında tam genişlik */
+.lost {
+  margin-bottom: 18px;
+}
+.lostLead {
+  margin-bottom: 10px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  font-size: 15px;
+}
+.lostList {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 14.5px;
+}
+.lostList li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.lostList b {
+  min-width: 28px;
+  font-weight: 600;
+}
+.lostList span {
+  color: var(--ink-2);
+}
