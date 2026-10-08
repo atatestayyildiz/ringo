@@ -61,7 +61,8 @@ revoke execute on function public._lost_customer_rows(uuid) from public, anon, a
 
 -- ---------------------------------------------------------------------------
 -- _release_to_queue: verilen müşterileri moda göre sıraya bırakır (çağıran kilidi tutar).
--- free_pool / manual: sahipsiz 'pending', tur sayacı 0, vakti gelmişse hemen (ileri tarih korunur).
+-- free_pool / manual: sahipsiz 'pending', tur sayacı 0. next_call_at'e dokunulmaz: vakti gelmiş müşteri
+-- zaten claim_next'e uygun, ileri tarihli geri arama tarihinde sıraya girer.
 -- auto_even: yalnız sahiplik boşalır.
 -- Bugünden itibaren günlük atama satırları silinir. Bırakılan müşteri sayısını döner.
 -- ---------------------------------------------------------------------------
@@ -86,7 +87,6 @@ begin
       assigned_to = null,
       call_status = 'pending',
       attempts_in_round = 0,
-      next_call_at = least(next_call_at, now()),
       updated_at = now()
     where tenant_id = p_tenant and id = any(p_customers);
   else
