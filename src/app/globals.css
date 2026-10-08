@@ -72,8 +72,22 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* çift dokunuşla yakınlaştırma yok; sayfa sağa sola kaymaz (iç kaydırıcılar kendi kutusunda kayar) */
+  touch-action: manipulation;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+/* Mobil Safari 16px'ten küçük alana odaklanınca sayfayı yakınlaştırır: dokunmatikte alanlar en az 16px */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 body {
+  overflow-x: clip;
+  max-width: 100%;
   font-family: var(--font-figtree), system-ui, -apple-system, "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--ink);

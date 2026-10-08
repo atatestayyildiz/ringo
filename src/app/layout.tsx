@@ -17,6 +17,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Alana dokununca ya da çimdikle yakınlaştırma yok (panel uygulama gibi sabit durur).
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
   // Klavye yerleşim alanını küçültmez (giriş/kilit sahnesinde logo sabit kalır; alt bölme --kb ile yukarı çıkar).
   interactiveWidget: "resizes-visual",
