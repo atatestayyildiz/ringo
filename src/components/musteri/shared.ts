@@ -97,3 +97,44 @@ export function memberName(members: MemberLite[], id: string | null): string {
   if (!id) return "";
   return members.find((m) => m.id === id)?.full_name ?? "";
 }
+
+/** archive_list satırı (supabase/migrations/20261008000300_archive_calls.sql). Telefon maskelidir. */
+export type ArchiveRow = {
+  id: string;
+  full_name: string;
+  phone_hint: string;
+  operator: string | null;
+  amount: string | null;
+  call_status: string;
+  pipeline_stage: string | null;
+  last_outcome: string | null;
+  last_note: string | null;
+  closed_at: string;
+  applied_at: string | null;
+  created_at: string;
+  call_count: number;
+  last_caller: string | null;
+  revived_before: boolean;
+};
+
+export type ArchivePage = { total: number; rows: ArchiveRow[] };
+
+/** Geçmiş dönem listesinde seçilebilen son sonuç filtreleri (kapanışa yol açan sonuçlar). */
+export const ARCHIVE_OUTCOMES: { value: string; label: string }[] = [
+  { value: "disqualified", label: "Uygun değil" },
+  { value: "not_interested", label: "İlgilenmiyor" },
+  { value: "wrong_number", label: "Yanlış numara" },
+  { value: "no_answer", label: "Açmadı (ulaşılamadı)" },
+  { value: "busy", label: "Meşgul (ulaşılamadı)" },
+];
+
+/** Bir çalışanın aynı anda alabileceği/bekleyen tutabileceği geçmiş dönem müşterisi (DB'deki sınırla aynı). */
+export const ARCHIVE_CLAIM_MAX = 10;
+
+export function normalizeArchive(raw: unknown): ArchivePage {
+  const o = (raw ?? {}) as { total?: unknown; rows?: unknown };
+  return {
+    total: typeof o.total === "number" ? o.total : 0,
+    rows: Array.isArray(o.rows) ? (o.rows as ArchiveRow[]) : [],
+  };
+}

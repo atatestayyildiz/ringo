@@ -44,6 +44,17 @@ export function normalizeIntake(data: unknown): Intake | null {
   };
 }
 
+/** Geçmiş dönem (kapanmış müşteri) aramaları: bugünkü form müşterisi sayılmaz, ayrı raporlanır (supabase/migrations/20261008000300_archive_calls.sql). */
+export type ArchiveReport = {
+  claimed: number;
+  attempts: number;
+  customers_called: number;
+  reached: number;
+  appointments: number;
+  completed: number;
+  by_member: { member_id: string; full_name: string; claimed: number; attempts: number; customers_called: number; reached: number; appointments: number }[];
+};
+
 /** team: kiracı geneli (yönetici veya view_reports); member: tek çalışan. Kapsamı DB belirler. */
 export type ReportScope = "team" | "member";
 
@@ -57,6 +68,7 @@ export type Report = {
   by_outcome: { outcome: string; count: number }[];
   by_source: { source_detail: string; customers: number; appointments: number; completed: number }[];
   by_operator: { operator: string; customers: number; completed: number }[];
+  archive: ArchiveReport;
 };
 
 export const OPERATOR_NAME: Record<string, string> = {
@@ -128,5 +140,14 @@ export function normalizeReport(raw: unknown): Report {
     by_outcome: o.by_outcome ?? [],
     by_source: o.by_source ?? [],
     by_operator: o.by_operator ?? [],
+    archive: {
+      claimed: n(o.archive?.claimed),
+      attempts: n(o.archive?.attempts),
+      customers_called: n(o.archive?.customers_called),
+      reached: n(o.archive?.reached),
+      appointments: n(o.archive?.appointments),
+      completed: n(o.archive?.completed),
+      by_member: o.archive?.by_member ?? [],
+    },
   };
 }

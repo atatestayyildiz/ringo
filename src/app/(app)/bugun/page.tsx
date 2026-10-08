@@ -67,7 +67,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
       ? supabase
           .from("customers")
           .select(
-            "id, full_name, phone, phone_alt, operator, amount, applied_at, call_status, attempts_in_round, next_call_at",
+            "id, full_name, phone, phone_alt, operator, amount, revive_active, applied_at, call_status, attempts_in_round, next_call_at",
           )
           .in("id", ids)
       : Promise.resolve({ data: [] }),
@@ -108,6 +108,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
       operator: c.operator,
       phoneAlt: c.phone_alt,
       amount: c.amount,
+      archive: c.revive_active,
       appliedLabel: c.applied_at ? relativeTime(c.applied_at, now) : null,
       status: c.call_status as CallStatus,
       tries: c.attempts_in_round,

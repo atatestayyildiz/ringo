@@ -110,7 +110,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
               : "Bugün sana atanan müşteriler."}
           </p>
         </div>
-        <CustomerActions canImport={viewer.canImport} exportHref={canExport ? exportHref : null} />
+        <div className="mu-actions">
+          <Link href="/musteriler/gecmis" className={buttonClass("soft")}>
+            Geçmiş dönem
+          </Link>
+          <CustomerActions canImport={viewer.canImport} exportHref={canExport ? exportHref : null} />
+        </div>
       </div>
 
       <CustomerFilters members={members} />

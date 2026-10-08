@@ -77,6 +77,8 @@ export type Item = {
   phoneAlt: string | null;
   /** Başvurudaki tutar (ham metin; gösterim formatAmount ile), yoksa null */
   amount: string | null;
+  /** Geçmiş dönem müşterisi (kapanmış kayıttan alındı); bugünkü form müşterisi sayılmaz */
+  archive: boolean;
   appliedLabel: string | null;
   status: CallStatus;
   tries: number;

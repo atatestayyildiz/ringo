@@ -81,13 +81,13 @@ isOneToOne: false
                   ]
                 },"customers": {
                   Row: {
-                    "amount": string | null,"applied_at": string | null,"appointment_day": string | null,"appointment_time": string | null,"assigned_to": string | null,"attempts_in_round": number,"birth_date": string | null,"call_status": string,"consent": boolean,"created_at": string | null,"full_name": string,"id": string,"last_note": string | null,"last_outcome": string | null,"next_call_at": string,"operator": string | null,"phone": string,"phone_alt": string | null,"pipeline_stage": string | null,"pool_count": number,"source": string,"source_detail": string | null,"tenant_id": string,"updated_at": string | null
+                    "amount": string | null,"revive_active": boolean,"revived_at": string | null,"revived_by": string | null,"applied_at": string | null,"appointment_day": string | null,"appointment_time": string | null,"assigned_to": string | null,"attempts_in_round": number,"birth_date": string | null,"call_status": string,"consent": boolean,"created_at": string | null,"full_name": string,"id": string,"last_note": string | null,"last_outcome": string | null,"next_call_at": string,"operator": string | null,"phone": string,"phone_alt": string | null,"pipeline_stage": string | null,"pool_count": number,"source": string,"source_detail": string | null,"tenant_id": string,"updated_at": string | null
                   }
                   Insert: {
-                    "amount"?: string | null,"applied_at"?: string | null,"appointment_day"?: string | null,"appointment_time"?: string | null,"assigned_to"?: string | null,"attempts_in_round"?: number,"birth_date"?: string | null,"call_status"?: string,"consent"?: boolean,"created_at"?: string | null,"full_name": string,"id"?: string,"last_note"?: string | null,"last_outcome"?: string | null,"next_call_at"?: string,"operator"?: string | null,"phone": string,"phone_alt"?: string | null,"pipeline_stage"?: string | null,"pool_count"?: number,"source"?: string,"source_detail"?: string | null,"tenant_id": string,"updated_at"?: string | null
+                    "amount"?: string | null,"revive_active"?: boolean,"revived_at"?: string | null,"revived_by"?: string | null,"applied_at"?: string | null,"appointment_day"?: string | null,"appointment_time"?: string | null,"assigned_to"?: string | null,"attempts_in_round"?: number,"birth_date"?: string | null,"call_status"?: string,"consent"?: boolean,"created_at"?: string | null,"full_name": string,"id"?: string,"last_note"?: string | null,"last_outcome"?: string | null,"next_call_at"?: string,"operator"?: string | null,"phone": string,"phone_alt"?: string | null,"pipeline_stage"?: string | null,"pool_count"?: number,"source"?: string,"source_detail"?: string | null,"tenant_id": string,"updated_at"?: string | null
                   }
                   Update: {
-                    "amount"?: string | null,"applied_at"?: string | null,"appointment_day"?: string | null,"appointment_time"?: string | null,"assigned_to"?: string | null,"attempts_in_round"?: number,"birth_date"?: string | null,"call_status"?: string,"consent"?: boolean,"created_at"?: string | null,"full_name"?: string,"id"?: string,"last_note"?: string | null,"last_outcome"?: string | null,"next_call_at"?: string,"operator"?: string | null,"phone"?: string,"phone_alt"?: string | null,"pipeline_stage"?: string | null,"pool_count"?: number,"source"?: string,"source_detail"?: string | null,"tenant_id"?: string,"updated_at"?: string | null
+                    "amount"?: string | null,"revive_active"?: boolean,"revived_at"?: string | null,"revived_by"?: string | null,"applied_at"?: string | null,"appointment_day"?: string | null,"appointment_time"?: string | null,"assigned_to"?: string | null,"attempts_in_round"?: number,"birth_date"?: string | null,"call_status"?: string,"consent"?: boolean,"created_at"?: string | null,"full_name"?: string,"id"?: string,"last_note"?: string | null,"last_outcome"?: string | null,"next_call_at"?: string,"operator"?: string | null,"phone"?: string,"phone_alt"?: string | null,"pipeline_stage"?: string | null,"pool_count"?: number,"source"?: string,"source_detail"?: string | null,"tenant_id"?: string,"updated_at"?: string | null
                   }
                   Relationships: [
                     {
@@ -569,6 +569,12 @@ isOneToOne: true
       } },
 "reassign_customers":
 { Args: { "p_customers": string[],"p_member": string }; Returns: number
+                           },
+"archive_list":
+{ Args: { "p_from"?: string,"p_limit"?: number,"p_offset"?: number,"p_operator"?: string,"p_outcome"?: string,"p_q"?: string,"p_sort"?: string,"p_to"?: string }; Returns: Json
+                           },
+"claim_archive_customers":
+{ Args: { "p_customers": string[] }; Returns: Json
                            },
 "release_customer":
 { Args: { "p_customer": string }; Returns: Database["public"]["Tables"]["customers"]["Row"]

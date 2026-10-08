@@ -143,6 +143,7 @@ export function FocusCard({
               <OperatorLogo operator={item.operator} />
             </Chip>
           ) : null}
+          {item.archive ? <Chip color="var(--c-retry)">Geçmiş dönem</Chip> : null}
           {amount ? (
             <Chip>
               Tutar {amount.value}

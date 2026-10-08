@@ -268,6 +268,80 @@ export default async function Page({
         </Card>
       ) : null}
 
+      {report && (report.archive.claimed > 0 || report.archive.attempts > 0) ? (
+        <Card className={s.intake}>
+          <h2>Geçmiş dönem aramaları</h2>
+          <p className={s.sub}>
+            Kapanmış müşterilerden alınıp aranan kayıtlar. Gelen başvuru, kaynak ve operatör tablolarına girmez; çalışanın deneme, ulaşılan ve randevu sayılarına dahildir.
+          </p>
+          <div className={s.intakeGrid}>
+            <div>
+              <small>Alınan</small>
+              <b>
+                <CountUp value={report.archive.claimed} />
+              </b>
+              <em>listeye eklenen müşteri</em>
+            </div>
+            <div>
+              <small>Aranan</small>
+              <b>
+                <CountUp value={report.archive.customers_called} />
+              </b>
+              <em>{report.archive.attempts} deneme</em>
+            </div>
+            <div>
+              <small>Ulaşılan</small>
+              <b>
+                <CountUp value={report.archive.reached} />
+              </b>
+              <em>farklı müşteri</em>
+            </div>
+            <div>
+              <small>Randevu</small>
+              <b>
+                <CountUp value={report.archive.appointments} />
+              </b>
+              <em>{report.archive.completed} işlem tamam</em>
+            </div>
+          </div>
+          {isTeam && report.archive.by_member.length > 0 ? (
+            <div className={s.scrollx}>
+              <table className={s.table}>
+                <caption className={s.srOnly}>Çalışan bazında geçmiş dönem aramaları</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Çalışan</th>
+                    <th scope="col" className={s.num}>
+                      Alınan
+                    </th>
+                    <th scope="col" className={s.num}>
+                      Deneme
+                    </th>
+                    <th scope="col" className={s.num}>
+                      Ulaşılan
+                    </th>
+                    <th scope="col" className={s.num}>
+                      Randevu
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.archive.by_member.map((m) => (
+                    <tr key={m.member_id}>
+                      <th scope="row">{m.full_name}</th>
+                      <td className={s.num}>{m.claimed}</td>
+                      <td className={s.num}>{m.attempts}</td>
+                      <td className={s.num}>{m.reached}</td>
+                      <td className={s.num}>{m.appointments}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </Card>
+      ) : null}
+
       {error || !report || !t ? (
         <Card>
           <EmptyState title="Rapor yüklenemedi">
