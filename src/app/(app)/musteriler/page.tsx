@@ -3,6 +3,7 @@ import { CustomerFilters } from "@/components/musteri/CustomerFilters";
 import { CustomerList } from "@/components/musteri/CustomerList";
 import { CustomerActions } from "@/components/musteri/CustomerActions";
 import { ListSummary } from "@/components/musteri/ListSummary";
+import { LiveRefresh } from "@/components/musteri/LiveRefresh";
 import { CUSTOMER_COLUMNS, type Customer, type MemberLite, type Viewer } from "@/components/musteri/shared";
 import { buttonClass, Card } from "@/components/ui";
 import { can, getSessionContext } from "@/lib/session";
@@ -99,6 +100,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
 
   return (
     <>
+      <LiveRefresh />
       <div className="page-head mu-head">
         <div>
           <h1>Müşteriler</h1>
