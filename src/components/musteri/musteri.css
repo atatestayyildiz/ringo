@@ -59,7 +59,7 @@
 .mu-row {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(172px, 1.38fr) 118px 104px 92px 118px 104px minmax(0, 2.8fr);
+  grid-template-columns: minmax(198px, 1.59fr) 118px 104px 92px 118px 104px minmax(0, 2.8fr);
   align-items: center;
   gap: 14px;
   padding: 12px 8px;
@@ -123,7 +123,7 @@
 }
 .mu-colhead {
   display: grid;
-  grid-template-columns: minmax(172px, 1.38fr) 118px 104px 92px 118px 104px minmax(0, 2.8fr);
+  grid-template-columns: minmax(198px, 1.59fr) 118px 104px 92px 118px 104px minmax(0, 2.8fr);
   gap: 14px;
   padding: 0 8px 10px;
   font-size: 12px;
