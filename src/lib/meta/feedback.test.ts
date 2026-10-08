@@ -147,6 +147,14 @@ describe("flushFeedback", () => {
     expect(rows[1].status).toBe("skipped");
   });
 
+  it("Meta kabul ettiği olay sayısı gönderilenden azsa satıra not düşülür", async () => {
+    const rows = [row("1", LEAD_B, "lead", 30), row("2", LEAD_B, "appointment", 10)];
+    const f = vi.fn(async () => new Response(JSON.stringify({ events_received: 1, fbtrace_id: "AbC123" }), { status: 200 }));
+    const sum = await flushFeedback(fakeAdmin(rows), cfg(f as never));
+    expect(sum.sent).toBe(2);
+    expect(rows[0].last_error).toBe("Meta 1/2 olay kabul etti, izleme AbC123");
+  });
+
   it("daha önce gönderilmiş aşama tekrar gönderilmez", async () => {
     const rows = [row("1", LEAD_B, "appointment", 60, { status: "sent" }), row("2", LEAD_B, "applied", 5)];
     const f = vi.fn(async () => ok());
@@ -218,7 +226,8 @@ describe("flushFeedback", () => {
 
   it("test kodu açıkken en çok 10 olay gider ve sent+test işaretlenir", async () => {
     const rows = Array.from({ length: 15 }, (_, i) => row(String(i), String(100000000000000 + i), "lead", 30 - i));
-    const f = vi.fn(async () => ok());
+    // Meta gönderilen kadar olayı kabul eder
+    const f = vi.fn(async (_u: string, init: RequestInit) => new Response(JSON.stringify({ events_received: (String(init.body).match(/event_name/g) ?? []).length }), { status: 200 }));
     const sum = await flushFeedback(fakeAdmin(rows), { ...cfg(f as never), testEventCode: "TEST1" });
     expect(sum.sent).toBe(10);
     expect(rows.filter((r) => r.status === "pending")).toHaveLength(5);

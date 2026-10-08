@@ -100,7 +100,8 @@ export function buildBody(events: { stage: string; time: number; leadId: string 
   return json;
 }
 
-type Outcome = { kind: "ok" } | { kind: "permanent"; text: string } | { kind: "transient"; text: string } | { kind: "config"; text: string };
+/** ok: Meta'nın cevabındaki kabul edilen olay sayısı (events_received) ve izleme kimliği; tanı için kaydedilir. */
+type Outcome = { kind: "ok"; received?: number; trace?: string } | { kind: "permanent"; text: string } | { kind: "transient"; text: string } | { kind: "config"; text: string };
 
 async function post(url: string, body: string, token: string, fetchImpl: typeof fetch): Promise<Outcome> {
   let res: Response;
@@ -115,7 +116,18 @@ async function post(url: string, body: string, token: string, fetchImpl: typeof 
   } catch {
     return { kind: "transient", text: "Meta'ya bağlanılamadı." };
   }
-  if (res.ok) return { kind: "ok" };
+  if (res.ok) {
+    try {
+      const j = (await res.json()) as { events_received?: unknown; fbtrace_id?: unknown };
+      return {
+        kind: "ok",
+        received: typeof j?.events_received === "number" ? j.events_received : undefined,
+        trace: typeof j?.fbtrace_id === "string" ? j.fbtrace_id : undefined,
+      };
+    } catch {
+      return { kind: "ok" };
+    }
+  }
   let code: number | null = null;
   try {
     const j = (await res.json()) as { error?: { code?: unknown } };
@@ -201,7 +213,15 @@ export async function flushFeedback(admin: SupabaseClient<Database>, cfg: Feedba
   const finish = async (items: typeof send, o: Outcome): Promise<"continue" | "stop"> => {
     const ids = items.map((i) => i.row.id);
     if (o.kind === "ok") {
-      await mark(ids, { status: "sent", sent_at: nowIso, last_error: cfg.testEventCode ? "test" : null });
+      // Meta kabul ettiğinden az olay saydıysa ya da test kodu açıksa tanı için not düşülür (kişisel veri yok).
+      const short = o.received !== undefined && o.received < ids.length;
+      const note = short
+        ? `Meta ${o.received}/${ids.length} olay kabul etti${o.trace ? `, izleme ${o.trace}` : ""}`
+        : cfg.testEventCode
+          ? "test"
+          : null;
+      await mark(ids, { status: "sent", sent_at: nowIso, last_error: note });
+      if (short) console.error(`[meta-feedback] Meta ${o.received}/${ids.length} olay kabul etti`);
       sum.sent += ids.length;
       return "continue";
     }
