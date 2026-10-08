@@ -1,4 +1,4 @@
--- Geçmiş dönem müşteri aramaları (migration 20261008000300_archive_calls.sql)
+-- Geçmiş dönem müşteri aramaları (migration 20261008000300_archive_calls.sql ve 20261008000400_archive_pool_cycle.sql)
 -- Senaryo tek DO bloğunda; herhangi bir assert düşerse test başarısız olur.
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -45,8 +45,9 @@ begin
   assert (public.archive_list(p_q => 'icra') ->> 'total')::int = 1, 'not aramasi';
   assert (public.archive_list(p_outcome => 'not_interested') ->> 'total')::int = 1, 'sonuc filtresi';
   assert (public.archive_list(p_from => current_date - 10) ->> 'total')::int = 1, 'tarih filtresi (son 10 gun)';
-  assert (r -> 'rows' -> 0 ->> 'phone_hint') like '0532 *** ** %', 'telefon maskeli';
-  assert (r -> 'rows' -> 0 ->> 'phone_hint') not like '%05321600%', 'tam numara sizmaz';
+  assert (r -> 'rows' -> 0 ->> 'phone') like '05321600%', 'telefon tam gorunur';
+  assert (public.archive_list(p_q => '05321600002') ->> 'total')::int = 1, 'telefonla arama';
+  assert (public.archive_list(p_q => '123') ->> 'total')::int = 0, 'kisa rakam telefon aramasi yapmaz';
 
   r := public.claim_archive_customers(array[c1, c2]);
   assert (r ->> 'claimed')::int = 2 and (r ->> 'skipped')::int = 0, 'alma: 2 musteri';
@@ -67,8 +68,21 @@ begin
   assert (select archive from public.call_attempts where customer_id = c1 order by created_at desc limit 1), 'arama arsiv bayrakli';
   perform public.log_call(c1, 'busy');
   perform public.log_call(c1, 'no_answer');
-  assert (select call_status from public.customers where id = c1) = 'unreachable', '3 basarisiz denemeden sonra havuz degil ulasilamadi';
-  assert (select revive_active from public.customers where id = c1), 'bayrak aramalar sirasinda korunur';
+  assert (select call_status from public.customers where id = c1) = 'pool', '3 basarisiz denemeden sonra havuza duser';
+  assert (select pool_count from public.customers where id = c1) = 1, 'normal dongu: havuz sayaci 0 dan baslar';
+  assert (select revive_active from public.customers where id = c1), 'havuzdayken de eski musteri isaretli';
+  -- havuz suresi dolunca normal dongude geri doner ve isaret kalir
+  update public.customers set next_call_at = now() - interval '1 hour', call_status = 'retry' where id = c1;
+  perform public.log_call(c1, 'no_answer');
+  assert (select archive from public.call_attempts where customer_id = c1 order by created_at desc limit 1), 'havuzdan donen musteri aramasi da arsiv bayrakli';
+
+  -- yeniden kapanan isaretli musteri tekrar listelenir
+  perform public.log_call(c2, 'not_interested');
+  alter table public.customers disable trigger customers_before_write;
+  update public.customers set updated_at = now() - interval '2 days' where id = c2;
+  alter table public.customers enable trigger customers_before_write;
+  assert (select revive_active from public.customers where id = c2), 'kapaninca da isaret kalir';
+  assert (public.archive_list(p_q => 'Kurgu Iki') ->> 'total')::int = 1, 'yeniden kapanan eski musteri tekrar listelenir';
 
   insert into public.daily_assignments (tenant_id, day, customer_id, member_id, position) values (t, public.tr_today(), c5, ma, 99);
   update public.customers set assigned_to = ma where id = c5;
@@ -77,7 +91,6 @@ begin
 
   update public.customers set applied_at = now() where id = c2;
   assert not (select revive_active from public.customers where id = c2), 'yeni form: normal musteriye doner';
-  update public.customers set revive_active = true where id = c2;
 
   perform set_config('request.jwt.claims', json_build_object('sub', um, 'role', 'authenticated')::text, true);
   rep := public.report_intake(current_date - 1, current_date);
@@ -85,9 +98,9 @@ begin
 
   rep := public._report_range(t, null, current_date - 1, current_date);
   assert (rep -> 'archive' ->> 'claimed')::int = 2, 'rapor: alinan 2';
-  assert (rep -> 'archive' ->> 'attempts')::int = 3, 'rapor: arsiv arama 3';
-  assert (rep -> 'totals' ->> 'attempts')::int = 4, 'toplam sayac arsivi de icerir (3+1)';
-  assert (rep -> 'archive' -> 'by_member' -> 0 ->> 'attempts')::int = 3, 'calisan kirilimi';
+  assert (rep -> 'archive' ->> 'attempts')::int = 5, 'rapor: arsiv arama 5';
+  assert (rep -> 'totals' ->> 'attempts')::int = 6, 'toplam sayac arsivi de icerir (5+1)';
+  assert (rep -> 'archive' -> 'by_member' -> 0 ->> 'attempts')::int = 5, 'calisan kirilimi';
   assert (select coalesce(sum((x ->> 'customers')::int), 0) from jsonb_array_elements(rep -> 'by_source') x) = 1, 'kaynak performansi yalniz normal arama (1 musteri)';
 
   perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
@@ -105,7 +118,7 @@ begin
     assert false, '11. bekleyen alinabildi';
   exception when sqlstate '22023' then null; end;
 end $$;
-$t$, 'geçmiş dönem: liste, alma, bayrak, rapor ve sınır kuralları');
+$t$, 'geçmiş dönem: liste, alma, havuz döngüsü, bayrak, rapor ve sınır kuralları');
 
 select * from finish();
 rollback;

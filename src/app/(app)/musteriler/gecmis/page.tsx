@@ -17,7 +17,7 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) 
 
 /**
  * Geçmiş dönem müşterileri: kapanmış (uygun değil, ulaşılamadı, ilgilenmiyor) müşteriler filtrelenir, çalışan
- * seçip kendine atar. Herkes görür; telefon maskelidir. Bu aramalar bugünkü form müşterisi sayılmaz (ayrı rapor).
+ * seçip kendine atar. Herkes görür. Bu aramalar bugünkü form müşterisi sayılmaz (ayrı rapor).
  */
 export default async function Page({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;

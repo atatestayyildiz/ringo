@@ -6,7 +6,7 @@ import { claimArchiveAction } from "@/app/(app)/musteriler/gecmis/actions";
 import { OUTCOME_LABEL } from "@/components/bugun/model";
 import { Button, useToast } from "@/components/ui";
 import { OperatorLogo } from "@/components/ui/OperatorLogo";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatPhone } from "@/lib/format";
 import { ARCHIVE_CLAIM_MAX, formatAmount, STAGE_LABEL, type ArchiveRow } from "./shared";
 import "./musteri.css";
 
@@ -25,7 +25,7 @@ function outcomeText(r: ArchiveRow): string {
 
 /**
  * Geçmiş dönem tablosu: çalışan satırları işaretler (en fazla 10), "Bana ata" ile müşteriler bugünkü listesine
- * bekleyen olarak düşer. Telefon maskelidir; alınınca Bugün ekranında tam görünür.
+ * bekleyen olarak düşer.
  */
 export function ArchiveList({ rows, filtered }: { rows: ArchiveRow[]; filtered: boolean }) {
   const router = useRouter();
@@ -108,7 +108,7 @@ export function ArchiveList({ rows, filtered }: { rows: ArchiveRow[]; filtered: 
                   </td>
                   <td>
                     <b>{r.full_name}</b>
-                    <small>{r.phone_hint}</small>
+                    <small>{formatPhone(r.phone)}</small>
                   </td>
                   <td>{r.operator ? <OperatorLogo operator={r.operator} /> : "-"}</td>
                   <td>{amount ? `${amount.value}${amount.unit ? ` ${amount.unit}` : ""}` : "-"}</td>

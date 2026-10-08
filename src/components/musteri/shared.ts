@@ -98,11 +98,11 @@ export function memberName(members: MemberLite[], id: string | null): string {
   return members.find((m) => m.id === id)?.full_name ?? "";
 }
 
-/** archive_list satırı (supabase/migrations/20261008000300_archive_calls.sql). Telefon maskelidir. */
+/** archive_list satırı (supabase/migrations/20261008000300_archive_calls.sql, 20261008000400_archive_pool_cycle.sql). */
 export type ArchiveRow = {
   id: string;
   full_name: string;
-  phone_hint: string;
+  phone: string;
   operator: string | null;
   amount: string | null;
   call_status: string;

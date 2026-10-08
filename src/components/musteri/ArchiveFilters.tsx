@@ -6,7 +6,7 @@ import { SelectBase } from "@/components/ui";
 import { ARCHIVE_OUTCOMES, OPERATOR_LABEL } from "./shared";
 import "./musteri.css";
 
-/** Geçmiş dönem listesi filtreleri: arama (ad, not), son sonuç, son işlem tarih aralığı, operatör, sıralama. Durum URL'de. */
+/** Geçmiş dönem listesi filtreleri: arama (ad, telefon, not), son sonuç, son işlem tarih aralığı, operatör, sıralama. Durum URL'de. */
 export function ArchiveFilters() {
   const router = useRouter();
   const pathname = usePathname();
@@ -48,8 +48,8 @@ export function ArchiveFilters() {
         type="search"
         value={q}
         onChange={(e) => onSearch(e.target.value)}
-        placeholder="Ad ya da not ara (ör. icra)"
-        aria-label="Ad ya da not ara"
+        placeholder="Ad, telefon ya da not ara (ör. icra)"
+        aria-label="Ad, telefon ya da not ara"
         enterKeyHint="search"
       />
       <SelectBase aria-label="Son sonuç" className={sel("sonuc") ? "is-set" : undefined} value={sel("sonuc")} onChange={(e) => push({ sonuc: e.target.value })}>
