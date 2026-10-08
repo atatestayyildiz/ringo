@@ -148,16 +148,43 @@ Kaydedip **Deployments > en son yayın > Redeploy** yapın. Değişken eklemek y
 
 ## 12. Başvuru durum geribeslemesi (isteğe bağlı, reklamcı isterse)
 
-Program, başvurunun durumu değişince Meta'ya olay gönderir (Giriş, Uygun, Dönüşüm, Kayıp, Uygun değil). Meta bu bilgiyle reklamı daha nitelikli başvuruya göre optimize eder. Ayrıntı ve eşleme: [spec-meta-geribesleme.md](spec-meta-geribesleme.md). **Bu adımlar Meta panelinde işletme hesabı yöneticisi tarafından yapılır; anahtar değerleri sohbete ya da dosyaya yazılmaz, yalnız Vercel'e girilir.**
+Program, başvurunun durumu değişince Meta'ya olay gönderir (Giriş, Uygun, Dönüşüm, Kayıp, Uygun değil). Meta bu bilgiyle reklamı daha nitelikli başvuruya göre optimize eder. Ayrıntı ve eşleme: [spec-meta-geribesleme.md](spec-meta-geribesleme.md).
 
-1. **Veri kaynağı:** Etkinlik Yöneticisi > Veri kaynakları: bir **Veri Seti (Dataset)** ya da Pixel seçin (yoksa Müşteri Adayı/CRM kaynağı oluşturun). **Kimliğini** (rakamlar) kopyalayın.
-2. **Sistem kullanıcısı:** İşletme Ayarları > Sistem kullanıcıları > `ringo-basvuru` > Varlık ekle: bu veri kaynağını **tam kontrol** ile atayın. Belirteçte `ads_management` izni olmalı (yoksa yeni belirteç üretip `META_ACCESS_TOKEN`'ı Vercel'de güncelleyin).
-3. **Vercel > Settings > Environment Variables:** `META_DATASET_ID` = veri kaynağı kimliği. Redeploy.
-4. **Deneme:** Etkinlik Yöneticisi > Test Olayları sekmesinde **test kodunu** kopyalayın, Vercel'e `META_TEST_EVENT_CODE` olarak ekleyin, redeploy. Bir başvurunun durumunu değiştirin (ör. Dükkana gelecek); 10 dakika içinde olay Test Olayları'nda **Uygun** adıyla görünmelidir. Test kodu açıkken tek turda en çok 10 olay gider ve bunlar canlı sayılmaz.
-5. **Canlıya alma:** `META_TEST_EVENT_CODE`'u Vercel'den silin, redeploy. Artık gerçek olaylar gider.
-6. **Reklam seti:** Reklam Yöneticisi > reklam seti > Performans hedefi: **Dönüşüm adayları** (Conversion Leads) ve optimize edilecek olay. Öneri: **Uygun** (randevu), çünkü Dönüşüm (satış) çoğu zaman çok seyrektir. Meta, ayda yaklaşık 200+ başvuru ve hedef aşama oranının %1-%40 olmasını ister.
+**Bu adımları işletme hesabının yöneticisi (Meta'da Tam kontrol sahibi) yapar. Belirteç ve kimlik değerleri sohbete ya da dosyaya yazılmaz, yalnız Vercel'e girilir.** Menü adları Meta'nın güncellemelerine göre biraz değişebilir.
 
-Kontrol: Etkinlik Yöneticisi > veri kaynağı > Genel Bakış'ta olayların geldiği görünür. Programda gönderim 10 dakikada bir, başvuru taramasıyla birlikte yapılır. Gönderim `META_DATASET_ID` tanımlı değilse kapalıdır.
+### Adım 1. CRM veri seti oluşturun ve kimliğini alın
+1. https://business.facebook.com/events_manager2/list adresini açın (sol üstten doğru işletme hesabını seçin).
+2. Soldaki **Veri kaynakları** (Data sources) sayfasında **Veri kaynağı bağla** (Connect data sources) düğmesine basın.
+3. **CRM**'i seçin, **Bağlan**'a basın. Meta "yeni veri seti oluştur" der: ad olarak `Ringo CRM` yazın. (Meta tavsiyesi: mevcut web Pixel'ine karıştırmayın, yeni veri seti açın.)
+4. Veri setini seçin, üst sekmelerden **Ayarlar**'a girin. Üstte **Veri Seti Kimliği** (Dataset ID / Pixel ID) yazan **rakamlardan oluşan sayıyı** kopyalayın. Bu sayı `META_DATASET_ID` olacak.
+
+### Adım 2. Erişim belirteci oluşturun
+1. Aynı **Ayarlar** sayfasında aşağı inin, **Conversions API** bölümünü bulun.
+2. **Erişim belirteci oluştur** (Generate access token) bağlantısına basın, çıkan uzun metni **Kopyala**'ya basarak kopyalayın. Bu belirteç yalnız bu veri setine olay gönderir; sayfa izni gerekmez. `META_DATASET_TOKEN` olacak. Başka yere yapıştırmayın.
+
+### Adım 3. Vercel'e girin
+1. https://vercel.com adresinde projeyi açın, **Settings > Environment Variables**.
+2. İki değişken ekleyin (Production seçili olsun):
+   - `META_DATASET_ID` = Adım 1'deki sayı
+   - `META_DATASET_TOKEN` = Adım 2'deki belirteç
+3. **Deployments** sekmesinde son yayının `...` menüsünden **Redeploy**.
+
+### Adım 4. Deneme (canlıya almadan önce)
+1. Etkinlik Yöneticisi > veri seti > **Test Olayları** (Test events) sekmesini açın, **Sunucu olaylarını test et** bölümündeki **test kodunu** kopyalayın (TEST ile başlar).
+2. Vercel'e `META_TEST_EVENT_CODE` = bu kod olarak ekleyin, Redeploy.
+3. Programda bir Meta başvurusunun durumunu değiştirin (ör. **Dükkana gelecek**). En geç 10 dakika içinde Test Olayları sekmesinde olay **Uygun** adıyla görünür.
+4. Test kodu açıkken tek turda en çok 10 olay gider ve bunlar **canlı sayılmaz**.
+
+### Adım 5. Canlıya alma
+Vercel'den `META_TEST_EVENT_CODE` değişkenini silin, Redeploy. Artık gerçek olaylar gider.
+
+### Adım 6. Reklam setini ayarlayın (reklamcı)
+1. https://adsmanager.facebook.com adresinde ilgili kampanyanın **reklam setini** düzenleyin.
+2. **Performans hedefi** olarak **Dönüşüm adayları** (Conversion Leads) seçin, optimize edilecek olay olarak **Uygun**'u seçin. Öneri: Uygun (randevu), çünkü Dönüşüm (satış) çoğu zaman çok seyrektir.
+3. Meta, ayda yaklaşık 200+ başvuru ve hedef aşama oranının %1-%40 olmasını ister. Olayların oturması için bir hafta veri toplanması önerilir.
+
+### Kontrol
+Etkinlik Yöneticisi > veri seti > **Genel Bakış**'ta olayların geldiği görünür. Programda gönderim 10 dakikada bir, başvuru taramasıyla birlikte yapılır. `META_DATASET_ID` tanımlı değilse gönderim kapalıdır. Belirteç yoksa programdaki `META_ACCESS_TOKEN` kullanılır, ama onun veri setine atanmış ve `ads_management` izinli olması gerekir (Adım 2'deki belirteç bu yüzden daha kolaydır).
 
 ---
 

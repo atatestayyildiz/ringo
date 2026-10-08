@@ -40,8 +40,9 @@ Eşleme tek yerde: `src/lib/meta/feedback.ts` (`STAGE_BY_SIGNAL`). Değişirse k
   - Aynı başvuruya aynı Meta aşaması ikinci kez gönderilmez (ör. randevu sonra geldi: tek "Uygun").
   - 6,5 günü geçen olay `skipped` (süresi doldu). Kalıcı hata (400 geçersiz kimlik) `failed`; geçici hata (429, 5xx, bağlantı) 5 denemeye kadar tekrar.
   - `META_DATASET_ID` tanımlı değilse hiçbir şey gönderilmez; kuyruk birikir (en çok 6,5 gün).
-- Ortam: `META_DATASET_ID` (Veri kaynağı/Pixel kimliği), isteğe bağlı `META_TEST_EVENT_CODE` (Etkinlik Yöneticisi > Test Olayları),
-  `META_ACCESS_TOKEN` zaten var (sistem kullanıcısına veri kaynağı atanmış ve `ads_management` yetkili olmalı).
+- Ortam: `META_DATASET_ID` (Veri kaynağı/Pixel kimliği), `META_DATASET_TOKEN` (Etkinlik Yöneticisi > Ayarlar > Conversions API belirteci;
+  yoksa `META_ACCESS_TOKEN` kullanılır, o durumda sistem kullanıcısına veri kaynağı atanmış ve `ads_management` yetkili olmalı),
+  isteğe bağlı `META_TEST_EVENT_CODE` (Etkinlik Yöneticisi > Test Olayları).
 - Kişisel veri gönderilmez: yalnız `lead_id` (Meta'nın kendi kimliği), aşama adı ve zaman. E-posta/telefon gönderilmez.
 
 ## Kapsam dışı

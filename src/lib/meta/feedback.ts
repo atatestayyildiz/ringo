@@ -63,10 +63,13 @@ export type FeedbackSummary = {
   configError: boolean;
 };
 
-/** META_DATASET_ID ve META_ACCESS_TOKEN yoksa null (geri bildirim kapalı). */
+/**
+ * META_DATASET_ID ve bir belirteç yoksa null (geri bildirim kapalı). Belirteç: META_DATASET_TOKEN (Etkinlik Yöneticisi >
+ * Ayarlar > Conversions API > erişim belirteci oluştur); yoksa META_ACCESS_TOKEN (sistem kullanıcısı).
+ */
 export function feedbackFromEnv(): FeedbackConfig | null {
   const datasetId = process.env.META_DATASET_ID?.trim();
-  const token = process.env.META_ACCESS_TOKEN?.trim();
+  const token = process.env.META_DATASET_TOKEN?.trim() || process.env.META_ACCESS_TOKEN?.trim();
   if (!datasetId || !token || !/^\d+$/.test(datasetId)) return null;
   return {
     datasetId,

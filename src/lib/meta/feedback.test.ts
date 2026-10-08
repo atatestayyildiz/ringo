@@ -113,6 +113,9 @@ describe("eşleme ve gövde", () => {
     expect(feedbackFromEnv()).toBeNull();
     vi.stubEnv("META_DATASET_ID", "12345");
     expect(feedbackFromEnv()).toMatchObject({ datasetId: "12345", token: "t" });
+    vi.stubEnv("META_DATASET_TOKEN", "dt");
+    expect(feedbackFromEnv()).toMatchObject({ token: "dt" });
+    vi.stubEnv("META_DATASET_TOKEN", "");
     vi.stubEnv("META_ACCESS_TOKEN", "");
     expect(feedbackFromEnv()).toBeNull();
   });
