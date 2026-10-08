@@ -12,6 +12,7 @@ import {
   IconX,
   type IconProps,
 } from "@/components/icons";
+import { formatAmount } from "@/components/musteri/shared";
 import { Avatar, Chip } from "@/components/ui";
 import { formatPhone, relativeTime, telLink, waLink } from "@/lib/format";
 import {
@@ -96,6 +97,7 @@ export function FocusCard({
   const open = isCallOpen(item.status);
   const tel = telLink(item.phone);
   const wa = waLink(item.phone);
+  const amount = formatAmount(item.amount);
   const callbackLabel =
     item.status === "retry" &&
     item.log[item.log.length - 1]?.outcome === "callback"
@@ -129,6 +131,7 @@ export function FocusCard({
               </span>
             </h3>
             <div className={styles.num}>{formatPhone(item.phone)}</div>
+            {item.phoneAlt ? <div className={styles.num}>{formatPhone(item.phoneAlt)}</div> : null}
             {item.owner ? (
               <div className={styles.owner}>{item.owner} listesinde</div>
             ) : null}
@@ -140,7 +143,12 @@ export function FocusCard({
               <OperatorLogo operator={item.operator} />
             </Chip>
           ) : null}
-          <Chip>{item.sourceLabel}</Chip>
+          {amount ? (
+            <Chip>
+              Tutar {amount.value}
+              {amount.unit ? ` ${amount.unit}` : ""}
+            </Chip>
+          ) : null}
           {item.appliedLabel ? (
             <Chip className={styles.chipIco}>
               <IconClock />

@@ -1,7 +1,6 @@
 import { BugunView } from "@/components/bugun/BugunView";
 import {
   firstName,
-  sourceLabel,
   type BirthdayInfo,
   type ClaimInfo,
   type DistributionMode,
@@ -68,7 +67,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
       ? supabase
           .from("customers")
           .select(
-            "id, full_name, phone, operator, source, source_detail, applied_at, call_status, attempts_in_round, next_call_at",
+            "id, full_name, phone, phone_alt, operator, amount, applied_at, call_status, attempts_in_round, next_call_at",
           )
           .in("id", ids)
       : Promise.resolve({ data: [] }),
@@ -107,7 +106,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
       name: c.full_name,
       phone: c.phone,
       operator: c.operator,
-      sourceLabel: sourceLabel(c.source, c.source_detail),
+      phoneAlt: c.phone_alt,
+      amount: c.amount,
       appliedLabel: c.applied_at ? relativeTime(c.applied_at, now) : null,
       status: c.call_status as CallStatus,
       tries: c.attempts_in_round,

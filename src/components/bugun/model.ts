@@ -73,7 +73,10 @@ export type Item = {
   name: string;
   phone: string;
   operator: string | null;
-  sourceLabel: string;
+  /** İkinci telefon (Meta formundaki ek numara), yoksa null */
+  phoneAlt: string | null;
+  /** Başvurudaki tutar (ham metin; gösterim formatAmount ile), yoksa null */
+  amount: string | null;
   appliedLabel: string | null;
   status: CallStatus;
   tries: number;
@@ -123,11 +126,6 @@ export type DistributeResult = { ok: true; count: number } | { ok: false; error:
 export function logText(e: LogEntry): string {
   const label = OUTCOME_LABEL[e.outcome as Outcome] ?? e.outcome;
   return e.note ? `${label}: ${e.note}` : label;
-}
-
-export function sourceLabel(source: string, detail: string | null): string {
-  const base = source === "meta_api" ? "Meta" : source === "import" ? "İçe aktarım" : "Elle eklendi";
-  return detail ? `${base} · ${detail}` : base;
 }
 
 export function firstName(full: string): string {
