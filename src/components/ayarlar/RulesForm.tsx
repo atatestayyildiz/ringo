@@ -109,7 +109,7 @@ export function RulesForm({ settings, summary }: { settings: TenantSettings; sum
           {mode === "free_pool" ? (
             <Input
               label="Aynı anda en fazla açık müşteri"
-              hint="Çalışan listesinde bu kadar aranmamış müşteri varken yenisini alamaz."
+              hint="Çalışan listesinde bu kadar bekleyen müşteri varken yenisini alamaz. Açmadı ve meşgul çıkanlar sayılmaz."
               error={claimError ?? undefined}
               type="number"
               inputMode="numeric"

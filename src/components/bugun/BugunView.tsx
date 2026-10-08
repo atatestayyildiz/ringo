@@ -534,7 +534,7 @@ export function BugunView(props: Props) {
                 "Şu an sırada bekleyen müşteri yok."
               )}{" "}
               {atLimit
-                ? `Listende ${claim.open} açık müşteri var, sınır ${claim.limit}. Onları arayınca yenisini alabilirsin.`
+                ? `Listende ${claim.open} açık müşteri var, sınır ${claim.limit}. Açmayan ve meşgul çıkanlar sayılmaz; bekleyenleri arayınca yenisini alabilirsin.`
                 : `Açık müşterin ${claim.open} / ${claim.limit}.`}
             </p>
           </div>

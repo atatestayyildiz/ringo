@@ -34,7 +34,7 @@ export function modeSummary(mode: DistributionMode, claimLimit: number): string 
     case "auto_even":
       return `Her sabah dağıtım saatinde bekleyen yeni müşteriler çalışanlara eşit bölünür. ${keep}`;
     case "free_pool":
-      return `Sabah dağıtım yapılmaz. Çalışan Bugün ekranında "Sıradaki müşteriyi al" der, sistem en eski bekleyen müşteriyi verir; kimse listeden seçemez. Bir çalışanın aynı anda en fazla ${claimLimit} açık müşterisi olur. Havuzdan dönen müşteri sıraya girer. ${keep}`;
+      return `Sabah dağıtım yapılmaz. Çalışan Bugün ekranında "Sıradaki müşteriyi al" der, sistem en eski bekleyen müşteriyi verir; kimse listeden seçemez. Bir çalışanın aynı anda en fazla ${claimLimit} bekleyen müşterisi olur (açmadı ve meşgul çıkanlar sayılmaz). Havuzdan dönen müşteri sıraya girer. ${keep}`;
     case "manual":
       return `Sabah yeni müşteri dağıtılmaz. Yönetici Müşteriler ekranından seçip çalışana atar, atanan müşteri o çalışanın bugünkü listesine düşer. Havuzdan dönen müşteri atanmayı bekler. ${keep}`;
   }
