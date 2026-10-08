@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { bearerToken, safeEqual } from "@/lib/push/auth";
 import { describeError, type Graph } from "./graph";
+import { flushFeedback, type FeedbackConfig, type FeedbackSummary } from "./feedback";
 import { DB_ERROR_TEXT, DbError, ingestLead, questionTypes, recordStatus } from "./ingest";
 
 export type Connection = { tenant_id: string; page_id: string; last_sync_at: string | null };
@@ -72,6 +73,8 @@ export type SyncDeps = {
   graph: Graph | null;
   getAdmin: () => SupabaseClient<Database>;
   now?: Date;
+  /** Meta durum geribeslemesi (META_DATASET_ID tanımlıysa). Yoksa ya da null ise gönderim yapılmaz. */
+  feedback?: FeedbackConfig | null;
 };
 
 export async function processSyncRequest(req: Request, deps: SyncDeps): Promise<Response> {
@@ -89,5 +92,14 @@ export async function processSyncRequest(req: Request, deps: SyncDeps): Promise<
   }
   const hours = parseHours(new URL(req.url).searchParams.get("hours"));
   const sum = await syncConnections(admin, deps.graph, list.data ?? [], { now: deps.now, hours });
-  return Response.json({ ok: sum.failed === 0, ...sum }, { status: sum.failed > 0 ? 500 : 200 });
+  // Yeni başvurular işlendikten sonra durum olayları gönderilir; hata taramanın sonucunu bozmaz.
+  let feedback: FeedbackSummary | undefined;
+  if (deps.feedback) {
+    try {
+      feedback = await flushFeedback(admin, { ...deps.feedback, now: deps.now ?? deps.feedback.now });
+    } catch {
+      console.error("[meta-feedback] gönderim başarısız");
+    }
+  }
+  return Response.json({ ok: sum.failed === 0, ...sum, ...(feedback ? { feedback } : {}) }, { status: sum.failed > 0 ? 500 : 200 });
 }

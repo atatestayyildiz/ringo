@@ -146,6 +146,21 @@ Kaydedip **Deployments > en son yayın > Redeploy** yapın. Değişken eklemek y
 
 ---
 
+## 12. Başvuru durum geribeslemesi (isteğe bağlı, reklamcı isterse)
+
+Program, başvurunun durumu değişince Meta'ya olay gönderir (Giriş, Uygun, Dönüşüm, Kayıp, Uygun değil). Meta bu bilgiyle reklamı daha nitelikli başvuruya göre optimize eder. Ayrıntı ve eşleme: [spec-meta-geribesleme.md](spec-meta-geribesleme.md). **Bu adımlar Meta panelinde işletme hesabı yöneticisi tarafından yapılır; anahtar değerleri sohbete ya da dosyaya yazılmaz, yalnız Vercel'e girilir.**
+
+1. **Veri kaynağı:** Etkinlik Yöneticisi > Veri kaynakları: bir **Veri Seti (Dataset)** ya da Pixel seçin (yoksa Müşteri Adayı/CRM kaynağı oluşturun). **Kimliğini** (rakamlar) kopyalayın.
+2. **Sistem kullanıcısı:** İşletme Ayarları > Sistem kullanıcıları > `ringo-basvuru` > Varlık ekle: bu veri kaynağını **tam kontrol** ile atayın. Belirteçte `ads_management` izni olmalı (yoksa yeni belirteç üretip `META_ACCESS_TOKEN`'ı Vercel'de güncelleyin).
+3. **Vercel > Settings > Environment Variables:** `META_DATASET_ID` = veri kaynağı kimliği. Redeploy.
+4. **Deneme:** Etkinlik Yöneticisi > Test Olayları sekmesinde **test kodunu** kopyalayın, Vercel'e `META_TEST_EVENT_CODE` olarak ekleyin, redeploy. Bir başvurunun durumunu değiştirin (ör. Dükkana gelecek); 10 dakika içinde olay Test Olayları'nda **Uygun** adıyla görünmelidir. Test kodu açıkken tek turda en çok 10 olay gider ve bunlar canlı sayılmaz.
+5. **Canlıya alma:** `META_TEST_EVENT_CODE`'u Vercel'den silin, redeploy. Artık gerçek olaylar gider.
+6. **Reklam seti:** Reklam Yöneticisi > reklam seti > Performans hedefi: **Dönüşüm adayları** (Conversion Leads) ve optimize edilecek olay. Öneri: **Uygun** (randevu), çünkü Dönüşüm (satış) çoğu zaman çok seyrektir. Meta, ayda yaklaşık 200+ başvuru ve hedef aşama oranının %1-%40 olmasını ister.
+
+Kontrol: Etkinlik Yöneticisi > veri kaynağı > Genel Bakış'ta olayların geldiği görünür. Programda gönderim 10 dakikada bir, başvuru taramasıyla birlikte yapılır. Gönderim `META_DATASET_ID` tanımlı değilse kapalıdır.
+
+---
+
 ## Sık karşılaşılan sorunlar
 
 | Belirti | Sebep ve çözüm |

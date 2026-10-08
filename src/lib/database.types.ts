@@ -173,6 +173,25 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"meta_feedback_events": {
+                  Row: {
+                    "attempts": number,"created_at": string,"customer_id": string | null,"event_time": string,"id": string,"last_error": string | null,"leadgen_id": string,"sent_at": string | null,"signal": string,"status": string,"tenant_id": string
+                  }
+                  Insert: {
+                    "attempts"?: number,"created_at"?: string,"customer_id"?: string | null,"event_time"?: string,"id"?: string,"last_error"?: string | null,"leadgen_id": string,"sent_at"?: string | null,"signal": string,"status"?: string,"tenant_id": string
+                  }
+                  Update: {
+                    "attempts"?: number,"created_at"?: string,"customer_id"?: string | null,"event_time"?: string,"id"?: string,"last_error"?: string | null,"leadgen_id"?: string,"sent_at"?: string | null,"signal"?: string,"status"?: string,"tenant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "meta_feedback_events_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"meta_leads": {
                   Row: {
                     "created_time": string | null,"customer_id": string | null,"form_id": string | null,"id": string,"leadgen_id": string,"received_at": string | null,"result": string,"tenant_id": string

@@ -1,6 +1,6 @@
 # Meta başvuru durum geribeslemesi: devam notu (2026-10-08)
 
-Durum: planlandı, kod yok. Başka bilgisayardan devam etmek için yazıldı.
+Durum (2026-10-08, güncellendi): kod yazıldı, canlıya alındı, **gönderim kapalı** (META_DATASET_ID yok). Ayrıntı: spec-meta-geribesleme.md. Kalan: Meta panel adımları (meta-kurulum.md bölüm 12) ve Vercel ortam değişkeni.
 
 ## Ne isteniyor
 Reklamcı "başvuru durum geribeslemesini ayarlasın" dedi. Anlamı: CRM'de müşteri durumu değişince Meta'ya olay göndermek (Conversions API for CRM / Conversion Leads). Meta algoritması hangi başvurunun gerçekten işe yaradığını öğrenir ve reklamı ona göre optimize eder.
