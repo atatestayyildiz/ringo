@@ -14,7 +14,7 @@ const OPTIONS = [
   { v: 30, label: "30 dakika" },
 ];
 
-const digitsOnly = (v: string) => v.replace(/\D/g, "").slice(0, 6);
+const digitsOnly = (v: string) => v.replace(/\D/g, "").slice(0, 8);
 
 /** Profil > Güvenlik: panel PIN'i değiştirme ve otomatik kilit süresi. */
 export function SecurityCard({ autoLockMinutes, autoLockMinutesMobile }: { autoLockMinutes: number; autoLockMinutesMobile: number }) {
@@ -27,15 +27,15 @@ export function SecurityCard({ autoLockMinutes, autoLockMinutesMobile }: { autoL
   const [again, setAgain] = useState("");
   const [touched, setTouched] = useState(false);
 
-  const six = (v: string) => /^\d{6}$/.test(v);
-  const curErr = touched && !six(current) ? "Mevcut PIN'i 6 hane olarak gir." : undefined;
-  const pinErr = touched && !six(pin) ? "Yeni PIN 6 haneli olmalı." : undefined;
+  const valid = (v: string) => /^\d{4,8}$/.test(v);
+  const curErr = touched && !valid(current) ? "Mevcut PIN'i gir (4 ile 8 hane)." : undefined;
+  const pinErr = touched && !valid(pin) ? "Yeni PIN 4 ile 8 hane arasında olmalı." : undefined;
   const againErr = touched && again !== pin ? "PIN'ler aynı değil." : undefined;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
-    if (!six(current) || !six(pin) || again !== pin) return;
+    if (!valid(current) || !valid(pin) || again !== pin) return;
     start(async () => {
       const res = await changePinAction(current, pin, again);
       if (res.ok) {
@@ -103,7 +103,7 @@ export function SecurityCard({ autoLockMinutes, autoLockMinutesMobile }: { autoL
           type="password"
           inputMode="numeric"
           autoComplete="off"
-          maxLength={6}
+          maxLength={8}
           error={curErr}
           value={current}
           onChange={(e) => setCurrent(digitsOnly(e.target.value))}
@@ -113,8 +113,8 @@ export function SecurityCard({ autoLockMinutes, autoLockMinutesMobile }: { autoL
           type="password"
           inputMode="numeric"
           autoComplete="off"
-          maxLength={6}
-          hint="6 hane; tekrarlanan ya da sıralı rakamlar olmaz."
+          maxLength={8}
+          hint="4 ile 8 hane; tekrarlanan ya da sıralı rakamlar olmaz."
           error={pinErr}
           value={pin}
           onChange={(e) => setPin(digitsOnly(e.target.value))}
@@ -124,7 +124,7 @@ export function SecurityCard({ autoLockMinutes, autoLockMinutesMobile }: { autoL
           type="password"
           inputMode="numeric"
           autoComplete="off"
-          maxLength={6}
+          maxLength={8}
           error={againErr}
           value={again}
           onChange={(e) => setAgain(digitsOnly(e.target.value))}

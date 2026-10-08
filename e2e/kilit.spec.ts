@@ -71,6 +71,7 @@ test.describe("ilk giriş: PIN belirleme zorunlu", () => {
 
     // zayıf PIN: DB mesajı
     await typePin(page, "123456");
+    await page.keyboard.press("Enter");
     await expect(page.getByRole("heading", { name: "PIN'i tekrar gir" })).toBeVisible();
     await typePin(page, "123456");
     await expect(page.getByRole("alert").filter({ hasText: "kolay tahmin" })).toBeVisible();
@@ -78,10 +79,12 @@ test.describe("ilk giriş: PIN belirleme zorunlu", () => {
 
     // eşleşmeme
     await typePin(page, "135790");
+    await page.keyboard.press("Enter");
     await typePin(page, "135791");
     await expect(page.getByRole("alert").filter({ hasText: "aynı değil" })).toBeVisible();
 
     await typePin(page, "135790");
+    await page.keyboard.press("Enter");
     await typePin(page, "135790");
     await expect(page).toHaveURL(/\/bugun/);
     await page.goto("/pin-belirle");

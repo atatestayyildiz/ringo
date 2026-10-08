@@ -88,13 +88,14 @@ export function notifyAutoLockChanged(minutes: number, mobile = false) {
 }
 
 /** lock_status() jsonb sonucunu güvenle çözer; üyelik yoksa null. */
-export type LockStatus = { locked: boolean; has_pin: boolean; auto_lock_minutes: number; auto_lock_minutes_mobile: number };
+export type LockStatus = { locked: boolean; has_pin: boolean; pin_length: number; auto_lock_minutes: number; auto_lock_minutes_mobile: number };
 export function parseLockStatus(v: unknown): LockStatus | null {
   if (!v || typeof v !== "object" || Array.isArray(v)) return null;
   const o = v as Record<string, unknown>;
   return {
     locked: o.locked === true,
     has_pin: o.has_pin === true,
+    pin_length: typeof o.pin_length === "number" && o.pin_length >= 4 && o.pin_length <= 8 ? o.pin_length : 6,
     auto_lock_minutes: typeof o.auto_lock_minutes === "number" ? o.auto_lock_minutes : 0,
     auto_lock_minutes_mobile: typeof o.auto_lock_minutes_mobile === "number" ? o.auto_lock_minutes_mobile : 0,
   };

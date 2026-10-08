@@ -12,11 +12,11 @@ import { createClient } from "@/lib/supabase/client";
 import { forgotPinAction, unlockAction } from "./actions";
 
 /**
- * Kilit ekranı (sahnenin alt bölmesi): "PIN gir" → 6 daire çizilir, yerel klavye açılır. Hanede halka nabzı,
+ * Kilit ekranı (sahnenin alt bölmesi): "PIN gir" → PIN kaç haneliyse o kadar daire çizilir, yerel klavye açılır. Hanede halka nabzı,
  * yanlışta halka kırmızı + daireler sallanır ve kalan hak yazılır, doğru PIN'de klavye kapanır ve kapı
  * açılışıyla panele; 5 yanlışta oturum kapanır, girişe dönülür.
  */
-export function LockScreen({ name }: { name: string }) {
+export function LockScreen({ name, pinLength }: { name: string; pinLength: number }) {
   const router = useRouter();
   const { announceUnlocked } = useLock();
   const { handle } = useScene();
@@ -86,7 +86,7 @@ export function LockScreen({ name }: { name: string }) {
         <p>{name ? `${name}, devam etmek için PIN'ini gir.` : "Devam etmek için PIN'ini gir."}</p>
       </div>
       <PinField
-        length={6}
+        length={pinLength}
         label="PIN"
         trigger="PIN gir"
         onComplete={submit}

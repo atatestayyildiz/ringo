@@ -40,6 +40,8 @@ export async function setupPinIfAsked(page: Page, pin = TEST_PIN) {
   if (!/\/pin-belirle/.test(page.url())) return;
   await expect(page.getByRole("heading", { name: "PIN belirle" })).toBeVisible();
   await typePin(page, pin);
+  // PIN 4-8 hane: ilk adım Enter ile onaylanır; ikinci adım aynı hane sayısında kendiliğinden gönderilir.
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "PIN'i tekrar gir" })).toBeVisible();
   await typePin(page, pin);
 }

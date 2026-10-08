@@ -1,7 +1,7 @@
 -- Panel kilidi (migration 20261005001200_panel_lock.sql)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(75);
+select plan(80);
 
 insert into auth.users (instance_id, id, aud, role, email) values
   ('00000000-0000-0000-0000-000000000000', '20000000-0000-4000-8000-0000000000e1', 'authenticated', 'authenticated', 'lk-yonetici@test.test'),
@@ -60,7 +60,7 @@ select ok(not has_column_privilege('authenticated', 'public.members', 'locked_at
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000e2","role":"authenticated"}', true);
 set local role authenticated;
 
-select is(public.lock_status(), '{"locked": false, "has_pin": false, "auto_lock_minutes": 10, "auto_lock_minutes_mobile": 0}'::jsonb, 'ilk durum: PIN yok, açık, bilgisayarda 10 dk, telefonda kapalı');
+select is(public.lock_status(), '{"locked": false, "has_pin": false, "pin_length": 6, "auto_lock_minutes": 10, "auto_lock_minutes_mobile": 0}'::jsonb, 'ilk durum: PIN yok, açık, bilgisayarda 10 dk, telefonda kapalı');
 select throws_ok($$select public.lock_me()$$, '22023', null, 'PIN yokken kilitlenemez');
 select throws_ok($$select public.set_my_pin('111111')$$, '22023', null, '111111 zayıf');
 select throws_ok($$select public.set_my_pin('000000')$$, '22023', null, '000000 (demo PIN) zayıf, RPC kabul etmez');
@@ -69,11 +69,16 @@ select throws_ok($$select public.set_my_pin('654321')$$, '22023', null, '654321 
 select throws_ok($$select public.set_my_pin('890123')$$, '22023', null, '890123 zayıf (döngü)');
 select throws_ok($$select public.set_my_pin('121212')$$, '22023', null, '121212 zayıf');
 select throws_ok($$select public.set_my_pin('123123')$$, '22023', null, '123123 zayıf');
-select throws_ok($$select public.set_my_pin('12345')$$, '22023', null, '5 hane reddedilir');
+select throws_ok($$select public.set_my_pin('123')$$, '22023', null, '3 hane reddedilir');
+select throws_ok($$select public.set_my_pin('135790246')$$, '22023', null, '9 hane reddedilir');
+select throws_ok($$select public.set_my_pin('1111')$$, '22023', null, '1111 zayıf');
+select throws_ok($$select public.set_my_pin('1212')$$, '22023', null, '1212 zayıf');
+select throws_ok($$select public.set_my_pin('4321')$$, '22023', null, '4321 zayıf');
 select throws_ok($$select public.set_my_pin('12a456')$$, '22023', null, 'harf reddedilir');
 select throws_ok($$select public.set_my_pin(null)$$, '22023', null, 'boş PIN reddedilir');
 select lives_ok($$select public.set_my_pin('246810')$$, 'ilk PIN mevcut PIN olmadan belirlenir');
 select is((public.lock_status() ->> 'has_pin')::boolean, true, 'has_pin true');
+select is((public.lock_status() ->> 'pin_length')::int, 6, 'pin_length 6');
 select throws_ok($$select pin_hash from public.members where id = '30000000-0000-4000-8000-0000000000e2'$$, '42501', null, 'pin_hash istemciden okunamaz');
 select throws_ok($$update public.members set locked_at = null where id = '30000000-0000-4000-8000-0000000000e2'$$, '42501', null, 'locked_at doğrudan yazılamaz');
 

@@ -10,7 +10,8 @@ import { setPinAction } from "./actions";
 
 /**
  * İlk PIN belirleme (sahnenin alt bölmesi, kilitle aynı dil): "PIN belirle" → daireler; iki adım, eşleşmeli.
- * Zayıf PIN uyarısı DB'den; başarıda klavye kapanır, kapı açılışıyla panele.
+ * PIN 4 ile 8 hane arasında: ilk adımda daireler hane girildikçe artar, Enter ya da "Devam" ile ilerlenir;
+ * ikinci adımda aynı hane sayısı tamamlanınca otomatik gönderilir. Zayıf PIN uyarısı DB'den; başarıda klavye kapanır, kapı açılışıyla panele.
  */
 export function PinSetup({ children }: { children?: React.ReactNode }) {
   const { handle } = useScene();
@@ -57,10 +58,11 @@ export function PinSetup({ children }: { children?: React.ReactNode }) {
     <>
       <div className="sr-only">
         <h1>{step2 ? "PIN'i tekrar gir" : "PIN belirle"}</h1>
-        <p>{step2 ? "Aynı 6 haneyi bir kez daha gir." : "Paneli açmak için 6 haneli bir PIN seç. Tekrarlanan ya da sıralı rakamlar olmaz."}</p>
+        <p>{step2 ? `Aynı ${first.length} haneyi bir kez daha gir.` : "Paneli açmak için 4 ile 8 hane arasında bir PIN seç; bitince Enter ya da Devam. Tekrarlanan ya da sıralı rakamlar olmaz."}</p>
       </div>
       <PinField
-        length={6}
+        length={step2 ? first.length : 8}
+        flexible={step2 ? undefined : { min: 4 }}
         label={step2 ? "PIN tekrarı" : "Yeni PIN"}
         trigger="PIN belirle"
         onComplete={onComplete}
