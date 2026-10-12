@@ -81,7 +81,6 @@ function Body({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmRelease, setConfirmRelease] = useState(false);
 
-  const canStage = viewer.isManager || c.assigned_to === viewer.id;
   // Serbest bırakma: açık müşteri, sahibi ya da yönetici
   const canRelease = !!c.assigned_to && (c.assigned_to === viewer.id || viewer.isManager) && (c.call_status === "pending" || c.call_status === "retry");
   const activeMembers = members.filter((m) => m.is_active);
@@ -225,15 +224,9 @@ function Body({
 
       <section className="mu-sec">
         <h3>Huni aşaması</h3>
-        {canStage ? (
-          <StageForm customer={c} onDone={refresh} />
-        ) : (
-          <p className="mu-warn">
-            {c.pipeline_stage ? `Aşama: ${STAGE_LABEL[c.pipeline_stage]}. ` : "Aşama henüz yok. "}
-            Aşamayı yalnız yönetici veya müşterinin atandığı çalışan değiştirebilir.
-          </p>
-        )}
-        {c.pipeline_stage === "appointment" ? <AppointmentRow customer={c} canChange={canStage} onDone={refresh} /> : null}
+        {/* Yetki DB'de (_can_manage): mağazadaki tüm aktif kullanıcılar */}
+        <StageForm customer={c} onDone={refresh} />
+        {c.pipeline_stage === "appointment" ? <AppointmentRow customer={c} canChange onDone={refresh} /> : null}
       </section>
 
       {viewer.isManager || viewer.canReassign ? (

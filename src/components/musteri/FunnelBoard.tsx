@@ -39,14 +39,12 @@ import {
   STAGE_LABEL,
   type Customer,
   type MemberLite,
-  type Viewer,
 } from "./shared";
 import "./musteri.css";
 import { toUserMessage } from "@/lib/errors";
 
 const APPT_OPTION = "__appointment";
 
-type V = Pick<Viewer, "id" | "isManager">;
 
 const collision: CollisionDetection = (args) => {
   const hits = pointerWithin(args);
@@ -69,12 +67,10 @@ function useReducedMotion() {
 export function FunnelBoard({
   customers,
   members,
-  viewer,
   reached,
 }: {
   customers: Customer[];
   members: MemberLite[];
-  viewer: V;
   /** MAIN_STAGES sırasıyla, o aşamaya (veya ilerisine) ulaşmış müşteri sayısı */
   reached: number[];
 }) {
@@ -245,7 +241,6 @@ export function FunnelBoard({
               <Cards
                 list={list}
                 members={members}
-                viewer={viewer}
                 busy={pending}
                 activeId={activeId}
                 openId={openId}
@@ -285,7 +280,6 @@ export function FunnelBoard({
                 <Cards
                   list={by(stage)}
                   members={members}
-                  viewer={viewer}
                   busy={pending}
                   activeId={activeId}
                   openId={openId}
@@ -346,7 +340,6 @@ function Column({
 function Cards({
   list,
   members,
-  viewer,
   busy,
   activeId,
   openId,
@@ -355,7 +348,6 @@ function Cards({
 }: {
   list: Customer[];
   members: MemberLite[];
-  viewer: V;
   busy: Record<string, true>;
   activeId: string | null;
   openId: string | null;
@@ -371,7 +363,6 @@ function Cards({
           key={c.id}
           c={c}
           members={members}
-          viewer={viewer}
           busy={!!busy[c.id]}
           dragging={activeId === c.id}
           open={openId === c.id}
@@ -424,7 +415,6 @@ function CardDetail({ c, members }: { c: Customer; members: MemberLite[] }) {
 function FunnelCard({
   c,
   members,
-  viewer,
   busy,
   dragging,
   open,
@@ -433,14 +423,14 @@ function FunnelCard({
 }: {
   c: Customer;
   members: MemberLite[];
-  viewer: V;
   busy: boolean;
   dragging: boolean;
   open: boolean;
   onToggle: (id: string) => void;
   onMove: (c: Customer, stage: string) => void;
 }) {
-  const canMove = viewer.isManager || c.assigned_to === viewer.id;
+  // Yetki DB'de (_can_manage): mağazadaki tüm aktif kullanıcılar taşıyabilir.
+  const canMove = true;
   const { setNodeRef, listeners } = useDraggable({
     id: c.id,
     disabled: !canMove || busy,

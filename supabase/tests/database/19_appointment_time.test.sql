@@ -1,7 +1,7 @@
 -- Randevu zamanı (migration 20261005000500_appointment_time.sql)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(43);
+select plan(44);
 
 -- ---------------------------------------------------------------------------
 -- Fixture (postgres olarak). Kiracı A: yönetici, ajan1 (atanmış), ajan2 (yetkisiz). Kiracı B: yönetici.
@@ -187,14 +187,15 @@ select is((select count(*)::int from public.audit_log
           3, 'set_appointment audit_log yazar');
 
 -- ---------------------------------------------------------------------------
--- Ajan2 (yetkisiz) ve başka kiracının yöneticisi
+-- Ajan2 (sahibi değil) ve başka kiracının yöneticisi
+-- 20261012000200: aynı mağazadaki her aktif kullanıcı randevu zamanını değiştirir.
 -- ---------------------------------------------------------------------------
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000b3","role":"authenticated"}', true);
 set local role authenticated;
-select throws_ok(
-  $$select public.set_appointment('40000000-0000-4000-8000-0000000000b5', public.tr_today() + 1, null)$$,
-  '42501', 'Müşteri bulunamadı veya bu müşteri için işlem yetkiniz yok.',
-  'set_appointment: yetkisiz çalışan başkasının müşterisini değiştiremez');
+select is((public.set_appointment('40000000-0000-4000-8000-0000000000b5', public.tr_today() + 1, null)).appointment_day,
+  public.tr_today() + 1, 'set_appointment: aynı mağazadaki çalışan başkasının müşterisini değiştirir');
+select lives_ok($$select public.set_appointment('40000000-0000-4000-8000-0000000000b5', null, null)$$,
+  'set_appointment: çalışan randevu zamanını temizler');
 reset role;
 
 select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-0000000000b4","role":"authenticated"}', true);
@@ -206,7 +207,7 @@ select throws_ok(
 reset role;
 
 select is((select appointment_day from public.customers where id = '40000000-0000-4000-8000-0000000000b5'),
-          null::date, 'reddedilen çağrılar müşteriyi değiştirmedi');
+          null::date, 'başka kiracının reddedilen çağrısı müşteriyi değiştirmedi');
 
 -- ---------------------------------------------------------------------------
 -- set_pipeline_stage: randevudan çıkınca kolonlar kalır; başka aşamadan randevuya girince null

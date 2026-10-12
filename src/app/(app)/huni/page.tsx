@@ -1,12 +1,12 @@
 import { FunnelBoard } from "@/components/musteri/FunnelBoard";
-import { CUSTOMER_COLUMNS, MAIN_STAGES, type Customer, type MemberLite, type Viewer } from "@/components/musteri/shared";
+import { CUSTOMER_COLUMNS, MAIN_STAGES, type Customer, type MemberLite } from "@/components/musteri/shared";
 import { getSessionContext } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Huni" };
 
 export default async function Page() {
-  const { member } = await getSessionContext();
+  await getSessionContext();
   const supabase = await createClient();
 
   const [{ data, error }, { data: events }, { data: memberRows }] = await Promise.all([
@@ -38,7 +38,6 @@ export default async function Page() {
     return n;
   });
 
-  const viewer: Pick<Viewer, "id" | "isManager"> = { id: member.id, isManager: member.role === "manager" };
 
   return (
     <div className="view-huni">
@@ -51,7 +50,7 @@ export default async function Page() {
           Huni yüklenemedi. Sayfayı yenileyin; sorun sürerse yöneticinize bildirin.
         </div>
       ) : (
-        <FunnelBoard customers={customers} members={(memberRows ?? []) as MemberLite[]} viewer={viewer} reached={reached} />
+        <FunnelBoard customers={customers} members={(memberRows ?? []) as MemberLite[]} reached={reached} />
       )}
     </div>
   );
