@@ -14,7 +14,7 @@ export default async function Page() {
           <h1>Excel içe aktar</h1>
           <p>.xlsx veya .csv dosyasından müşteri ekleyin. Kayıtlı numaralar tekrar eklenmez.</p>
         </div>
-        <Link href="/musteriler" className={buttonClass("soft", "sm")}>
+        <Link prefetch={false} href="/musteriler" className={buttonClass("soft", "sm")}>
           Müşterilere dön
         </Link>
       </div>

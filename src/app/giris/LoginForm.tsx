@@ -114,7 +114,7 @@ export function LoginForm({ notice }: { notice?: string }) {
       <button type="submit" className={s.submit} disabled={pending || leaving}>
         {pending ? "Giriş yapılıyor" : leaving ? "Açılıyor" : "Giriş yap"}
       </button>
-      <Link href="/sifre-sifirla" className={s.forgot}>
+      <Link prefetch={false} href="/sifre-sifirla" className={s.forgot}>
         Şifremi unuttum
       </Link>
       {door}

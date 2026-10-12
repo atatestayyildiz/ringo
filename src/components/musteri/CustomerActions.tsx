@@ -76,7 +76,7 @@ export function CustomerActions({ canImport, exportHref }: { canImport: boolean;
               </button>
             ) : null}
             {canImport ? (
-              <Link href="/musteriler/ice-aktar" role="menuitem" className={buttonClass("soft")}>
+              <Link prefetch={false} href="/musteriler/ice-aktar" role="menuitem" className={buttonClass("soft")}>
                 Excel içe aktar
               </Link>
             ) : null}

@@ -134,7 +134,7 @@ export function PoolList({
         <div className="toast-region hv-notice-region" role="status" aria-live="polite">
           <div key={notice.id} className="toast hv-notice">
             <span>{notice.name} listene eklendi</span>
-            <Link href="/bugun" className="hv-notice-link">
+            <Link prefetch={false} href="/bugun" className="hv-notice-link">
               Bugün&apos;e git
             </Link>
           </div>

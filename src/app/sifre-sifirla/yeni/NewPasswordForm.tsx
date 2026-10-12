@@ -21,7 +21,7 @@ export function NewPasswordForm({ tokenHash, type }: { tokenHash: string; type: 
       <input type="hidden" name="token_hash" value={tokenHash} />
       <input type="hidden" name="type" value={type} />
       {state.linkDead ? (
-        <Link href="/sifre-sifirla" className="btn btn-ink btn-block" style={{ textAlign: "center" }}>
+        <Link prefetch={false} href="/sifre-sifirla" className="btn btn-ink btn-block" style={{ textAlign: "center" }}>
           Yeni bağlantı iste
         </Link>
       ) : (

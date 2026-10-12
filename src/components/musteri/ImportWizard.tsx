@@ -456,7 +456,7 @@ export function ImportWizard() {
             <Button variant="soft" onClick={reset}>
               Yeni dosya
             </Button>
-            <Link href="/musteriler" className={buttonClass("ink")}>
+            <Link prefetch={false} href="/musteriler" className={buttonClass("ink")}>
               Müşterilere git
             </Link>
           </div>

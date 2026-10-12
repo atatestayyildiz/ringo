@@ -51,7 +51,7 @@ export function MainNav({ visible }: { visible: NavKey[] }) {
       {NAV_ITEMS.filter((i) => visible.includes(i.key)).map(({ key, href, label, Icon }) => {
         const active = path === href || path.startsWith(href + "/");
         return (
-          <Link key={key} href={href} aria-current={active ? "page" : undefined} aria-label={label} onClick={() => refreshIfCurrent(href)}>
+          <Link prefetch={false} key={key} href={href} aria-current={active ? "page" : undefined} aria-label={label} onClick={() => refreshIfCurrent(href)}>
             <Icon />
             <span>{label}</span>
           </Link>

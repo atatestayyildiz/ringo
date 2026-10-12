@@ -25,7 +25,7 @@ export default async function NewPasswordPage({ searchParams }: { searchParams: 
             <div className="form-error" role="alert">
               Bağlantı geçersiz ya da eksik. Yeni bir bağlantı isteyin.
             </div>
-            <Link href="/sifre-sifirla" className="btn btn-ink btn-block" style={{ textAlign: "center" }}>
+            <Link prefetch={false} href="/sifre-sifirla" className="btn btn-ink btn-block" style={{ textAlign: "center" }}>
               Yeni bağlantı iste
             </Link>
           </>

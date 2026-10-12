@@ -168,7 +168,7 @@ export function CallbackReminder({ memberId }: { memberId: string }) {
             const tel = telLink(d.phone);
             return (
               <li key={keyOf(d)} className={styles.row}>
-                <Link href={`/bugun?m=${d.id}`} className={styles.who}>
+                <Link prefetch={false} href={`/bugun?m=${d.id}`} className={styles.who}>
                   <b>{d.name}</b>
                   <span>Saat {formatTime(d.at)}</span>
                 </Link>

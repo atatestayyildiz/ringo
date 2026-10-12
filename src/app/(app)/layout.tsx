@@ -34,7 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header className="top">
         <div className="top-in">
           <MobileMenu visible={visible} signOutAction={signOutAction} />
-          <Link href="/bugun" className="logo" style={{ textDecoration: "none" }}>
+          <Link prefetch={false} href="/bugun" className="logo" style={{ textDecoration: "none" }}>
             <span className="logo-mark" aria-hidden="true">
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element

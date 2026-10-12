@@ -119,7 +119,7 @@ export function MobileMenu({
               {NAV_ITEMS.filter((i) => visible.includes(i.key)).map(({ key, href, label, Icon }) => {
                 const active = path === href || path.startsWith(href + "/");
                 return (
-                  <Link
+                  <Link prefetch={false}
                     key={key}
                     href={href}
                     aria-current={active ? "page" : undefined}
@@ -134,7 +134,7 @@ export function MobileMenu({
                 );
               })}
               <hr />
-              <Link
+              <Link prefetch={false}
                 href="/profil"
                 aria-current={path === "/profil" || path.startsWith("/profil/") ? "page" : undefined}
                 onClick={() => setOpen(false)}

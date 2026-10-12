@@ -23,7 +23,7 @@ export function RequestForm() {
       <Button type="submit" variant="ink" block disabled={pending}>
         {pending ? "Gönderiliyor" : "Bağlantı gönder"}
       </Button>
-      <Link href="/giris" style={{ textAlign: "center", fontSize: 14, color: "var(--ink-2)" }}>
+      <Link prefetch={false} href="/giris" style={{ textAlign: "center", fontSize: 14, color: "var(--ink-2)" }}>
         Girişe dön
       </Link>
     </form>

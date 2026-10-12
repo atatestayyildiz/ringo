@@ -411,7 +411,7 @@ export function BugunView(props: Props) {
       <Card>
         <h2>
           Havuz
-          <Link
+          <Link prefetch={false}
             href="/havuz"
             className={styles.open}
             aria-label="Havuzu aç"
@@ -704,7 +704,7 @@ export function BugunView(props: Props) {
               <Card>
                 <h2>
                   Tekrar aranacaklar
-                  <Link
+                  <Link prefetch={false}
                     href="/musteriler"
                     className={styles.open}
                     aria-label="Tümünü aç"
@@ -756,7 +756,7 @@ export function BugunView(props: Props) {
                     {isManager ? (
                       <>
                         {" "}
-                        <Link href="/ayarlar">Kuralları değiştir</Link>
+                        <Link prefetch={false} href="/ayarlar">Kuralları değiştir</Link>
                       </>
                     ) : null}
                   </div>

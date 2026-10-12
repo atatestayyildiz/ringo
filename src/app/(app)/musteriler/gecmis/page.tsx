@@ -64,7 +64,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
             form müşterisi sayılmaz, ayrı raporlanır; arama sayaçlarına eklenir.
           </p>
         </div>
-        <Link href="/musteriler" className={buttonClass("soft")}>
+        <Link prefetch={false} href="/musteriler" className={buttonClass("soft")}>
           Müşteriler
         </Link>
       </div>
@@ -90,13 +90,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
 
       {total > PAGE_SIZE ? (
         <nav className="mu-pager" aria-label="Sayfalama">
-          <Link href={hrefFor(page - 1)} className={buttonClass("soft", "sm")} aria-disabled={page <= 1} tabIndex={page <= 1 ? -1 : undefined}>
+          <Link prefetch={false} href={hrefFor(page - 1)} className={buttonClass("soft", "sm")} aria-disabled={page <= 1} tabIndex={page <= 1 ? -1 : undefined}>
             Önceki
           </Link>
           <span>
             Sayfa {page} / {pageCount}
           </span>
-          <Link href={hrefFor(page + 1)} className={buttonClass("soft", "sm")} aria-disabled={page >= pageCount} tabIndex={page >= pageCount ? -1 : undefined}>
+          <Link prefetch={false} href={hrefFor(page + 1)} className={buttonClass("soft", "sm")} aria-disabled={page >= pageCount} tabIndex={page >= pageCount ? -1 : undefined}>
             Sonraki
           </Link>
         </nav>

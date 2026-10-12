@@ -111,7 +111,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
           </p>
         </div>
         <div className="mu-actions">
-          <Link href="/musteriler/gecmis" className={buttonClass("soft")}>
+          <Link prefetch={false} href="/musteriler/gecmis" className={buttonClass("soft")}>
             Geçmiş dönem
           </Link>
           <CustomerActions canImport={viewer.canImport} exportHref={canExport ? exportHref : null} />
@@ -145,7 +145,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
 
       {total > pageSize ? (
         <nav className="mu-pager" aria-label="Sayfalama">
-          <Link
+          <Link prefetch={false}
             href={hrefFor(page - 1)}
             className={buttonClass("soft", "sm")}
             aria-disabled={page <= 1}
@@ -156,7 +156,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
           <span>
             Sayfa {page} / {pageCount}
           </span>
-          <Link
+          <Link prefetch={false}
             href={hrefFor(page + 1)}
             className={buttonClass("soft", "sm")}
             aria-disabled={page >= pageCount}
