@@ -4,7 +4,7 @@ import { OperatorLogo } from "@/components/ui/OperatorLogo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { claimNextAction, distributeDayAction, logCallAction } from "@/app/(app)/bugun/actions";
+import { addNoteAction, claimNextAction, distributeDayAction, logCallAction } from "@/app/(app)/bugun/actions";
 import { IconArrow, IconChat, IconClock, IconInfo } from "@/components/icons";
 import {
   Avatar,
@@ -328,6 +328,19 @@ export function BugunView(props: Props) {
     }
   }
 
+  async function addNote(item: Item, note: string): Promise<boolean> {
+    const res = await addNoteAction(item.id, note);
+    if (!res.ok) {
+      toast(res.error, "error");
+      return false;
+    }
+    setItems((l) =>
+      l.map((x) => (x.id === item.id ? { ...x, log: [...x.log, { outcome: "note", note }] } : x)),
+    );
+    toast("Not kaydedildi");
+    return true;
+  }
+
   function pick(outcome: Outcome, note: string) {
     if (!cur || busy || busyRef.current || !isCallOpen(cur.status)) return;
     if (outcome === "callback") return setDialog({ kind: "callback", note });
@@ -561,6 +574,7 @@ export function BugunView(props: Props) {
                 item={cur}
                 busy={busy}
                 onPick={pick}
+                onAddNote={(note) => addNote(cur, note)}
                 onOpenCard={() => void openCard(cur.id)}
               />
             </section>

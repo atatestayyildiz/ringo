@@ -478,10 +478,14 @@
   line-height: 1.45;
   color: var(--ink-2);
 }
-.outcomesClosed .o,
-.outcomesClosed .noteInput {
+.outcomesClosed .o {
   opacity: 0.45;
   cursor: not-allowed;
+}
+.noteSave {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 .noteInput {
   margin-top: 12px;

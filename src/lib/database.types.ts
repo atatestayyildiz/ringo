@@ -79,6 +79,37 @@ isOneToOne: false
       referencedColumns: ["tenant_id","id"]
     }
                   ]
+                },"customer_notes": {
+                  Row: {
+                    "created_at": string,"customer_id": string,"id": string,"member_id": string,"note": string,"tenant_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"customer_id": string,"id"?: string,"member_id": string,"note": string,"tenant_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"customer_id"?: string,"id"?: string,"member_id"?: string,"note"?: string,"tenant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "customer_notes_tenant_id_customer_id_fkey"
+      columns: ["tenant_id","customer_id"]
+isOneToOne: false
+      referencedRelation: "customers"
+      referencedColumns: ["tenant_id","id"]
+    },{
+      foreignKeyName: "customer_notes_tenant_id_fkey"
+      columns: ["tenant_id"]
+isOneToOne: false
+      referencedRelation: "tenants"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "customer_notes_tenant_id_member_id_fkey"
+      columns: ["tenant_id","member_id"]
+isOneToOne: false
+      referencedRelation: "members"
+      referencedColumns: ["tenant_id","id"]
+    }
+                  ]
                 },"customers": {
                   Row: {
                     "amount": string | null,"revive_active": boolean,"revived_at": string | null,"revived_by": string | null,"applied_at": string | null,"appointment_day": string | null,"appointment_time": string | null,"assigned_to": string | null,"attempts_in_round": number,"birth_date": string | null,"call_status": string,"consent": boolean,"created_at": string | null,"full_name": string,"id": string,"last_note": string | null,"last_outcome": string | null,"next_call_at": string,"operator": string | null,"phone": string,"phone_alt": string | null,"pipeline_stage": string | null,"pool_count": number,"source": string,"source_detail": string | null,"tenant_id": string,"updated_at": string | null
@@ -330,6 +361,9 @@ isOneToOne: true
             [_ in never]: never
           }
           Functions: {
+"add_customer_note":
+{ Args: { "p_customer": string,"p_note": string }; Returns: Database["public"]["Tables"]["customer_notes"]["Row"]
+                           },
             "_audit":
 { Args: { "p_action": string,"p_data": Json,"p_entity": string,"p_entity_id": string,"p_member": string,"p_tenant": string }; Returns: undefined
                            },

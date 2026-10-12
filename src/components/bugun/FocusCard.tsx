@@ -13,7 +13,7 @@ import {
   type IconProps,
 } from "@/components/icons";
 import { formatAmount } from "@/components/musteri/shared";
-import { Avatar, Chip } from "@/components/ui";
+import { Avatar, Button, Chip } from "@/components/ui";
 import { formatPhone, relativeTime, telLink, waLink } from "@/lib/format";
 import {
   isCallOpen,
@@ -85,15 +85,19 @@ export function FocusCard({
   item,
   busy,
   onPick,
+  onAddNote,
   onOpenCard,
 }: {
   item: Item;
   busy: boolean;
   onPick: (outcome: Outcome, note: string) => void;
+  /** Kapanmış müşteriye serbest not; başarılıysa true */
+  onAddNote: (note: string) => Promise<boolean>;
   /** Ad ya da baş harfe tıklayınca müşteri kartı (sağ panel) */
   onOpenCard?: () => void;
 }) {
   const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
   const open = isCallOpen(item.status);
   const tel = telLink(item.phone);
   const wa = waLink(item.phone);
@@ -205,7 +209,7 @@ export function FocusCard({
         {open ? null : (
           <div className={styles.closedNote} role="status">
             {CLOSED_TEXT[item.status] ?? "Bu müşteri için arama kaydı kapalı."}{" "}
-            Aşama değişikliği için Müşteriler ekranını kullanın.
+            Aşağıya not ekleyebilirsiniz. Aşama değişikliği için Müşteriler ekranını kullanın.
           </div>
         )}
         <div className={styles.ogrid}>
@@ -229,12 +233,27 @@ export function FocusCard({
           className={styles.noteInput}
           rows={2}
           maxLength={1000}
-          placeholder="Not ekle (isteğe bağlı)"
-          aria-label="Görüşme notu"
-          disabled={!open}
+          placeholder={open ? "Not ekle (isteğe bağlı)" : "Not ekle"}
+          aria-label={open ? "Görüşme notu" : "Müşteri notu"}
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
+        {open ? null : (
+          <div className={styles.noteSave}>
+            <Button
+              size="sm"
+              disabled={saving || !note.trim()}
+              onClick={async () => {
+                setSaving(true);
+                const ok = await onAddNote(note.trim());
+                setSaving(false);
+                if (ok) setNote("");
+              }}
+            >
+              {saving ? "Kaydediliyor" : "Notu kaydet"}
+            </Button>
+          </div>
+        )}
       </div>
     </>
   );

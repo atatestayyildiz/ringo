@@ -496,7 +496,7 @@ function ReassignForm({ customer: c, members, onDone }: { customer: Customer; me
 /* ---------- zaman çizelgesi ---------- */
 type TimelineItem = {
   key: string;
-  kind: "call" | "stage";
+  kind: "call" | "stage" | "note";
   at: string;
   memberId: string;
   title: string;
@@ -512,7 +512,7 @@ function Timeline({ customerId, members }: { customerId: string; members: Member
     let alive = true;
     (async () => {
       const supabase = createClient();
-      const [calls, stages] = await Promise.all([
+      const [calls, stages, notes] = await Promise.all([
         supabase
           .from("call_attempts")
           .select("id, member_id, outcome, note, callback_at, created_at")
@@ -525,9 +525,15 @@ function Timeline({ customerId, members }: { customerId: string; members: Member
           .eq("customer_id", customerId)
           .order("created_at", { ascending: false })
           .limit(100),
+        supabase
+          .from("customer_notes")
+          .select("id, member_id, note, created_at")
+          .eq("customer_id", customerId)
+          .order("created_at", { ascending: false })
+          .limit(100),
       ]);
       if (!alive) return;
-      if (calls.error || stages.error) {
+      if (calls.error || stages.error || notes.error) {
         setFailed(true);
         return;
       }
@@ -548,6 +554,14 @@ function Timeline({ customerId, members }: { customerId: string; members: Member
           memberId: s.member_id,
           title: `Aşama: ${STAGE_LABEL[s.stage] ?? s.stage}`,
           note: s.note,
+        })),
+        ...(notes.data ?? []).map((n) => ({
+          key: `n${n.id}`,
+          kind: "note" as const,
+          at: n.created_at,
+          memberId: n.member_id,
+          title: "Not",
+          note: n.note,
         })),
       ].sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
       setItems(list);

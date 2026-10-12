@@ -62,7 +62,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
       ? settings.distribution_mode
       : "auto_even";
 
-  const [customersRes, attemptsRes, birthdaysRes, rulesRes, poolRes, summaryRes, membersRes, claimRes] = await Promise.all([
+  const [customersRes, attemptsRes, notesRes, birthdaysRes, rulesRes, poolRes, summaryRes, membersRes, claimRes] = await Promise.all([
     ids.length
       ? supabase
           .from("customers")
@@ -79,6 +79,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
           .order("created_at", { ascending: false })
           .limit(600)
       : Promise.resolve({ data: [] }),
+    ids.length
+      ? supabase
+          .from("customer_notes")
+          .select("customer_id, note, created_at")
+          .in("customer_id", ids)
+          .order("created_at", { ascending: false })
+          .limit(600)
+      : Promise.resolve({ data: [] }),
     supabase.rpc("upcoming_birthdays"),
     supabase.rpc("rules_summary_text"),
     // Ortak havuz: kiracının tüm havuzu (Havuz sayfasıyla aynı kaynak, telefon yok)
@@ -89,11 +97,16 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
   ]);
 
   const byId = new Map((customersRes.data ?? []).map((c) => [c.id, c]));
+  // Arama kayıtları ve serbest notlar birlikte, en yeni 3 kayıt
+  const entries = [
+    ...(attemptsRes.data ?? []).map((a) => ({ id: a.customer_id, at: a.created_at ?? "", outcome: a.outcome, note: a.note })),
+    ...(notesRes.data ?? []).map((n) => ({ id: n.customer_id, at: n.created_at, outcome: "note", note: n.note as string | null })),
+  ].sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
   const logs = new Map<string, { outcome: string; note: string | null }[]>();
-  for (const a of attemptsRes.data ?? []) {
-    const l = logs.get(a.customer_id) ?? [];
-    if (l.length < 3) l.push({ outcome: a.outcome, note: a.note });
-    logs.set(a.customer_id, l);
+  for (const e of entries) {
+    const l = logs.get(e.id) ?? [];
+    if (l.length < 3) l.push({ outcome: e.outcome, note: e.note });
+    logs.set(e.id, l);
   }
   const names = new Map((membersRes.data ?? []).map((m) => [m.id, m.full_name]));
 

@@ -66,6 +66,19 @@ export async function logCallAction(
   };
 }
 
+/** Serbest not: kapanmış müşteriye de eklenir. Yetki DB'de (add_customer_note, sahip veya yönetici). */
+export async function addNoteAction(customerId: string, note: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const clean = (note ?? "").trim();
+  if (!UUID.test(customerId)) return { ok: false, error: "Geçersiz istek. Sayfayı yenileyip tekrar deneyin." };
+  if (!clean) return { ok: false, error: "Not boş olamaz." };
+  if (clean.length > 1000) return { ok: false, error: "Not en fazla 1000 karakter olabilir." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("add_customer_note", { p_customer: customerId, p_note: clean });
+  if (error) return { ok: false, error: toUserMessage(error) };
+  revalidatePath("/bugun");
+  return { ok: true };
+}
+
 export async function distributeDayAction(): Promise<DistributeResult> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("distribute_day");

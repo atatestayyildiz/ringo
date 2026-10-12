@@ -126,7 +126,7 @@ export type ClaimResult =
 export type DistributeResult = { ok: true; count: number } | { ok: false; error: string };
 
 export function logText(e: LogEntry): string {
-  const label = OUTCOME_LABEL[e.outcome as Outcome] ?? e.outcome;
+  const label = e.outcome === "note" ? "Not" : (OUTCOME_LABEL[e.outcome as Outcome] ?? e.outcome);
   return e.note ? `${label}: ${e.note}` : label;
 }
 
