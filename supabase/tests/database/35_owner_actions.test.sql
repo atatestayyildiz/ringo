@@ -63,7 +63,7 @@ select is((public.add_customer_note('40000000-0000-4000-8000-0000000000f1', 'yö
           '30000000-0000-4000-8000-0000000000e1'::uuid, 'not yazanın adına kaydedilir');
 reset role;
 
-select is((select count(*)::int from public.audit_log where action = 'add_customer_note'),
+select is((select count(*)::int from public.audit_log where action = 'add_customer_note' and tenant_id = '10000000-0000-4000-8000-0000000000e1'),
           2, 'not ekleme audit kaydı yazılır');
 
 select * from finish();
