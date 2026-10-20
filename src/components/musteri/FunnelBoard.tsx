@@ -28,7 +28,7 @@ import {
 } from "@/components/ui";
 import { IconFunnel } from "@/components/icons";
 import { appointmentBadge, compareAppointments } from "@/lib/appointment";
-import { formatPhone } from "@/lib/format";
+import { formatDate, formatPhone } from "@/lib/format";
 import { ChangeAppointmentDialog } from "./AppointmentDialog";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -68,8 +68,11 @@ export function FunnelBoard({
   customers,
   members,
   reached,
+  day = null,
 }: {
   customers: Customer[];
+  /** Randevu günü süzgeci (YYYY-MM-DD); null ise tüm huni */
+  day?: string | null;
   members: MemberLite[];
   /** MAIN_STAGES sırasıyla, o aşamaya (veya ilerisine) ulaşmış müşteri sayısı */
   reached: number[];
@@ -182,6 +185,16 @@ export function FunnelBoard({
         : `${nameOf(active.id)} bırakıldı.`,
     onDragCancel: ({ active }) => `${nameOf(active.id)} taşıma iptal edildi.`,
   };
+
+  if (customers.length === 0 && day) {
+    return (
+      <Card>
+        <EmptyState title="Bu günde randevu yok" icon={<IconFunnel />}>
+          {formatDate(day)} tarihine randevusu olan müşteri bulunamadı. Başka bir gün seçin ya da Tümü ile tüm huniyi görün.
+        </EmptyState>
+      </Card>
+    );
+  }
 
   if (customers.length === 0) {
     return (
