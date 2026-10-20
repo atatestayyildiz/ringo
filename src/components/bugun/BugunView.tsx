@@ -3,7 +3,7 @@
 import { OperatorLogo } from "@/components/ui/OperatorLogo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { addNoteAction, claimNextAction, distributeDayAction, logCallAction } from "@/app/(app)/bugun/actions";
 import { IconArrow, IconChat, IconClock, IconInfo } from "@/components/icons";
 import {
@@ -24,14 +24,17 @@ import { CallbackDialog, ReasonDialog } from "./Dialogs";
 import { FocusCard } from "./FocusCard";
 import {
   firstName,
+  groupByOrigin,
   isCallOpen,
   isDeferred,
   logText,
+  ORIGIN_LABEL,
   toneOf,
   type BirthdayInfo,
   type ClaimInfo,
   type DistributionMode,
   type Item,
+  type Origin,
   type Outcome,
   type PoolInfo,
   type RuleNumbers,
@@ -208,6 +211,7 @@ export function BugunView(props: Props) {
 
   const [showAll, setShowAll] = useState(false);
   const [filter, setFilter] = useState<Tone | null>(null);
+  const [originFilter, setOriginFilter] = useState<Origin | null>(null);
   const focusRef = useRef<HTMLElement>(null);
   // Daralt/Genişlet: basılan düğme ekranda aynı yerde kalır, içerik onun altında değişir
   const anchorRef = useRef<{ el: HTMLElement; top: number } | null>(null);
@@ -378,11 +382,18 @@ export function BugunView(props: Props) {
 
   const matches = (i: Item) => filter === null || toneOf(i.status) === filter;
   const retryItems = items.filter((i) => i.status === "retry");
-  const queue = items.filter(matches).sort((a, b) => {
-    const r = (i: Item) =>
-      i.status === "pending" ? 0 : i.status === "retry" ? 1 : 2;
-    return r(a) - r(b);
-  });
+  // Sıra kaynağa göre gruplanır (yeni, havuzdan dönen, geçmiş dönem); grup içinde duruma göre.
+  // items sırası değişmez: gün şeridi numaraları ve sonraki müşteri seçimi ona bağlı.
+  const queue = groupByOrigin(
+    items.filter((i) => matches(i) && (originFilter === null || i.origin === originFilter)).sort((a, b) => {
+      const r = (i: Item) =>
+        i.status === "pending" ? 0 : i.status === "retry" ? 1 : 2;
+      return r(a) - r(b);
+    }),
+  ).flatMap((g) => g.items);
+  const origins = groupByOrigin(items);
+  const grouped = origins.length > 1;
+  const visibleQueue = showAll ? queue : queue.slice(0, QUEUE_LIMIT);
 
   const title = teamView ? (
     <>
@@ -591,12 +602,28 @@ export function BugunView(props: Props) {
               }
             >
               <div className={styles.qHead}>
-                <h2>
-                  Bugünün sırası
-                  <span className={styles.headNote}>
-                    {finished} / {items.length} bitti
-                  </span>
-                </h2>
+                <div className={styles.qTitle}>
+                  <h2>
+                    Bugünün sırası
+                    <span className={styles.headNote}>
+                      {finished} / {items.length} bitti
+                    </span>
+                  </h2>
+                  <div className={styles.originCounts} data-testid="origin-counts">
+                    {origins.map((g) => (
+                      <button
+                        key={g.origin}
+                        type="button"
+                        data-origin={g.origin}
+                        aria-pressed={originFilter === g.origin}
+                        disabled={!grouped && originFilter === null}
+                        onClick={() => setOriginFilter((o) => (o === g.origin ? null : g.origin))}
+                      >
+                        {ORIGIN_LABEL[g.origin]} <b>{g.items.length}</b>
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 {queue.length > QUEUE_LIMIT ? (
                   <button
                     type="button"
@@ -612,9 +639,15 @@ export function BugunView(props: Props) {
                 <p className={styles.empty}>Bu durumda müşteri yok.</p>
               ) : null}
               <div className={styles.listWrap} data-testid="queue-list">
-                {(showAll ? queue : queue.slice(0, QUEUE_LIMIT)).map((x) => (
+                {visibleQueue.map((x, idx) => (
+                  <Fragment key={x.id}>
+                  {grouped && (idx === 0 || visibleQueue[idx - 1].origin !== x.origin) ? (
+                    <div className={styles.qGroup} data-origin={x.origin} role="presentation">
+                      {ORIGIN_LABEL[x.origin]}
+                      <b>{queue.filter((q) => q.origin === x.origin).length}</b>
+                    </div>
+                  ) : null}
                   <button
-                    key={x.id}
                     type="button"
                     className={`${styles.q}${x.id === curId ? ` ${styles.cur}` : ""}`}
                     onClick={() => {
@@ -640,6 +673,7 @@ export function BugunView(props: Props) {
                     </div>
                     <StatusBadge status={x.status} />
                   </button>
+                  </Fragment>
                 ))}
               </div>
               {queue.length > QUEUE_LIMIT ? (

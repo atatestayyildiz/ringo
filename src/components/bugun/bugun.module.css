@@ -197,9 +197,72 @@
 }
 .qHead h2 {
   margin-bottom: 0;
+  min-height: 36px;
+}
+.qTitle {
   flex: 1;
   min-width: 0;
-  min-height: 36px;
+}
+/* Kaynak sayaçları: yeni, havuzdan dönen, geçmiş dönem */
+.originCounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.originCounts button,
+.qGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.originCounts button {
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+.originCounts button:disabled {
+  cursor: default;
+}
+.originCounts button[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--surface);
+}
+.originCounts button::before,
+.qGroup::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+.originCounts [data-origin="pool"]::before,
+.qGroup[data-origin="pool"]::before {
+  background: var(--c-pool);
+}
+.originCounts [data-origin="archive"]::before,
+.qGroup[data-origin="archive"]::before {
+  background: var(--ink-3);
+}
+.originCounts b,
+.qGroup b {
+  color: var(--ink);
+}
+/* Sıradaki grup ayırıcısı */
+.qGroup {
+  width: 100%;
+  padding: 14px 8px 6px;
+  border-top: 1px dashed color-mix(in srgb, var(--ink) 18%, transparent);
+  text-transform: none;
+}
+.qGroup:first-child {
+  border-top: 0;
+  padding-top: 2px;
 }
 .qToggle {
   flex: none;

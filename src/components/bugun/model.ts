@@ -68,6 +68,33 @@ export function isDeferred(
 
 export type LogEntry ={ outcome: string; note: string | null };
 
+export type Origin = "new" | "pool" | "archive";
+
+export const ORIGIN_ORDER: Origin[] = ["new", "pool", "archive"];
+
+export const ORIGIN_LABEL: Record<Origin, string> = {
+  new: "Yeni müşteriler",
+  pool: "Havuzdan dönenler",
+  archive: "Geçmiş dönem",
+};
+
+/**
+ * Müşteri listeye nereden geldi. Bugün havuza düşen yeni müşteri pool_count'u bir artırdığı için
+ * havuzdaki kayıtta bir eksiği sayılır: yeni müşteri gün içinde "havuzdan dönen"e kaymaz.
+ */
+export function originOf(c: { archive: boolean; status: CallStatus; poolCount: number }): Origin {
+  if (c.archive) return "archive";
+  const before = c.status === "pool" ? c.poolCount - 1 : c.poolCount;
+  return before > 0 ? "pool" : "new";
+}
+
+/** Sırayı kaynağa göre gruplar; grup içinde verilen sıra korunur. Boş grup dönmez. */
+export function groupByOrigin<T extends { origin: Origin }>(list: T[]): { origin: Origin; items: T[] }[] {
+  return ORIGIN_ORDER.map((origin) => ({ origin, items: list.filter((i) => i.origin === origin) })).filter(
+    (g) => g.items.length > 0,
+  );
+}
+
 export type Item = {
   id: string;
   name: string;
@@ -79,6 +106,8 @@ export type Item = {
   amount: string | null;
   /** Geçmiş dönem müşterisi (kapanmış kayıttan alındı); bugünkü form müşterisi sayılmaz */
   archive: boolean;
+  /** Listeye nereden geldi: yeni başvuru, havuzdan dönüş ya da geçmiş dönem */
+  origin: Origin;
   appliedLabel: string | null;
   status: CallStatus;
   tries: number;
