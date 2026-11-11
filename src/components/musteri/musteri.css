@@ -412,6 +412,9 @@
   padding: 2px 2px 4px;
   margin: 0 -2px;
 }
+.mu-col-list > * {
+  flex-shrink: 0;
+}
 .mu-col-search {
   width: 100%;
   border: 0;
