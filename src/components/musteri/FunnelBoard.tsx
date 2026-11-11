@@ -44,6 +44,10 @@ import "./musteri.css";
 import { toUserMessage } from "@/lib/errors";
 
 const APPT_OPTION = "__appointment";
+/** Sütunda bir seferde gösterilen kart sayısı */
+const PAGE = 30;
+/** Bu sayıdan çok kartı olan sütunda arama kutusu çıkar */
+const SEARCH_FROM = 12;
 
 
 const collision: CollisionDetection = (args) => {
@@ -367,11 +371,41 @@ function Cards({
   onToggle: (id: string) => void;
   onMove: (c: Customer, stage: string) => void;
 }) {
+  const [q, setQ] = useState("");
+  const [limit, setLimit] = useState(PAGE);
   if (list.length === 0)
     return <div className="mu-empty-col">Bu aşamada müşteri yok</div>;
+  const term = q.trim().toLocaleLowerCase("tr");
+  const digits = term.replace(/\D/g, "");
+  const shown = term
+    ? list.filter(
+        (c) =>
+          c.full_name.toLocaleLowerCase("tr").includes(term) ||
+          (digits.length >= 3 && c.phone.replace(/\D/g, "").includes(digits)),
+      )
+    : list;
+  const visible = shown.slice(0, limit);
+  const rest = shown.length - visible.length;
   return (
     <>
-      {list.map((c) => (
+      {list.length > SEARCH_FROM ? (
+        <input
+          type="search"
+          className="mu-col-search"
+          placeholder="İsim veya telefon ara"
+          aria-label="Bu sütunda ara"
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setLimit(PAGE);
+          }}
+        />
+      ) : null}
+      <div className="mu-col-list">
+      {term && shown.length === 0 ? (
+        <div className="mu-empty-col">Eşleşen müşteri yok</div>
+      ) : null}
+      {visible.map((c) => (
         <FunnelCard
           key={c.id}
           c={c}
@@ -383,6 +417,16 @@ function Cards({
           onMove={onMove}
         />
       ))}
+      {rest > 0 ? (
+        <button
+          type="button"
+          className="mu-more"
+          onClick={() => setLimit((l) => l + PAGE)}
+        >
+          Daha fazla göster ({rest} kaldı)
+        </button>
+      ) : null}
+      </div>
     </>
   );
 }
